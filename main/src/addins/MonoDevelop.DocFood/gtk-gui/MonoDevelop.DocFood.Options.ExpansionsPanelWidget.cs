@@ -32,7 +32,9 @@ namespace MonoDevelop.DocFood.Options
 			this.GtkScrolledWindow1.ShadowType = ((global::Gtk.ShadowType)(1));
 			// Container child GtkScrolledWindow1.Gtk.Container+ContainerChild
 			this.textview1 = new global::Gtk.TextView ();
-			this.textview1.Buffer.Text = "All words that consist of only consonants (like sql) and/or upper case letters (like HTML) are treated as acronyms. However the acronym recognition can be improved by defining acronyms.";
+			this.textview1.Buffer.Text = "All words that consist of only consonants (like sql) and/or upper case letters (l" +
+				"ike HTML) are treated as acronyms. However the acronym recognition can be improv" +
+				"ed by defining acronyms.";
 			this.textview1.CanFocus = true;
 			this.textview1.Name = "textview1";
 			this.textview1.Editable = false;
