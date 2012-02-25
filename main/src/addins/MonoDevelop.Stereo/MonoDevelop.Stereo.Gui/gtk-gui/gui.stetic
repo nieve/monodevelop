@@ -6,8 +6,8 @@
   </configuration>
   <import>
     <widget-library name="glade-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
-    <widget-library name="../bin/Debug/MonoDevelop.Stereo.Gui.dll" internal="true" />
     <widget-library name="../../../../../build/bin/MonoDevelop.Ide.dll" />
+    <widget-library name="../../../../../build/AddIns/MonoDevelop.Stereo/MonoDevelop.Stereo.Gui.dll" internal="true" />
   </import>
   <widget class="Gtk.Dialog" id="MonoDevelop.Stereo.Gui.RefactoringNamingDialog" design-size="400 165">
     <property name="MemberName" />

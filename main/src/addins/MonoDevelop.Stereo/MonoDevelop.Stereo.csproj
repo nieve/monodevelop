@@ -14,7 +14,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\..\Program Files (x86)\MonoDevelop\AddIns\MonoDevelop.Stereo</OutputPath>
+    <OutputPath>..\..\..\build\AddIns\MonoDevelop.Stereo</OutputPath>
     <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -28,7 +28,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\..\Program Files (x86)\MonoDevelop\AddIns\MonoDevelop.Stereo</OutputPath>
+    <OutputPath>..\..\..\build\AddIns\MonoDevelop.Stereo</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
@@ -82,7 +82,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <EmbeddedResource Include="MonoDevelop.Stereo.addin.xml" />
+    <EmbeddedResource Include="MonoDevelop.Stereo.addin.xml">
+      <LogicalName>MonoDevelop.Stereo.addin.xml</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Refactoring\" />
