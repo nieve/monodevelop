@@ -39,8 +39,7 @@ namespace MonoDevelop.Stereo
 		public IEnumerable<MemberReference> FindReferences(NamespaceResolveResult resolveResult, IProgressMonitor monitor){
 			return FindReferences(IdeApp.ProjectOperations.CurrentSelectedSolution, resolveResult, monitor);
 		}
-			
-		//TODO: Modify to use resolveResult.Namespace.Types!!
+		
 		public IEnumerable<MemberReference> FindReferences(Solution solution, NamespaceResolveResult resolveResult, IProgressMonitor monitor){
 	        MonoDevelop.Ide.Gui.Document doc = IdeApp.Workbench.ActiveDocument;
 			string nspace = resolveResult.NamespaceName;
@@ -63,20 +62,21 @@ namespace MonoDevelop.Stereo
 					int lineOffset;
 					for (var i = 0; i < editor.Lines.Count(); i++){
 						var line = editor.GetLineText(i);
+						if (filePath == @"C:\Code\Mono\TestMonoAddIn\Test\MyTestClass.cs") Console.WriteLine(line);
 						DomRegion region = new DomRegion(filePath, i, 0);
 						if (line != null && line.Contains("using " + nspace + ";")) {
 							column = line.IndexOf (nspace);
 							lineOffset = editor.Text.IndexOf(line, lastFoundIndex);
 							lastFoundIndex = lineOffset + line.Length;
-							var offset = editor.LocationToOffset(i, lineOffset + column);
+							var offset = editor.LocationToOffset(i, column + 1);
 							yield return new MemberReference(null, region, offset, nspace.Length);
 						}
-						if (line != null && 
-						    (line.Trim().StartsWith("namespace " + nspace + ";") || line.Contains("namespace " + nspace + ";"))) {
+						if (line != null && //TODO: change to regex, needs to start with 'namespace nspace' and not be suffixed by anything other than space & {.
+						    (line.Trim() == ("namespace " + nspace) || line.Trim ().StartsWith("namespace " + nspace))) {
 							column = line.IndexOf (nspace);
 							lineOffset = editor.Text.IndexOf(line, lastFoundIndex);
 							lastFoundIndex = lineOffset + line.Length;
-							var offset = editor.LocationToOffset(i, lineOffset + column);
+							var offset = editor.LocationToOffset(i, column + 1);
 							yield return new MemberReference(null, region, offset, nspace.Length);
 						}
 					}
