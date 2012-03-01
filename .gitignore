@@ -16,7 +16,7 @@ obj/
 /main/contrib/bin/
 /local-libs
 
-/main/src/addins/MonoDevelop.Stereo/MonoDevelop.Stereo.Tests/bin/*
+/main/src/addins/MonoDevelop.Stereo/MonoDevelop.Stereo.Tests/bin
 
 
 # globs
