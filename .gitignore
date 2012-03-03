@@ -15,6 +15,7 @@ obj/
 /main/tests/UnitTests/test-results
 /main/contrib/bin/
 /local-libs
+/main/src/addins/*/test-results
 
 /main/src/addins/MonoDevelop.Stereo/MonoDevelop.Stereo.Tests/bin
 
