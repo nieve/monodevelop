@@ -7,6 +7,7 @@ using MonoDevelop.Core;
 using ICSharpCode.NRefactory.Semantics;
 using ICSharpCode.NRefactory.TypeSystem;
 using ICSharpCode.NRefactory.TypeSystem.Implementation;
+using MonoDevelop.Stereo.Gui;
 
 namespace MonoDevelop.Stereo.RenameNamespaceRefactoringTest
 {
@@ -24,25 +25,31 @@ namespace MonoDevelop.Stereo.RenameNamespaceRefactoringTest
 		}
 	}
 	
-//	[TestFixture]
-//	public class PerformChanges
-//	{
-//		RenameNamespaceRefactoring renameNamespaceRefactoring;
-//		IFindNamespaceReference refFinder = MockRepository.GenerateStub<IFindNamespaceReference>();
-//		RefactoringOptions options = new RefactoringOptions();
-//		
-//		[SetUp]
-//		public void SetUp(){
-//			renameNamespaceRefactoring = new RenameNamespaceRefactoring(refFinder);
-//		}
-//		
-//		[Test()]
-//		public void Returns_null_when_found_references_are_null ()
-//		{
-//			refFinder.Stub(f=>f.FindReferences(Arg<NamespaceResolveResult>.Is.Anything, Arg<IProgressMonitor>.Is.Anything))
-//				.Return(null);
-//			Assert.IsNull(renameNamespaceRefactoring.PerformChanges(options, null));
-//		}
-//	}
+	[TestFixture]
+	public class PerformChanges
+	{
+		RenameNamespaceRefactoring renameNamespaceRefactoring;
+		IFindNamespaceReference refFinder = MockRepository.GenerateStub<IFindNamespaceReference>();
+		RefactoringOptions options = new RefactoringOptions();
+		INameValidator validator = MockRepository.GenerateStub<INameValidator>();
+		MonoDevelop.Stereo.Refactoring.Rename.IProgressMonitorFactory factory = MockRepository.GenerateStub<MonoDevelop.Stereo.Refactoring.Rename.IProgressMonitorFactory>();
+		
+		[SetUp]
+		public void SetUp(){
+			factory.Stub (f=>f.Create()).Return(MockRepository.GenerateStub<IProgressMonitor>());
+			renameNamespaceRefactoring = new RenameNamespaceRefactoring(refFinder, validator, factory);
+			var ns = MockRepository.GenerateStub<INamespace>();
+			ns.Expect(n=>n.FullName).Return ("My.Namespace");
+			options.ResolveResult = new NamespaceResolveResult(ns);
+		}
+		
+		[Test()]
+		public void Returns_null_when_found_references_are_null ()
+		{
+			refFinder.Stub(f=>f.FindReferences(Arg<NamespaceResolveResult>.Is.Anything, Arg<IProgressMonitor>.Is.Anything))
+				.Return(null);
+			Assert.IsEmpty(renameNamespaceRefactoring.PerformChanges(options, null));
+		}
+	}
 }
 

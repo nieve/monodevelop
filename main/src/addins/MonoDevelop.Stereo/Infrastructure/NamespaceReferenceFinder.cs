@@ -14,6 +14,7 @@ using ICSharpCode.NRefactory.Semantics;
 using ICSharpCode.OldNRefactory;
 using MonoDevelop.TypeSystem;
 using ICSharpCode.NRefactory.TypeSystem;
+using ICSharpCode.OldNRefactory.Ast;
 
 namespace MonoDevelop.Stereo
 {
@@ -41,10 +42,8 @@ namespace MonoDevelop.Stereo
 		}
 		
 		public IEnumerable<MemberReference> FindReferences(Solution solution, NamespaceResolveResult resolveResult, IProgressMonitor monitor){
-	        MonoDevelop.Ide.Gui.Document doc = IdeApp.Workbench.ActiveDocument;
-			string nspace = resolveResult.NamespaceName;
+			string nspace = resolveResult.Namespace.FullName;
 			
-			string currentMime = null;
 			IEnumerable<FilePath> projFiles = projectFilesExtractor.GetFileNames (solution, monitor);
 			foreach (FilePath filePath in projFiles) {
 				if (string.IsNullOrWhiteSpace(filePath.Extension)) continue;
@@ -52,17 +51,15 @@ namespace MonoDevelop.Stereo
 					break;
 				}
 				else {
-					string mime = DesktopService.GetMimeTypeForUri(filePath);
-					currentMime = mime;
-  					TextEditorData editor = TextFileProvider.Instance.GetTextEditorData(filePath);
-    				ParsedDocument parsedDoc = TypeSystemService.ParseFile(doc.Project, filePath);
+					TextEditorData editor = TextFileProvider.Instance.GetTextEditorData(filePath);
 					
 					int lastFoundIndex = 0;
 					int column;
 					int lineOffset;
 					for (var i = 0; i < editor.Lines.Count(); i++){
 						var line = editor.GetLineText(i);
-						if (filePath == @"C:\Code\Mono\TestMonoAddIn\Test\MyTestClass.cs") Console.WriteLine(line);
+						if (string.IsNullOrWhiteSpace(line)) continue;
+						
 						DomRegion region = new DomRegion(filePath, i, 0);
 						if (line != null && line.Contains("using " + nspace + ";")) {
 							column = line.IndexOf (nspace);
@@ -71,8 +68,7 @@ namespace MonoDevelop.Stereo
 							var offset = editor.LocationToOffset(i, column + 1);
 							yield return new MemberReference(null, region, offset, nspace.Length);
 						}
-						if (line != null && //TODO: change to regex, needs to start with 'namespace nspace' and not be suffixed by anything other than space & {.
-						    (line.Trim() == ("namespace " + nspace) || line.Trim ().StartsWith("namespace " + nspace))) {
+						if (LineContainsNamespaceDeclaration(line, nspace)) {
 							column = line.IndexOf (nspace);
 							lineOffset = editor.Text.IndexOf(line, lastFoundIndex);
 							lastFoundIndex = lineOffset + line.Length;
@@ -81,11 +77,20 @@ namespace MonoDevelop.Stereo
 						}
 					}
 					
+					//TODO: Looks like this isn't working - fix.
 					foreach(var memberRef in FindInnerReferences (monitor, nspace, filePath))
 						yield return memberRef;
 				}
 			}
 			yield break;
+		}
+		
+		private bool LineContainsNamespaceDeclaration(string line, string nspace){
+			return (line != null && 
+		    	(line.Trim() == ("namespace " + nspace) || 
+			 	line.TrimStart().StartsWith("namespace " + nspace + " ") ||
+			 	line.TrimStart().StartsWith("namespace " + nspace + "{") ||
+			 	line.TrimStart().StartsWith("namespace " + nspace + ".")));
 		}
 		
 		IEnumerable<MemberReference> FindInnerReferences (IProgressMonitor monitor, string nspace, FilePath filePath)

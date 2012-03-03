@@ -5,17 +5,17 @@ namespace MonoDevelop.Stereo
 {
 	public interface INonexistantTypeContext : IDocumentContext
 	{
-		MemberResolveResult GetResolvedTypeNameResult ();		
+		ResolveResult GetUnknownTypeResolvedResult ();		
 	}
 	
 	public class NonexistantTypeContext : DocumentContext, INonexistantTypeContext
 	{
-		public MemberResolveResult GetResolvedTypeNameResult ()
+		public ResolveResult GetUnknownTypeResolvedResult ()
 		{
 			ResolveResult resolveResult = GetResolvedResult ();
 			
-			return (resolveResult is MemberResolveResult) ?
-				(MemberResolveResult)resolveResult : null;
+			return (resolveResult is UnknownIdentifierResolveResult || resolveResult is ErrorResolveResult) ?
+				resolveResult : null;
 		}
 	}
 }

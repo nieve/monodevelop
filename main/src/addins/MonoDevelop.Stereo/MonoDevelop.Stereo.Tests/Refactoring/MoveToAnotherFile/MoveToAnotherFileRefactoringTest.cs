@@ -27,10 +27,10 @@ namespace MonoDevelop.Stereo.MoveToAnotherFileRefactoringTest
 		
 		[Test]
 		public void Validates_when_types_were_found_and_current_location_is_not_type_with_file_name(){
-			ctx.Stub(dp=>dp.IsCurrentPositionTypeDeclarationUnmatchingFileName()).Return(true);
+			ctx.Stub(c=>c.IsCurrentPositionTypeDeclarationUnmatchingFileName()).Return(true);
 			IType t1 = MockRepository.GenerateStub<IType>();
 			IType t2 = MockRepository.GenerateStub<IType>();
-			ctx.Stub(dp=>dp.GetTypes()).Return(new List<IType>{t1,t2});
+			ctx.Stub(c=>c.GetTypes()).Return(new List<IType>{t1,t2});
 			
 			var validation = subject.IsValid();
 			
@@ -41,7 +41,7 @@ namespace MonoDevelop.Stereo.MoveToAnotherFileRefactoringTest
 		public void Invalidates_when_one_type_was_found(){
 			ctx.Stub(dp=>dp.IsCurrentPositionTypeDeclarationUnmatchingFileName()).Return(true);
 			IType t1 = MockRepository.GenerateStub<IType>();
-			ctx.Stub(dp=>dp.GetTypes()).Return(new List<IType>{t1});
+			ctx.Stub(c=>c.GetTypes()).Return(new List<IType>{t1});
 			
 			var validation = subject.IsValid();
 			
@@ -50,10 +50,10 @@ namespace MonoDevelop.Stereo.MoveToAnotherFileRefactoringTest
 		
 		[Test]
 		public void Invalidates_when_current_location_is_type_with_file_name(){
-			ctx.Stub(dp=>dp.IsCurrentPositionTypeDeclarationUnmatchingFileName()).Return(false);
+			ctx.Stub(c=>c.IsCurrentPositionTypeDeclarationUnmatchingFileName()).Return(false);
 			IType t1 = MockRepository.GenerateStub<IType>();
 			IType t2 = MockRepository.GenerateStub<IType>();
-			ctx.Stub(dp=>dp.GetTypes()).Return(new List<IType>{t1,t2});
+			ctx.Stub(c=>c.GetTypes()).Return(new List<IType>{t1,t2});
 			
 			var validation = subject.IsValid();
 			

@@ -23,8 +23,11 @@ namespace MonoDevelop.Stereo.Refactoring.GenerateNewType
 			if (type == null) {
 				throw new System.ArgumentNullException ("type");
 			}
+			
+			//TODO: Need to get Declaring type!
+			var declaringType = parsedDocument.GetTypeResolveContext(document.Compilation, data.OffsetToLocation(data.FindCurrentWordStart(0)));
 //			type = (parsedDocument.CompilationUnit.GetTypeAt (type.Location) ?? type);
-			DomRegion region = type.GetDefinition ().BodyRegion;
+			DomRegion region = declaringType.CurrentTypeDefinition.BodyRegion;
 			var start = region.BeginLine;
 			indent = data.GetLine(start).GetIndentation(data.Document);
 			var endLine = region.EndLine;

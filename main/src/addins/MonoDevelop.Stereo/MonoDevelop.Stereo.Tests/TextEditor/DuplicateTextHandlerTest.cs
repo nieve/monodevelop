@@ -31,7 +31,7 @@ namespace MonoDevelop.Stereo.DuplicateTextHandlerTest
 		
 		[Test]
 		public void Enables_info_when_active_document_and_editor_exist(){
-			ctx.Stub(p=>p.ActiveDocumentAndEditorExist()).Return(true);
+			ctx.Stub(c=>c.ActiveDocumentAndEditorExist()).Return(true);
 			
 			CommandInfo commandInfo = new CommandInfo{Enabled=false};
 			subject.TestUpdate(commandInfo);
@@ -41,7 +41,7 @@ namespace MonoDevelop.Stereo.DuplicateTextHandlerTest
 		
 		[Test]
 		public void Enables_info_when_active_document_and_editor_dont_exist(){
-			ctx.Stub(p=>p.ActiveDocumentAndEditorExist()).Return(false);
+			ctx.Stub(c=>c.ActiveDocumentAndEditorExist()).Return(false);
 			
 			CommandInfo commandInfo = new CommandInfo{Enabled=false};
 			subject.TestUpdate(commandInfo);
@@ -65,7 +65,7 @@ namespace MonoDevelop.Stereo.DuplicateTextHandlerTest
 		
 		[Test]
 		public void Appends_duplicated_text(){
-			ctx.Stub(p=>p.GetTextToDuplicate()).Return(text);
+			ctx.Stub(c=>c.GetTextToDuplicate()).Return(text);
 			
 			subject.TestRun();
 			

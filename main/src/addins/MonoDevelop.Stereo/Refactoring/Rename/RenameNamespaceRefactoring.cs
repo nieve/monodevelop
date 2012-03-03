@@ -16,14 +16,16 @@ namespace MonoDevelop.Stereo.Refactoring.Rename
 	{
 		IFindNamespaceReference finder;
 		INameValidator validator;
+		IProgressMonitorFactory factory;
 		
-		public RenameNamespaceRefactoring () : this(new NamespaceReferenceFinder(), new NamespaceValidator()) {	}
+		public RenameNamespaceRefactoring () : this(new NamespaceReferenceFinder(), new NamespaceValidator(), new ProgressMonitorFactory()) { }
 		
-		public RenameNamespaceRefactoring (IFindNamespaceReference namespaceRefFinder, INameValidator validator)
+		public RenameNamespaceRefactoring (IFindNamespaceReference namespaceRefFinder, INameValidator validator, IProgressMonitorFactory factory)
 		{
 			this.Name = "Rename Namespace";
 			finder = namespaceRefFinder;
 			this.validator = validator;
+			this.factory = factory;
 		}
 		
 		public override bool IsValid (RefactoringOptions options)
@@ -50,7 +52,7 @@ namespace MonoDevelop.Stereo.Refactoring.Rename
       		string newName = (string) prop;
 			List<Change> changes = new List<Change>();
 			var oldName = ((NamespaceResolveResult)options.ResolveResult).NamespaceName;
-			using (var dialogProgressMonitor = new MessageDialogProgressMonitor(true, false, false, true)) {
+			using (var dialogProgressMonitor = factory.Create()) {
 		        var references = finder.FindReferences((NamespaceResolveResult)options.ResolveResult, dialogProgressMonitor);
 		        if (references == null)
 		          return changes;
@@ -66,6 +68,18 @@ namespace MonoDevelop.Stereo.Refactoring.Rename
 		        }
 			}
 			return changes;
+		}
+	}
+	
+	public interface IProgressMonitorFactory
+	{
+		IProgressMonitor Create();
+	}
+	
+	public class ProgressMonitorFactory : IProgressMonitorFactory
+	{
+		public IProgressMonitor Create(){
+			return new MessageDialogProgressMonitor(true, false, false, true);
 		}
 	}
 }

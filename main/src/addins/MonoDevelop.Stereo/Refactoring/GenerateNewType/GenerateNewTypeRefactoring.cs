@@ -63,8 +63,8 @@ namespace MonoDevelop.Stereo.Refactoring.GenerateNewType
 		}
 		
 		public bool IsValid(){
-			MemberResolveResult resolvedTypeName = context.GetResolvedTypeNameResult();
-			return resolvedTypeName != null && resolvedTypeName.Type == null; 
+			ResolveResult resolvedTypeName = context.GetUnknownTypeResolvedResult();
+			return resolvedTypeName != null;
 //				&& resolvedTypeName.ResolvedExpression != null && resolvedTypeName.ResolvedType.Type == null;
 		}
 		
@@ -72,15 +72,15 @@ namespace MonoDevelop.Stereo.Refactoring.GenerateNewType
 		{
 			var declaringType = options.ResolveResult.Type; //TODO: this will probably be wrong, needs calling type...
 			MonoDevelop.Ide.Gui.Document doc = options.Document;
-			var fileName = doc.FileName;
-			MonoDevelop.Ide.Gui.Document openDocument = IdeApp.Workbench.OpenDocument(fileName, (OpenDocumentOptions) 39);
-			if (openDocument == null) {
-				MessageService.ShowError(string.Format("Can't open file {0}.", fileName));
-			}
-			else {
-				insertionPoint = GetInsertionPoint(openDocument, declaringType);
+//			var fileName = doc.FileName;
+//			MonoDevelop.Ide.Gui.Document openDocument = IdeApp.Workbench.OpenDocument(fileName, (OpenDocumentOptions) 39);
+//			if (openDocument == null) {
+//				MessageService.ShowError(string.Format("Can't open file {0}.", fileName));
+//			}
+//			else {
+				insertionPoint = GetInsertionPoint(doc, declaringType);
 				base.Run(options);
-			}
+//			}
 		}
 				
 		public override List<Change> PerformChanges (RefactoringOptions options, object properties)
@@ -92,10 +92,11 @@ namespace MonoDevelop.Stereo.Refactoring.GenerateNewType
 			int num = data.Document.LocationToOffset(insertionPoint.Location);
 			textReplaceChange.Offset = num;
 			
-			var resolveResult = context.GetResolvedTypeNameResult ();
+			var resolveResult = context.GetUnknownTypeResolvedResult ();
 			if (resolveResult == null) throw new InvalidOperationException("Cannot generate class here");
-			var nspace = resolveResult.Member.DeclaringType.Namespace; //TODO: was CallingType.Namespace
-			string newTypeName = resolveResult.Member.Name; // ResolvedExpression.Expression;
+			var nspace = resolveResult.Type.Namespace; //TODO: was CallingType.Namespace
+			
+			string newTypeName = (resolveResult as UnknownIdentifierResolveResult).Identifier; //TODO: need to cater for ErrorResolveResult
 			StringBuilder contentBuilder = new StringBuilder();
 			if (insertionPoint.LineBefore == NewLineInsertion.Eol) contentBuilder.Append(data.EolMarker);
 			contentBuilder.Append(data.EolMarker);

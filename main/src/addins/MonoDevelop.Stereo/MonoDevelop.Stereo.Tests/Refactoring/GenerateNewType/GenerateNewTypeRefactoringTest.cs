@@ -17,12 +17,9 @@ namespace MonoDevelop.Stereo.GenerateNewTypeRefactoringTest {
 		INonexistantTypeContext ctx = MockRepository.GenerateMock<INonexistantTypeContext>();
 		IResolveTypeContent resolver = MockRepository.GenerateMock<IResolveTypeContent>();
 		GenerateNewTypeRefactoring generateClassRefactoring;
-		readonly string nmspc = "Foo.Bar";
-		readonly string clsName = "NewClass";
 		readonly string dir = @"c:\some\path\";
 		readonly string fileName = "current.cs";
 		List<Change> changes = null;
-		MemberResolveResult resolvedResult;
 		string fileContent = "some file content";
 		
 		[TestFixtureSetUp]
@@ -36,14 +33,11 @@ namespace MonoDevelop.Stereo.GenerateNewTypeRefactoringTest {
 		
 		[SetUp]
 		public void SetTest(){
-//			AnonymousType anonymousType = new AnonymousType(null,null);// {Namespace = nmspc};
-//			resolvedResult = new MemberResolveResult(anonymousType);
-//			resolvedResult.CallingType = anonymousType;
-//			resolvedResult.ResolvedExpression = new ExpressionResult(clsName);
-			ctx.Stub(p=>p.GetResolvedTypeNameResult()).Return(null);//resolvedResult);
-			ctx.Stub(p=>p.GetCurrentFilePath()).Return(new FilePath(dir + fileName));
+			UnknownIdentifierResolveResult result = new UnknownIdentifierResolveResult("NonExistant", 0);
+			ctx.Stub(c=>c.GetUnknownTypeResolvedResult()).Return(result);
+			ctx.Stub(c=>c.GetCurrentFilePath()).Return(new FilePath(dir + fileName));
 			
-			resolver.Stub(r=>r.GetNewTypeContent(Arg<string>.Is.Anything, Arg<string>.Is.Anything, Arg<string>.Is.Anything)).Return (fileContent);
+			resolver.Stub(r=>r.GetNewTypeContent(Arg<string>.Is.Equal("NonExistant"), Arg<string>.Is.Anything, Arg<string>.Is.Anything)).Return (fileContent);
 			
 			changes = generateClassRefactoring.PerformChanges(null, null);
 		}
@@ -51,8 +45,6 @@ namespace MonoDevelop.Stereo.GenerateNewTypeRefactoringTest {
 		[Test()]
 		public void Returns_a_change ()
 		{
-			changes = generateClassRefactoring.PerformChanges(null, null);
-			
 			Assert.IsNotNull(changes);
 			Assert.AreEqual(1, changes.Count);
 		}
@@ -60,7 +52,6 @@ namespace MonoDevelop.Stereo.GenerateNewTypeRefactoringTest {
 		[Test()]
 		public void Returns_a_text_replace_change ()
 		{
-			changes = generateClassRefactoring.PerformChanges(null, null);
 			Assert.IsInstanceOfType(typeof(TextReplaceChange), changes[0]);
 		}
 		
@@ -93,12 +84,8 @@ namespace MonoDevelop.Stereo.GenerateNewTypeRefactoringTest {
 		[Test()]
 		public void Validates_only_expression_that_isnt_member_nor_type ()
 		{
-//			MemberResolveResult result = new MemberResolveResult(null){
-//				ResolvedMember = null, 
-//				ResolvedType = new DomReturnType{Type = null},
-//				ResolvedExpression = new ExpressionResult("SomeClass")
-//			};
-			ctx.Stub(p=>p.GetResolvedTypeNameResult()).Return(null);//result);
+			ResolveResult result = new ResolveResult(MockRepository.GenerateStub<IType>());
+			ctx.Stub(c=>c.GetUnknownTypeResolvedResult()).Return(result);
 			
 			Assert.IsTrue(generateClassRefactoring.IsValid());
 		}
