@@ -75,14 +75,34 @@ namespace MonoDevelop.Stereo
 							var offset = editor.LocationToOffset(i, column + 1);
 							yield return new MemberReference(null, region, offset, nspace.Length);
 						}
+						else if (line.Contains(nspace + ".")) {
+							MemberReference memRef = TryFindTypePrefixNamespaceRef(nspace, filePath, line, i, editor);
+							if (memRef != null) yield return memRef;
+						}
 					}
 					
 					//TODO: Looks like this isn't working - fix.
-					foreach(var memberRef in FindInnerReferences (monitor, nspace, filePath))
-						yield return memberRef;
+//					foreach(var memberRef in FindInnerReferences (monitor, nspace, filePath))
+//						yield return memberRef;
 				}
 			}
 			yield break;
+		}
+		
+		private MemberReference TryFindTypePrefixNamespaceRef(string nspace, FilePath filePath, string line, int index, TextEditorData editor){
+			var column = line.IndexOf(nspace) + 1;
+			int position = editor.LocationToOffset(index, column);
+			var document = IdeApp.Workbench.GetDocument(filePath.CanonicalPath);
+			ITextBuffer text = document.GetContent<ITextBuffer> ();
+			text.CursorPosition = position + 1;
+			ResolveResult typeResult;
+			CurrentRefactoryOperationsHandler.GetItem (document, out typeResult); //TODO: Looks like typeResult is null... SetSelection or GetItem returned value?
+			if (typeResult is NamespaceResolveResult) {
+				DomRegion region = new DomRegion(filePath, index, column);
+				return new MemberReference(null, region, position, nspace.Length);
+			}
+			
+			return null;
 		}
 		
 		private bool LineContainsNamespaceDeclaration(string line, string nspace){
@@ -110,7 +130,7 @@ namespace MonoDevelop.Stereo
 						
 						ResolveResult typeResult;
 						CurrentRefactoryOperationsHandler.GetItem (document, out typeResult);
-						if (typeResult is TypeResolveResult) {
+						if (typeResult is NamespaceResolveResult) {
 							DomRegion region = new DomRegion(filePath, line, column);
 							yield return new MemberReference(null, region, position, nspace.Length);
 						}
