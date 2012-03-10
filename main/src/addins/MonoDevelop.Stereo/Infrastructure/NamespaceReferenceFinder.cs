@@ -1,21 +1,15 @@
-using System;
-using System.Linq;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using ICSharpCode.NRefactory.Semantics;
+using ICSharpCode.NRefactory.TypeSystem;
 using Mono.TextEditor;
 using MonoDevelop.Core;
+using MonoDevelop.CSharp.Resolver;
 using MonoDevelop.Ide;
-using MonoDevelop.Ide.Gui;
-using MonoDevelop.Projects;
-using MonoDevelop.Ide.Gui.Content;
-using MonoDevelop.Refactoring;
 using MonoDevelop.Ide.FindInFiles;
-using ICSharpCode.NRefactory.Semantics;
-using ICSharpCode.OldNRefactory;
-using MonoDevelop.TypeSystem;
-using ICSharpCode.NRefactory.TypeSystem;
-using ICSharpCode.OldNRefactory.Ast;
-using ICSharpCode.NRefactory.CSharp.TypeSystem;
+using MonoDevelop.Ide.Gui.Content;
+using MonoDevelop.Projects;
+using MonoDevelop.Refactoring;
+using System.Linq;
 
 namespace MonoDevelop.Stereo
 {
@@ -28,14 +22,17 @@ namespace MonoDevelop.Stereo
 	public class NamespaceReferenceFinder : IFindNamespaceReference
 	{
 		IExtractProjectFiles projectFilesExtractor;
+		ITextEditorResolverProvider resolver;
 		public NamespaceReferenceFinder ()
 		{
 			projectFilesExtractor = new ExtractProjectFiles();
+			resolver = new TextEditorResolverProvider();
 		}
 		
-		public NamespaceReferenceFinder (IExtractProjectFiles extractProjectFiles)
+		public NamespaceReferenceFinder (IExtractProjectFiles extractProjectFiles, ITextEditorResolverProvider resolver)
 		{
 			projectFilesExtractor = extractProjectFiles;
+			this.resolver = resolver;
 		}
 		
 		public IEnumerable<MemberReference> FindReferences(NamespaceResolveResult resolveResult, IProgressMonitor monitor){
@@ -103,12 +100,12 @@ namespace MonoDevelop.Stereo
 			var column = line.IndexOf(nspace) + 1;
 			int position = editor.LocationToOffset(index, column);
 			var document = IdeApp.Workbench.GetDocument(filePath.CanonicalPath);
-			ITextBuffer text = document.GetContent<ITextBuffer> ();
-			text.CursorPosition = position + 1;
-			ResolveResult typeResult;
-			CurrentRefactoryOperationsHandler.GetItem (document, out typeResult);
+//			ITextBuffer text = document.GetContent<ITextBuffer> ();
+//			text.CursorPosition = position + 1;
+			DomRegion region;
+			ResolveResult typeResult = resolver.GetLanguageItem(editor, position + 1, out region);
+			System.Console.WriteLine (typeResult);
 			if (typeResult is NamespaceResolveResult) {
-				DomRegion region = new DomRegion(filePath, index, column);
 				return new MemberReference(null, region, position, nspace.Length);
 			}
 			
