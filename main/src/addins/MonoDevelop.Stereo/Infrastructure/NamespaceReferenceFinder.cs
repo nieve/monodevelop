@@ -15,6 +15,7 @@ using ICSharpCode.OldNRefactory;
 using MonoDevelop.TypeSystem;
 using ICSharpCode.NRefactory.TypeSystem;
 using ICSharpCode.OldNRefactory.Ast;
+using ICSharpCode.NRefactory.CSharp.TypeSystem;
 
 namespace MonoDevelop.Stereo
 {
@@ -43,6 +44,19 @@ namespace MonoDevelop.Stereo
 		
 		public IEnumerable<MemberReference> FindReferences(Solution solution, NamespaceResolveResult resolveResult, IProgressMonitor monitor){
 			string nspace = resolveResult.Namespace.FullName;
+			ICSharpCode.NRefactory.CSharp.Resolver.FindReferences findRefs = new ICSharpCode.NRefactory.CSharp.Resolver.FindReferences();
+			foreach (var t in resolveResult.Namespace.Types) {
+				var fileName = t.BodyRegion.FileName;
+				
+				//TODO: can I get where type is being referenced?
+//				var scopes = findRefs.GetSearchScopes(t);
+//				foreach (var scope in scopes) {
+//					var fs = findRefs.GetInterestingFiles (scope, t.Compilation);
+//					foreach (var file in fs) {
+//						Console.WriteLine ("Ref: " + file.FileName);
+//					}
+//				}
+			}
 			
 			IEnumerable<FilePath> projFiles = projectFilesExtractor.GetFileNames (solution, monitor);
 			foreach (FilePath filePath in projFiles) {
@@ -80,10 +94,6 @@ namespace MonoDevelop.Stereo
 							if (memRef != null) yield return memRef;
 						}
 					}
-					
-					//TODO: Looks like this isn't working - fix.
-//					foreach(var memberRef in FindInnerReferences (monitor, nspace, filePath))
-//						yield return memberRef;
 				}
 			}
 			yield break;
@@ -96,7 +106,7 @@ namespace MonoDevelop.Stereo
 			ITextBuffer text = document.GetContent<ITextBuffer> ();
 			text.CursorPosition = position + 1;
 			ResolveResult typeResult;
-			CurrentRefactoryOperationsHandler.GetItem (document, out typeResult); //TODO: Looks like typeResult is null... SetSelection or GetItem returned value?
+			CurrentRefactoryOperationsHandler.GetItem (document, out typeResult);
 			if (typeResult is NamespaceResolveResult) {
 				DomRegion region = new DomRegion(filePath, index, column);
 				return new MemberReference(null, region, position, nspace.Length);
