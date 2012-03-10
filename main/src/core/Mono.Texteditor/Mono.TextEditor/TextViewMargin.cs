@@ -158,13 +158,11 @@ namespace Mono.TextEditor
 				UpdateBracketHighlighting (this, EventArgs.Empty);
 		}
 
-		void HandleTextReplaced (object sender, ReplaceEventArgs e)
+		void HandleTextReplaced (object sender, DocumentChangeEventArgs e)
 		{
 			RemoveCachedLine (Document.GetLineByOffset (e.Offset));
 			if (mouseSelectionMode == MouseSelectionMode.Word && e.Offset < mouseWordStart) {
-				int delta = -e.Count;
-				if (!string.IsNullOrEmpty (e.Value))
-					delta += e.Value.Length;
+				int delta = e.ChangeDelta;
 				mouseWordStart += delta;
 				mouseWordEnd += delta;
 			}
@@ -1294,16 +1292,16 @@ namespace Mono.TextEditor
 			double width = layout.PangoWidth / Pango.Scale.PangoScale;
 			double xPos = pangoPosition / Pango.Scale.PangoScale;
 
-	//		if (!(HighlightCaretLine || textEditor.Options.HighlightCaretLine) || Document.GetLine(Caret.Line) != line) {
-				foreach (var bg in layout.BackgroundColors) {
-					int x1, x2;
-					x1 = layout.Layout.IndexToPos (bg.FromIdx).X;
-					x2 = layout.Layout.IndexToPos (bg.ToIdx).X;
-					DrawRectangleWithRuler (cr, xPos + textEditor.HAdjustment.Value - TextStartPosition,
+			//		if (!(HighlightCaretLine || textEditor.Options.HighlightCaretLine) || Document.GetLine(Caret.Line) != line) {
+			foreach (var bg in layout.BackgroundColors) {
+				int x1, x2;
+				x1 = layout.Layout.IndexToPos (bg.FromIdx).X;
+				x2 = layout.Layout.IndexToPos (bg.ToIdx).X;
+				DrawRectangleWithRuler (cr, xPos + textEditor.HAdjustment.Value - TextStartPosition,
 						new Cairo.Rectangle ((x1 + pangoPosition) / Pango.Scale.PangoScale, y, (x2 - x1) / Pango.Scale.PangoScale + 1, LineHeight),
 						bg.Color, true);
 			}
-	//		}
+			//		}
 
 			bool drawBg = true;
 			bool drawText = true;
@@ -1384,10 +1382,16 @@ namespace Mono.TextEditor
 			if (lineNumber == Caret.Line) {
 				int caretOffset = Caret.Offset;
 				if (offset <= caretOffset && caretOffset <= offset + length) {
-					int index = caretOffset- offset;
+					int index = caretOffset - offset;
 
 					if (Caret.Column > line.EditableLength + 1) {
-						string virtualSpace = this.textEditor.GetTextEditorData ().GetVirtualSpaces (Caret.Line, Caret.Column);
+						string virtualSpace = "";
+						var data = textEditor.GetTextEditorData ();
+						if (data.HasIndentationTracker && line.EditableLength == 0) {
+							virtualSpace = this.textEditor.GetTextEditorData ().GetIndentationString (Caret.Location);
+						}
+						if (Caret.Column > line.EditableLength + 1 + virtualSpace.Length) 
+							virtualSpace += new string (' ', Caret.Column - line.EditableLength - 1 - virtualSpace.Length);
 						LayoutWrapper wrapper = new LayoutWrapper (PangoUtil.CreateLayout (textEditor));
 						wrapper.LineChars = virtualSpace.ToCharArray ();
 						wrapper.Layout.SetText (virtualSpace);
@@ -1567,8 +1571,12 @@ namespace Mono.TextEditor
 				if (isHandled)
 					return;
 				if (line != null && clickLocation.Column >= line.EditableLength + 1 && GetWidth (Document.GetTextAt (line) + "-") < args.X) {
-					int nextColumn = this.textEditor.GetTextEditorData ().GetNextVirtualColumn (clickLocation.Line, clickLocation.Column);
-					clickLocation.Column = nextColumn;
+						clickLocation.Column = line.EditableLength + 1;
+						if (textEditor.GetTextEditorData ().HasIndentationTracker && textEditor.Options.IndentStyle == IndentStyle.Virtual) {
+							int indentationColumn = this.textEditor.GetTextEditorData ().GetVirtualIndentationColumn (clickLocation);
+							if (indentationColumn > clickLocation.Column)
+								clickLocation.Column = indentationColumn;
+						}
 				}
 
 				int offset = Document.LocationToOffset (clickLocation);

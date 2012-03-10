@@ -114,16 +114,15 @@ FILES =  \
 	Ast/Statements/YieldReturnStatement.cs \
 	Ast/TokenRole.cs \
 	Ast/TypeMembers/Accessor.cs \
-	Ast/TypeMembers/AttributedNode.cs \
 	Ast/TypeMembers/ConstructorDeclaration.cs \
 	Ast/TypeMembers/DestructorDeclaration.cs \
+	Ast/TypeMembers/EntityDeclaration.cs \
 	Ast/TypeMembers/EnumMemberDeclaration.cs \
 	Ast/TypeMembers/EventDeclaration.cs \
 	Ast/TypeMembers/FieldDeclaration.cs \
 	Ast/TypeMembers/FixedFieldDeclaration.cs \
 	Ast/TypeMembers/FixedVariableInitializer.cs \
 	Ast/TypeMembers/IndexerDeclaration.cs \
-	Ast/TypeMembers/MemberDeclaration.cs \
 	Ast/TypeMembers/MethodDeclaration.cs \
 	Ast/TypeMembers/OperatorDeclaration.cs \
 	Ast/TypeMembers/ParameterDeclaration.cs \
@@ -219,12 +218,14 @@ FILES =  \
 	Refactoring/ContextAction/CreateProperty.cs \
 	Refactoring/ContextAction/FlipOperatorArguments.cs \
 	Refactoring/ContextAction/GenerateGetter.cs \
+	Refactoring/ContextAction/GenerateProperty.cs \
 	Refactoring/ContextAction/GenerateSwitchLabels.cs \
 	Refactoring/ContextAction/InsertAnonymousMethodSignature.cs \
 	Refactoring/ContextAction/IntroduceFormatItem.cs \
 	Refactoring/ContextAction/InvertIf.cs \
 	Refactoring/ContextAction/RemoveBackingStore.cs \
 	Refactoring/ContextAction/RemoveBraces.cs \
+	Refactoring/ContextAction/RemoveRegion.cs \
 	Refactoring/ContextAction/ReplaceEmptyString.cs \
 	Refactoring/ContextAction/SplitDeclarationAndAssignment.cs \
 	Refactoring/ContextAction/SplitString.cs \

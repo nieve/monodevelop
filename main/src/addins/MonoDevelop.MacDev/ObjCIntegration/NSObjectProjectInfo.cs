@@ -77,7 +77,12 @@ namespace MonoDevelop.MacDev.ObjCIntegration
 		{
 			if (!needsUpdating)
 				return;
-			
+			foreach (DotNetProject r in dom.ReferencedProjects) {
+				var info = infoService.GetProjectInfo (r);
+				if (info != null)
+					info.Update ();
+			}
+			TypeSystemService.ForceUpdate (dom);
 			objcTypes.Clear ();
 			cliTypes.Clear ();
 			refObjcTypes.Clear ();

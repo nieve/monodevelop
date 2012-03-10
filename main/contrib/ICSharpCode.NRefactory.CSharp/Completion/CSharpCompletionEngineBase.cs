@@ -171,28 +171,82 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 			
 			return inSingleComment || inString || inVerbatimString || inChar || inMultiLineComment;
 		}
-		
-		protected bool IsInsideComment (int offset)
-		{
-			var loc = document.GetLocation (offset);
-			return Unit.GetNodeAt<ICSharpCode.NRefactory.CSharp.Comment> (loc.Line, loc.Column) != null;
-		}
-		
+
 		protected bool IsInsideDocComment ()
 		{
-			var loc = document.GetLocation (offset);
-			var cmt = Unit.GetNodeAt<ICSharpCode.NRefactory.CSharp.Comment> (loc.Line, loc.Column - 1);
-			return cmt != null && cmt.CommentType == CommentType.Documentation;
-		}
-		
-		protected bool IsInsideString (int offset)
-		{
+			var text = GetMemberTextToCaret ();
+			bool inSingleComment = false, inString = false, inVerbatimString = false, inChar = false, inMultiLineComment = false;
+			bool singleLineIsDoc = false;
 			
-			var loc = document.GetLocation (offset);
-			var expr = Unit.GetNodeAt<PrimitiveExpression> (loc.Line, loc.Column);
-			return expr != null && expr.Value is string;
+			for (int i = 0; i < text.Item1.Length - 1; i++) {
+				char ch = text.Item1 [i];
+				char nextCh = text.Item1 [i + 1];
+				
+				switch (ch) {
+				case '/':
+					if (inString || inChar || inVerbatimString)
+						break;
+					if (nextCh == '/') {
+						i++;
+						inSingleComment = true;
+						singleLineIsDoc = i + 1 < text.Item1.Length && text.Item1 [i + 1] == '/';
+						if (singleLineIsDoc) {
+							i++;
+						}
+					}
+					if (nextCh == '*')
+						inMultiLineComment = true;
+					break;
+				case '*':
+					if (inString || inChar || inVerbatimString || inSingleComment)
+						break;
+					if (nextCh == '/') {
+						i++;
+						inMultiLineComment = false;
+					}
+					break;
+				case '@':
+					if (inString || inChar || inVerbatimString || inSingleComment || inMultiLineComment)
+						break;
+					if (nextCh == '"') {
+						i++;
+						inVerbatimString = true;
+					}
+					break;
+				case '\n':
+				case '\r':
+					inSingleComment = false;
+					inString = false;
+					inChar = false;
+					break;
+				case '\\':
+					if (inString || inChar)
+						i++;
+					break;
+				case '"':
+					if (inSingleComment || inMultiLineComment || inChar)
+						break;
+					if (inVerbatimString) {
+						if (nextCh == '"') {
+							i++;
+							break;
+						}
+						inVerbatimString = false;
+						break;
+					}
+					inString = !inString;
+					break;
+				case '\'':
+					if (inSingleComment || inMultiLineComment || inString || inVerbatimString)
+						break;
+					inChar = !inChar;
+					break;
+				}
+			}
+			
+			return inSingleComment && singleLineIsDoc;
 		}
-		
+
 		protected CSharpResolver GetState ()
 		{
 			return new CSharpResolver (ctx);
@@ -403,7 +457,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 			} else {
 				memberLocation = new TextLocation (1, 1);
 			}
-			
+
 			using (var stream = new System.IO.StringReader (wrapper.ToString ())) {
 				try {
 					var parser = new CSharpParser ();
@@ -483,8 +537,8 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 				if (expr == null)
 					return null;
 			}
-			var member = Unit.GetNodeAt<AttributedNode> (memberLocation);
-			var member2 = baseUnit.GetNodeAt<AttributedNode> (memberLocation);
+			var member = Unit.GetNodeAt<EntityDeclaration> (memberLocation);
+			var member2 = baseUnit.GetNodeAt<EntityDeclaration> (memberLocation);
 			member2.Remove ();
 			member.ReplaceWith (member2);
 			return new ExpressionResult ((AstNode)expr, Unit);

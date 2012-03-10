@@ -94,22 +94,22 @@ namespace Mono.TextEditor
 				return Document.MimeType;
 			}
 		}
-		
+
 		public TextEditorData () : this (new Document ())
 		{
 		}
-		
+
 		public TextEditorData (Document doc)
 		{
 			LineHeight = 16;
-			
+
 			caret = new Caret (this);
 			caret.PositionChanged += CaretPositionChanged;
-			
+
 			options = TextEditorOptions.DefaultOptions;
 			Document = doc;
 			this.SearchEngine = new BasicSearchEngine ();
-			
+
 			this.heightTree = new HeightTree (this);
 			this.heightTree.Rebuild ();
 		}
@@ -149,19 +149,21 @@ namespace Mono.TextEditor
 				this.document = value;
 				this.document.BeginUndo += OnBeginUndo;
 				this.document.EndUndo += OnEndUndo;
-				
+				this.document.TextReplaced += HandleTextReplaced;
+
 				this.document.Undone += DocumentHandleUndone;
 				this.document.Redone += DocumentHandleRedone;
 				this.document.LineChanged += HandleDocLineChanged;
-				
+
 				this.document.TextSet += HandleDocTextSet;
 				this.document.Folded += HandleTextEditorDataDocumentFolded;
 				this.document.FoldTreeUpdated += HandleTextEditorDataDocumentFoldTreeUpdated;
-				
+
 				this.document.splitter.LineInserted += HandleDocumentsplitterhandleLineInserted;
 				this.document.splitter.LineRemoved += HandleDocumentsplitterhandleLineRemoved;
 			}
 		}
+
 
 		void HandleDocumentsplitterhandleLineRemoved (object sender, LineEventArgs e)
 		{
@@ -336,7 +338,8 @@ namespace Mono.TextEditor
 			
 			document.BeginUndo -= OnBeginUndo;
 			document.EndUndo -= OnEndUndo;
-			
+			document.TextReplaced -= HandleTextReplaced;
+
 			document.Undone -= DocumentHandleUndone;
 			document.Redone -= DocumentHandleRedone;
 			document.LineChanged -= HandleDocLineChanged;
@@ -354,15 +357,23 @@ namespace Mono.TextEditor
 		public void Dispose ()
 		{
 			options = options.Kill ();
-			
+
 			DetachDocument ();
 		}
-		
+
+		void FixVirtualIndentation ()
+		{
+			if (!HasIndentationTracker || Options.IndentStyle != IndentStyle.Virtual)
+				return;
+			var line = Document.GetLine (Caret.Line);
+			if (line != null && line.EditableLength > 0 && GetIndentationString (Caret.Location) == Document.GetTextAt (line.Offset, line.EditableLength))
+				Remove (line.Offset, line.EditableLength);
+		}
+
 		void CaretPositionChanged (object sender, DocumentLocationEventArgs args)
 		{
 			if (!caret.PreserveSelection)
 				this.ClearSelection ();
-			
 			if (Options.RemoveTrailingWhitespaces && args.Location.Line != Caret.Line) {
 				LineSegment line = Document.GetLine (args.Location.Line);
 				if (line != null && line.WasChanged)
@@ -391,7 +402,7 @@ namespace Mono.TextEditor
 		{
 			return this.options.WordFindStrategy.FindNextSubwordOffset (this.Document, offset);
 		}
-		
+
 		public int FindPrevSubwordOffset (int offset)
 		{
 			return this.options.WordFindStrategy.FindPrevSubwordOffset (this.Document, offset);
@@ -420,19 +431,33 @@ namespace Mono.TextEditor
 		#region undo/redo handling
 		int       savedCaretPos;
 		Selection savedSelection;
+		bool hasChangedInUndo = false;
 		//List<TextEditorDataState> states = new List<TextEditorDataState> ();
-		
+
 		void OnBeginUndo (object sender, EventArgs args)
 		{
+			if (!document.IsInAtomicUndo)
+				hasChangedInUndo = false;
 			savedCaretPos  = Caret.Offset;
 			savedSelection = Selection.Clone (MainSelection);
 		}
-		
+
 		void OnEndUndo (object sender, Document.UndoOperationEventArgs e)
 		{
+			if (!document.IsInAtomicUndo && hasChangedInUndo)
+				FixVirtualIndentation ();
 			if (e == null)
 				return;
 			e.Operation.Tag = new TextEditorDataState (this, savedCaretPos, savedSelection);
+		}
+
+		void HandleTextReplaced (object sender, DocumentChangeEventArgs e)
+		{
+			if (document.IsInAtomicUndo) {
+				hasChangedInUndo = true;
+			} else {
+				FixVirtualIndentation ();
+			}
 		}
 
 		void DocumentHandleUndone (object sender, Document.UndoOperationEventArgs e)
@@ -448,12 +473,12 @@ namespace Mono.TextEditor
 			if (state != null)
 				state.RedoState ();
 		}
-		
+
 		class TextEditorDataState
 		{
 			int      undoCaretPos;
 			Selection undoSelection;
-			
+
 			int      redoCaretPos;
 			Selection redoSelection;
 			
@@ -495,7 +520,7 @@ namespace Mono.TextEditor
 				return IsSomethingSelected && MainSelection.Anchor.Line - MainSelection.Lead.Line != 0;
 			}
 		}
-		
+
 		public bool CanEditSelection {
 			get {
 				// To be improved when we support read-only regions
@@ -701,7 +726,7 @@ namespace Mono.TextEditor
 			MainSelection = new Selection (document.OffsetToLocation (Document.GetLine (from).Offset), 
 			                               document.OffsetToLocation (Document.GetLine (to).EndOffset));
 		}
-		
+
 		internal void DeleteSelection (Selection selection)
 		{
 			if (selection == null)
@@ -800,7 +825,7 @@ namespace Mono.TextEditor
 		}
 		
 		public event EventHandler SearchChanged;
-		
+
 		SearchRequest currentSearchRequest;
 		
 		public SearchRequest SearchRequest {
@@ -911,54 +936,52 @@ namespace Mono.TextEditor
 		#endregion
 		
 		#region VirtualSpace Manager
-		IVirtualSpaceManager virtualSpaceManager = null;
-		public IVirtualSpaceManager VirtualSpaceManager {
+		IIndentationTracker indentationTracker = null;
+		public bool HasIndentationTracker {
 			get {
-				if (virtualSpaceManager == null)
-					virtualSpaceManager = new DefaultVirtualSpaceManager (this.document);
-				return virtualSpaceManager;
+				return indentationTracker != null;	
+			}	
+		}
+
+		public IIndentationTracker IndentationTracker {
+			get {
+				if (!HasIndentationTracker)
+					throw new InvalidOperationException ("Indentation tracker not installed.");
+				return indentationTracker;
 			}
 			set {
-				virtualSpaceManager = value;
+				indentationTracker = value;
 			}
 		}
 		
-		public interface IVirtualSpaceManager
+		public string GetIndentationString (DocumentLocation loc)
 		{
-			string GetVirtualSpaces (int lineNumber, int column);
-			int GetNextVirtualColumn (int lineNumber, int column);
+			return IndentationTracker.GetIndentationString (loc.Line, loc.Column);
 		}
 		
-		class DefaultVirtualSpaceManager : IVirtualSpaceManager
+		public string GetIndentationString (int lineNumber, int column)
 		{
-			Document doc;
-			public DefaultVirtualSpaceManager (Document doc)
-			{
-				this.doc = doc;
-			}
-			public string GetVirtualSpaces (int lineNumber, int column)
-			{
-				LineSegment line = doc.GetLine (lineNumber);
-				if (line == null)
-					return "";
-				int count = column - 1 - line.EditableLength;
-				return new string (' ', System.Math.Max (0, count));
-			}
-			
-			public int GetNextVirtualColumn (int lineNumber, int column)
-			{
-				return column + 1;
-			}
+			return IndentationTracker.GetIndentationString (lineNumber, column);
 		}
 		
-		public string GetVirtualSpaces (int lineNumber, int column)
+		public string GetIndentationString (int offset)
 		{
-			return VirtualSpaceManager.GetVirtualSpaces (lineNumber, column);
+			return IndentationTracker.GetIndentationString (offset);
 		}
 		
-		public int GetNextVirtualColumn (int lineNumber, int column)
+		public int GetVirtualIndentationColumn (DocumentLocation loc)
 		{
-			return VirtualSpaceManager.GetNextVirtualColumn (lineNumber, column);
+			return IndentationTracker.GetVirtualIndentationColumn (loc.Line, loc.Column);
+		}
+		
+		public int GetVirtualIndentationColumn (int lineNumber, int column)
+		{
+			return IndentationTracker.GetVirtualIndentationColumn (lineNumber, column);
+		}
+		
+		public int GetVirtualIndentationColumn (int offset)
+		{
+			return IndentationTracker.GetVirtualIndentationColumn (offset);
 		}
 		
 		public int EnsureCaretIsNotVirtual ()
@@ -966,15 +989,18 @@ namespace Mono.TextEditor
 			LineSegment line = Document.GetLine (Caret.Line);
 			if (line == null)
 				return 0;
-			
 			if (Caret.Column > line.EditableLength + 1) {
-				string virtualSpace = GetVirtualSpaces (Caret.Line, Caret.Column);
-				if (!string.IsNullOrEmpty (virtualSpace))
-					Insert (Caret.Offset, virtualSpace);
-				
+				string virtualSpace;
+				if (HasIndentationTracker && line.EditableLength == 0) {
+					virtualSpace = GetIndentationString (Caret.Location);
+				} else {
+					virtualSpace = new string (' ', Caret.Column - 1 - line.EditableLength);
+				}
+				Insert (Caret.Offset, virtualSpace);
 				// No need to reposition the caret, because it's already at the correct position
 				// The only difference is that the position is not virtual anymore.
 				return virtualSpace.Length;
+
 			}
 			return 0;
 		}
@@ -1062,7 +1088,7 @@ namespace Mono.TextEditor
 		{
 			return Document.GetLineText (line, includeDelimiter);
 		}
-		
+
 		public IEnumerable<LineSegment> Lines {
 			get {
 				return Document.Lines;
@@ -1226,6 +1252,11 @@ namespace Mono.TextEditor
 			return new DocumentLocation (line, column);
 		}
 
+		public DocumentLocation LogicalToVisualLocation (int line, int column)
+		{
+			return LogicalToVisualLocation (new DocumentLocation (line, column));
+		}
+
 		public int LogicalToVisualLine (int logicalLine)
 		{
 			return heightTree.LogicalToVisualLine (logicalLine);
@@ -1291,7 +1322,7 @@ namespace Mono.TextEditor
 				Char = ch
 			});
 		}
-		
+
 		#endregion
 	}
 }

@@ -47,26 +47,28 @@ namespace MonoDevelop.MacDev.XcodeSyncing
 	
 	public abstract class XcodeProjectTracker : IDisposable
 	{
-		NSObjectInfoService infoService;
-		DotNetProject dnp;
+		readonly NSObjectInfoService infoService;
+		readonly DotNetProject dnp;
 		List<NSObjectTypeInfo> userTypes;
 		XcodeMonitor xcode;
-		
+
 		bool updatingProjectFiles;
 		bool disposed;
-		
+
 		public XcodeProjectTracker (DotNetProject dnp, NSObjectInfoService infoService)
 		{
+			if (dnp == null)
+				throw new ArgumentNullException ("dnp");
 			this.dnp = dnp;
 			this.infoService = infoService;
 			AppleSdkSettings.Changed += DisableSyncing;
 		}
-		
+
 		public bool ShouldOpenInXcode (FilePath fileName)
 		{
 			if (!HasInterfaceDefinitionExtension (fileName))
 				return false;
-			
+
 			var file = dnp.Files.GetFile (fileName);
 			return file != null && (file.BuildAction == BuildAction.InterfaceDefinition);
 		}
@@ -174,7 +176,7 @@ namespace MonoDevelop.MacDev.XcodeSyncing
 			try {
 				EnableSyncing (monitor);
 				
-				if (!UpdateTypes (monitor, true) || monitor.IsCancelRequested)
+				if (!UpdateTypes (monitor) || monitor.IsCancelRequested)
 					return false;
 				
 				if (!UpdateXcodeProject (monitor) || monitor.IsCancelRequested)
@@ -323,7 +325,7 @@ namespace MonoDevelop.MacDev.XcodeSyncing
 				using (var monitor = GetStatusMonitor (GettextCatalog.GetString ("Syncing types to Xcode..."))) {
 					//FIXME: make this async (and safely async)
 					//FIXME: only update the project if obj-c types change
-					updateProject |= UpdateTypes (monitor, true);
+					updateProject |= UpdateTypes (monitor);
 				}
 			}
 			
@@ -365,7 +367,7 @@ namespace MonoDevelop.MacDev.XcodeSyncing
 		
 		#region Outbound syncing
 		
-		bool UpdateTypes (IProgressMonitor monitor, bool force)
+		bool UpdateTypes (IProgressMonitor monitor)
 		{
 			monitor.BeginTask (GettextCatalog.GetString ("Updating Objective-C type information"), 0);
 			try {
@@ -373,7 +375,7 @@ namespace MonoDevelop.MacDev.XcodeSyncing
 				if (pinfo == null)
 					throw new Exception ("Did not get project info");
 				// FIXME: report progress
-				pinfo.Update (force);
+				pinfo.Update (true);
 				userTypes = pinfo.GetTypes ().Where (t => t.IsUserType).ToList ();
 				return true;
 			} catch (Exception ex) {

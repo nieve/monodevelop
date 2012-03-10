@@ -25,6 +25,7 @@
 // THE SOFTWARE.
 using System;
 using MonoDevelop.Core;
+using System.Threading;
 
 namespace MonoDevelop.CSharp.ContextAction
 {
@@ -32,9 +33,9 @@ namespace MonoDevelop.CSharp.ContextAction
 	{
 		protected T action = new T ();
 		
-		protected override bool IsValid (MDRefactoringContext context)
+		protected override bool IsValid (MDRefactoringContext context, CancellationToken cancellationToken)
 		{
-			return action.IsValid (context);
+			return action.IsValid (context, cancellationToken);
 		}
 		
 		protected override void Run (MDRefactoringContext context)
@@ -99,6 +100,10 @@ namespace MonoDevelop.CSharp.ContextAction
 	{
 	}
 	
+	public class RemoveRegion : ContextActionWrapper<ICSharpCode.NRefactory.CSharp.Refactoring.RemoveRegion>
+	{
+	}
+	
 	public class SplitString : ContextActionWrapper<ICSharpCode.NRefactory.CSharp.Refactoring.SplitString>
 	{
 	}
@@ -160,7 +165,11 @@ namespace MonoDevelop.CSharp.ContextAction
 	public class GenerateGetter : ContextActionWrapper<ICSharpCode.NRefactory.CSharp.Refactoring.GenerateGetter>
 	{
 	}
-	
+
+	public class GenerateProperty : ContextActionWrapper<ICSharpCode.NRefactory.CSharp.Refactoring.GenerateProperty>
+	{
+	}
+
 	public class CreateEventInvocator : ContextActionWrapper<ICSharpCode.NRefactory.CSharp.Refactoring.CreateEventInvocator>
 	{
 	}

@@ -44,6 +44,11 @@ namespace Mono.TextEditor
 			}
 		}
 		
+		public bool IsDirty {
+			get;
+			set;
+		}
+		
 		public IEnumerable<T> Segments {
 			get {
 				var root = tree.Root;
@@ -66,11 +71,18 @@ namespace Mono.TextEditor
 		{
 			doc.TextReplaced -= UpdateOnTextReplace;
 		}
-
-		public void UpdateOnTextReplace (object sender, ReplaceEventArgs e)
+		
+		public void Clear ()
 		{
-			if (e.Count == 0) {
-				var length = (e.Value != null ? e.Value.Length : 0);
+			IsDirty = false;
+			tree.Clear ();
+		}
+		
+		public void UpdateOnTextReplace (object sender, DocumentChangeEventArgs e)
+		{
+			IsDirty = true;
+			if (e.RemovalLength == 0) {
+				var length = e.InsertionLength;
 				foreach (var segment in GetSegmentsAt (e.Offset).Where (s => s.Offset < e.Offset && e.Offset < s.EndOffset)) {
 					segment.Length += length;
 					segment.UpdateAugmentedData ();
@@ -82,10 +94,10 @@ namespace Mono.TextEditor
 				}
 				return;
 			}
-			int delta = (e.Value != null ? e.Value.Length : 0) - e.Count;
-			foreach (var segment in new List<T> (GetSegmentsOverlapping (e.Offset, e.Count))) {
+			int delta = e.ChangeDelta;
+			foreach (var segment in new List<T> (GetSegmentsOverlapping (e.Offset, e.RemovalLength))) {
 				if (segment.Offset < e.Offset) {
-					if (segment.EndOffset >= e.Offset + e.Count) {
+					if (segment.EndOffset >= e.Offset + e.RemovalLength) {
 						segment.Length += delta;
 					} else {
 						segment.Length = e.Offset - segment.Offset;
@@ -93,10 +105,10 @@ namespace Mono.TextEditor
 					segment.UpdateAugmentedData ();
 					continue;
 				}
-				int remainingLength = segment.EndOffset - (e.Offset + e.Count);
+				int remainingLength = segment.EndOffset - (e.Offset + e.RemovalLength);
 				Remove (segment);
 				if (remainingLength > 0) {
-					segment.Offset = e.Offset + e.Count;
+					segment.Offset = e.Offset + e.RemovalLength;
 					segment.Length = remainingLength;
 					Add (segment);
 				}

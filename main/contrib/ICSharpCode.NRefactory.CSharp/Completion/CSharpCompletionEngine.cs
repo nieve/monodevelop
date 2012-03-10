@@ -176,7 +176,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 					if (!(pexpr.Value is string || pexpr.Value is char) && !pexpr.LiteralValue.Contains ('.'))
 						return null;
 				}
-				
+
 				resolveResult = ResolveExpression (expr);
 				if (resolveResult == null)
 					return null;
@@ -435,14 +435,20 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 				var identifierStart = GetExpressionAtCursor ();
 				if (identifierStart != null && identifierStart.Node is TypeParameterDeclaration)
 					return null;
-				
+
 				if (identifierStart != null && identifierStart.Node is VariableInitializer && location <= ((VariableInitializer)identifierStart.Node).NameToken.EndLocation) {
 					return controlSpace ? HandleAccessorContext () ?? DefaultControlSpaceItems (identifierStart) : null;
+				}
+
+				if (identifierStart != null && identifierStart.Node is CatchClause) {
+					if (((CatchClause)identifierStart.Node).VariableNameToken.Contains (location))
+						return null;
+					identifierStart = null;
 				}
 				if (!(char.IsLetter (completionChar) || completionChar == '_') && (!controlSpace || identifierStart == null || !(identifierStart.Node.Parent is ArrayInitializerExpression))) {
 					return controlSpace ? HandleAccessorContext () ?? DefaultControlSpaceItems (identifierStart) : null;
 				}
-				
+
 				char prevCh = offset > 2 ? document.GetCharAt (offset - 2) : ';';
 				char nextCh = offset < document.TextLength ? document.GetCharAt (offset) : ' ';
 				const string allowedChars = ";,.[](){}+-*/%^?:&|~!<>=";
@@ -462,13 +468,13 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 				var prevToken2 = GetPreviousToken (ref prevTokenIndex, false);
 				if (prevToken2 == "delegate") // after these always follows a name
 					return null;
-				if (identifierStart == null && !string.IsNullOrEmpty (token) && !(IsInsideComment (tokenIndex) || IsInsideString (tokenIndex)) && (prevToken2 == ";" || prevToken2 == "{" || prevToken2 == "}")) {
+				if (identifierStart == null && !string.IsNullOrEmpty (token) && !IsInsideCommentOrString () && (prevToken2 == ";" || prevToken2 == "{" || prevToken2 == "}")) {
 					char last = token [token.Length - 1];
 					if (char.IsLetterOrDigit (last) || last == '_' || token == ">") {
 						return HandleKeywordCompletion (tokenIndex, token);
 					}
 				}
-				
+
 				if (identifierStart == null) {
 					var accCtx = HandleAccessorContext ();
 					if (accCtx != null)
@@ -480,7 +486,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 				if (n != null && n.Parent is AnonymousTypeCreateExpression) {
 					AutoSelect = false;
 				}
-				
+
 				// Handle foreach (type name _
 				if (n is IdentifierExpression) {
 					var prev = n.GetPrevNode () as ForeachStatement;
@@ -500,7 +506,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 					if (p != null) {
 						var initializerResult = ResolveExpression (p, identifierStart.Unit);
 						if (initializerResult != null && initializerResult.Item1.Type.Kind != TypeKind.Unknown) {
-							
+
 							foreach (var m in initializerResult.Item1.Type.GetMembers (m => m.IsPublic && (m.EntityType == EntityType.Property || m.EntityType == EntityType.Field))) {
 								contextList.AddMember (m);
 							}
@@ -511,7 +517,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 						}
 					}
 				}
-				
+
 				if (n != null && n.Parent is InvocationExpression) {
 					var invokeParent = (InvocationExpression)n.Parent;
 					var invokeResult = ResolveExpression (invokeParent.Target, identifierStart.Unit);
@@ -540,16 +546,14 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 									AutoSelect = false;
 									AutoCompleteEmptyMatch = false;
 								}
-								
+
 							}
 						}
 					}
 				}
-				
 				if (n != null && n.Parent is ObjectCreateExpression) {
 					var invokeResult = ResolveExpression (n.Parent, identifierStart.Unit);
 					var mgr = invokeResult != null ? invokeResult.Item1 as ResolveResult : null;
-					
 					if (mgr != null) {
 						foreach (var constructor in mgr.Type.GetConstructors ()) {
 							foreach (var p in constructor.Parameters) {
@@ -558,11 +562,11 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 						}
 					}
 				}
-				
+
 				if (n is IdentifierExpression) {
 					var bop = n.Parent as BinaryOperatorExpression;
 					Expression evaluationExpr = null;
-					
+
 					if (bop != null && bop.Right == n && (bop.Operator == BinaryOperatorType.Equality || bop.Operator == BinaryOperatorType.InEquality)) {
 						evaluationExpr = bop.Left;
 					}
@@ -599,7 +603,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 					}
 					
 					if (initalizerResult != null && initalizerResult.Item1.Type.Kind != TypeKind.Unknown) { 
-						
+
 						foreach (var property in initalizerResult.Item1.Type.GetProperties ()) {
 							if (!property.IsPublic)
 								continue;
@@ -748,7 +752,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 		bool IsInLinqContext (int offset)
 		{
 			string token;
-			while (null != (token = GetPreviousToken (ref offset, true)) && !IsInsideComment (offset) && !IsInsideString (offset)) {
+			while (null != (token = GetPreviousToken (ref offset, true)) && !IsInsideCommentOrString ()) {
 				if (token == "from")
 					return true;
 				if (token == ";" || token == "{")
@@ -942,7 +946,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 		static bool IsInSwitchContext (AstNode node)
 		{
 			var n = node;
-			while (n != null && !(n is MemberDeclaration)) {
+			while (n != null && !(n is EntityDeclaration)) {
 				if (n is SwitchStatement)
 					return true;
 				if (n is BlockStatement)
@@ -1271,7 +1275,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 						}
 					}
 				}
-				
+
 				if (newParentNode is AssignmentExpression) {
 					var assign = (AssignmentExpression)newParentNode;
 					var resolved = ResolveExpression (assign.Left, expressionOrVariableDeclaration.Unit);
@@ -1279,7 +1283,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 						hintType = resolved.Item1.Type;
 					}
 				}
-				
+
 				if (newParentNode is VariableDeclarationStatement) {
 					var varDecl = (VariableDeclarationStatement)newParentNode;
 					hintTypeAst = varDecl.Type;
@@ -1288,7 +1292,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 						hintType = resolved.Item1.Type;
 					}
 				}
-				
+
 				if (newParentNode is FieldDeclaration) {
 					var varDecl = (FieldDeclaration)newParentNode;
 					hintTypeAst = varDecl.ReturnType;
@@ -1296,6 +1300,13 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 					if (resolved != null)
 						hintType = resolved.Item1.Type;
 				}
+
+				if (newParentNode is ReturnStatement) {
+					var varDecl = (ReturnStatement)newParentNode;
+					if (ctx.CurrentMember != null)
+						hintType = ctx.CurrentMember.ReturnType;
+				}
+
 				return CreateTypeCompletionData (hintType, hintTypeAst);
 //					IType callingType = NRefactoryResolver.GetTypeAtCursor (Document.CompilationUnit, Document.FileName, new TextLocation (document.Caret.Line, document.Caret.Column));
 //					ExpressionContext newExactContext = new NewCSharpExpressionFinder (dom).FindExactContextForNewCompletion (document, Document.CompilationUnit, Document.FileName, callingType);
@@ -1403,15 +1414,18 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 						// check if type is in inheritance tree.
 						if (hintType.GetDefinition () != null && !t.GetDefinition ().IsDerivedFrom (hintType.GetDefinition ()))
 							return false;
-						
+						if (t.Kind == TypeKind.Interface && hintType.Kind != TypeKind.Array)
+							return false;
 						// check for valid constructors
 						if (t.GetConstructors ().Count () == 0)
 							return true;
 						bool isProtectedAllowed = currentType != null ? currentType.Resolve (ctx).GetDefinition ().IsDerivedFrom (t.GetDefinition ()) : false;
 						return t.GetConstructors ().Any (m => lookup.IsAccessible (m, isProtectedAllowed));
 					};
-					DefaultCompletionString = GetShortType (hintType, GetState ());
-					wrapper.AddType (hintType, DefaultCompletionString);
+					if (!(hintType.Kind == TypeKind.Interface && hintType.Kind != TypeKind.Array)) {
+						DefaultCompletionString = GetShortType (hintType, GetState ());
+						wrapper.AddType (hintType, DefaultCompletionString);
+					}
 				} else {
 					DefaultCompletionString = hintTypeAst.ToString ();
 					wrapper.AddType (hintType, DefaultCompletionString);
@@ -1694,19 +1708,29 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 				n = n.Parent;
 			return n is Attribute;
 		}
-		
+
+		IType GuessHintType (AstNode resolvedNode)
+		{
+			ObjectCreateExpression oce = resolvedNode.Parent as ObjectCreateExpression ?? (ObjectCreateExpression)resolvedNode.Ancestors.FirstOrDefault (n => n is ObjectCreateExpression);
+			if (oce != null && oce.Parent is ReturnStatement)
+				return ctx.CurrentMember != null ? ctx.CurrentMember.ReturnType : null;
+			return null;
+		}
+
 		IEnumerable<ICompletionData> CreateTypeAndNamespaceCompletionData (TextLocation location, ResolveResult resolveResult, AstNode resolvedNode, CSharpResolver state)
 		{
 			if (resolveResult == null || resolveResult.IsError)
 				return null;
+
+			var hintType = GuessHintType (resolvedNode);
 			var result = new CompletionDataWrapper (this);
 			if (resolveResult is NamespaceResolveResult) {
 				var nr = (NamespaceResolveResult)resolveResult;
 				if (!(resolvedNode.Parent is UsingDeclaration || resolvedNode.Parent != null && resolvedNode.Parent.Parent is UsingDeclaration)) {
-					Console.WriteLine ("fooo");
 					foreach (var cl in nr.Namespace.Types) {
 						string name = cl.Name;
-						
+						if (hintType != null && hintType.Kind != TypeKind.Array && cl.Kind == TypeKind.Interface)
+							continue;
 						if (IsAttributeContext (resolvedNode) && name.EndsWith ("Attribute") && name.Length > "Attribute".Length)
 							name = name.Substring (0, name.Length - "Attribute".Length);
 						result.AddType (cl, name);
@@ -1718,12 +1742,14 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 			} else if (resolveResult is TypeResolveResult) {
 				var type = resolveResult.Type;
 				foreach (var nested in type.GetNestedTypes ()) {
+					if (hintType != null && hintType.Kind != TypeKind.Array && nested.Kind == TypeKind.Interface)
+						continue;
 					result.AddType (nested, nested.Name);
 				}
 			}
 			return result.Result;
 		}
-		
+
 		IEnumerable<ICompletionData> CreateTypeList ()
 		{
 			foreach (var cl in Compilation.RootNamespace.Types) {
@@ -2042,13 +2068,13 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 			var curNode = baseUnit.GetNodeAt (location);
 			
 			// hack for local variable declaration missing ';' issue - remove that if it works.
-			if (curNode is AttributedNode || baseUnit.GetNodeAt<Expression> (location) == null) {
+			if (curNode is EntityDeclaration || baseUnit.GetNodeAt<Expression> (location) == null) {
 				baseUnit = ParseStub ("a()");
 				curNode = baseUnit.GetNodeAt (location);
 			}
-			
+
 			// Hack for handle object initializer continuation expressions
-			if (curNode is AttributedNode || baseUnit.GetNodeAt<Expression> (location) == null) {
+			if (curNode is EntityDeclaration || baseUnit.GetNodeAt<Expression> (location) == null) {
 				baseUnit = ParseStub ("a()};");
 			}
 			var mref = baseUnit.GetNodeAt<MemberReferenceExpression> (location); 
@@ -2063,7 +2089,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 				if (invoke != null)
 					mref = invoke.Target as MemberReferenceExpression;
 			}
-			Expression expr = null;
+			AstNode expr = null;
 			if (mref != null) {
 				expr = mref.Target.Clone ();
 				mref.Parent.ReplaceWith (expr);
@@ -2073,37 +2099,46 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 				if (memberType == null) {
 					memberType = baseUnit.GetNodeAt<MemberType> (location); 
 					if (memberType != null) {
-						tref = baseUnit.GetNodeAt<Expression> (location); 
-						if (tref == null) {
-							tref = new TypeReferenceExpression (memberType.Clone ());
-							memberType.Parent.AddChild (tref, AstNode.Roles.Expression);
+						if (memberType.Parent is ObjectCreateExpression) {
+							var mt = memberType.Target.Clone ();
+							memberType.ReplaceWith (mt);
+							expr = mt;
+							goto exit;
+						} else {
+							tref = baseUnit.GetNodeAt<Expression> (location); 
+							if (tref == null) {
+								tref = new TypeReferenceExpression (memberType.Clone ());
+								memberType.Parent.AddChild (tref, AstNode.Roles.Expression);
+							}
+							if (tref is ObjectCreateExpression) {
+								expr = new TypeReferenceExpression (memberType.Target.Clone ());
+								expr.AddAnnotation (new ObjectCreateExpression ());
+							}
 						}
 					}
-					if (tref is ObjectCreateExpression) {
-						expr = new TypeReferenceExpression (memberType.Target.Clone ());
-						expr.AddAnnotation (new ObjectCreateExpression ());
-					}
 				}
-					
+
 				if (memberType == null)
 					return null;
-				if (expr == null)
+				if (expr == null) {
 					expr = new TypeReferenceExpression (memberType.Target.Clone ());
+				}
 				tref.ReplaceWith (expr);
 			}
-			
-			var member = Unit.GetNodeAt<AttributedNode> (memberLocation);
-			var member2 = baseUnit.GetNodeAt<AttributedNode> (memberLocation);
+		exit:
+			var member = Unit.GetNodeAt<EntityDeclaration> (memberLocation);
+			var member2 = baseUnit.GetNodeAt<EntityDeclaration> (memberLocation);
 			member2.Remove ();
 			member.ReplaceWith (member2);
+			Print (member2);
 			return new ExpressionResult ((AstNode)expr, Unit);
 		}
-		
+
 		ExpressionResult GetExpressionAtCursor ()
 		{
 //			if (currentMember == null && currentType == null)
 //				return null;
-			
+
 			TextLocation memberLocation;
 			if (currentMember != null) {
 				memberLocation = currentMember.Region.Begin;
@@ -2119,34 +2154,37 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 			if (expr == null) {
 				expr = baseUnit.GetNodeAt<AstType> (location.Line, location.Column - 1);
 			}
-			
+
 			// try insertStatement
 			if (expr == null && baseUnit.GetNodeAt<EmptyStatement> (location.Line, location.Column) != null) {
 				tmpUnit = baseUnit = ParseStub ("a();", false);
 				expr = baseUnit.GetNodeAt<InvocationExpression> (location.Line, location.Column + 1); 
 			}
-			
+
 			if (expr == null) {
 				baseUnit = ParseStub ("()");
 				expr = baseUnit.GetNodeAt<IdentifierExpression> (location.Line, location.Column - 1); 
+				if (expr == null) {
+					expr = baseUnit.GetNodeAt<MemberType> (location.Line, location.Column - 1); 
+				}
 			}
-			
+
 			if (expr == null) {
 				baseUnit = ParseStub ("a", false);
-				expr = baseUnit.GetNodeAt (location, n => n is IdentifierExpression || n is MemberReferenceExpression);
+				expr = baseUnit.GetNodeAt (location, n => n is IdentifierExpression || n is MemberReferenceExpression || n is CatchClause);
 			
 			}
-			
+
 			// try statement 
 			if (expr == null) {
 				expr = tmpUnit.GetNodeAt<SwitchStatement> (location.Line, location.Column - 1); 
 				baseUnit = tmpUnit;
 			}
-			
+
 			if (expr == null) {
 				var block = tmpUnit.GetNodeAt<BlockStatement> (location); 
 				var node = block != null ? block.Statements.LastOrDefault () : null;
-				
+
 				var forStmt = node != null ? node.PrevSibling as ForStatement : null;
 				if (forStmt != null && forStmt.EmbeddedStatement.IsNull) {
 					expr = forStmt;
@@ -2169,19 +2207,19 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 				expr = tmpUnit.GetNodeAt<VariableInitializer> (location.Line, location.Column - 1);
 				baseUnit = tmpUnit;
 			}
-			
+
 			// try parameter declaration type
 			if (expr == null) {
 				baseUnit = ParseStub (">", false, "{}");
 				expr = baseUnit.GetNodeAt<TypeParameterDeclaration> (location.Line, location.Column - 1); 
 			}
-			
+
 			// try parameter declaration method
 			if (expr == null) {
 				baseUnit = ParseStub ("> ()", false, "{}");
 				expr = baseUnit.GetNodeAt<TypeParameterDeclaration> (location.Line, location.Column - 1); 
 			}
-			
+
 			// try expression in anonymous type "new { sample = x$" case
 			if (expr == null) {
 				baseUnit = ParseStub ("a", false);
@@ -2193,12 +2231,12 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 			}
 			if (expr == null)
 				return null;
-			
-			var member = Unit.GetNodeAt<AttributedNode> (memberLocation);
-			var member2 = baseUnit.GetNodeAt<AttributedNode> (memberLocation);
+
+			var member = Unit.GetNodeAt<EntityDeclaration> (memberLocation);
+			var member2 = baseUnit.GetNodeAt<EntityDeclaration> (memberLocation);
 			if (member != null && member2 != null) {
 				member2.Remove ();
-				
+
 				if (member is TypeDeclaration) {
 					member.AddChild (member2, TypeDeclaration.MemberRole);
 				} else {
@@ -2463,7 +2501,8 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 			"true", "false", "typeof", "checked", "unchecked", "from", "break", "checked",
 			"unchecked", "const", "continue", "do", "finally", "fixed", "for", "foreach",
 			"goto", "if", "lock", "return", "stackalloc", "switch", "throw", "try", "unsafe", 
-			"using", "while", "yield", "dynamic", "var", "dynamic"
+			"using", "while", "yield", "dynamic", "var", "dynamic",
+			"catch"
 		};
 		static string[] globalLevelKeywords = new string [] {
 			"namespace", "using", "extern", "public", "internal", 

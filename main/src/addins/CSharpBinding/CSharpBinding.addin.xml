@@ -86,6 +86,7 @@
 	<Extension path = "/MonoDevelop/Ide/TextEditorExtensions">
 		<Class fileExtensions = ".cs" class = "MonoDevelop.CSharp.Formatting.CSharpTextEditorIndentation" />
 		<Class fileExtensions = ".cs" class = "MonoDevelop.CSharp.Completion.CSharpCompletionTextEditorExtension" />
+		<Class fileExtensions = ".cs" class = "MonoDevelop.CSharp.Formatting.OnTheFlyFormatterTextEditorExtension" />
 		<Class fileExtensions = ".cs" class = "MonoDevelop.CSharp.Highlighting.HighlightUsagesExtension" />
 		<Class fileExtensions = ".cs" class = "MonoDevelop.CSharp.PathedDocumentTextEditorExtension" />
 	</Extension>
@@ -133,6 +134,41 @@
 		<Policies resource="MonoCSharpPolicy.xml" />
 	</Extension>
 	
+	<Extension path = "/MonoDevelop/ProjectModel/PolicySets" >
+		<PolicySet id="KR" _name="K&amp;R style" allowDiffSerialize="true">
+			<Policies resource="KRCSharpPolicy.xml" />
+			<Policies resource="InvariantTextStylePolicy.xml" />
+		</PolicySet>
+	</Extension>
+	
+	<Extension path = "/MonoDevelop/ProjectModel/PolicySets" >
+		<PolicySet id="1TBS" _name="SharpDevelop style (1TBS)" allowDiffSerialize="true">
+			<Policies resource="SharpDevelopCSharpPolicy.xml" />
+			<Policies resource="InvariantTextStylePolicy.xml" />
+		</PolicySet>
+	</Extension>
+
+	<Extension path = "/MonoDevelop/ProjectModel/PolicySets" >
+		<PolicySet id="Allman" _name="Allman style" allowDiffSerialize="true">
+			<Policies resource="AllmanCSharpPolicy.xml" />
+			<Policies resource="InvariantTextStylePolicy.xml" />
+		</PolicySet>
+	</Extension>
+
+	<Extension path = "/MonoDevelop/ProjectModel/PolicySets" >
+		<PolicySet id="Whitesmiths" _name="Whitesmiths style" allowDiffSerialize="true">
+			<Policies resource="WhitesmithsCSharpPolicy.xml" />
+			<Policies resource="InvariantTextStylePolicy.xml" />
+		</PolicySet>
+	</Extension>
+
+	<Extension path = "/MonoDevelop/ProjectModel/PolicySets" >
+		<PolicySet id="GNU" _name="GNU style" allowDiffSerialize="true">
+			<Policies resource="GNUCSharpPolicy.xml" />
+			<Policies resource="GNUTextStylePolicy.xml" />
+		</PolicySet>
+	</Extension>
+
 	<Extension path = "/MonoDevelop/ProjectModel/Gui/MimeTypePolicyPanels">
 		<Panel id = "CSharpFormatting" _label = "C# Format" mimeType="text/x-csharp" class = "MonoDevelop.CSharp.Formatting.CSharpFormattingPolicyPanel" />
 	</Extension>
@@ -146,6 +182,10 @@
 			_title = "Generate getter"
 			_description = "Generates a getter for a field."
 			class = "MonoDevelop.CSharp.ContextAction.GenerateGetter" />
+		<Action mimeType="text/x-csharp"
+			_title = "Generate property"
+			_description = "Generates a getter and setter for a field."
+			class = "MonoDevelop.CSharp.ContextAction.GenerateProperty" />
 		<Action mimeType="text/x-csharp"
 			_title = "Create local variable"
 			_description = "Creates a local variable for a undefined variable."
@@ -237,6 +277,10 @@
 			_title = "Insert anonymous method signature"
 			_description = "Inserts a signature to parameterless anonymous methods."
 			class = "MonoDevelop.CSharp.ContextAction.InsertAnonymousMethodSignature" /> 
+		<Action mimeType="text/x-csharp"
+			_title = "Remove region"
+			_description = "Removes a pre processor #region/#endregion directive."
+			class = "MonoDevelop.CSharp.ContextAction.RemoveRegion" />
 	</Extension>
 	
 	<Extension path = "/MonoDevelop/Refactoring/Inspectors">
@@ -358,8 +402,11 @@
 	
 	<Extension path = "/MonoDevelop/Refactoring/CodeGenerators">
 		<Class class = "MonoDevelop.CodeGeneration.CreateConstructorGenerator" />
+		<Class class = "MonoDevelop.CodeGeneration.ReadonlyPropertyGenerator" />
+		<Class class = "MonoDevelop.CodeGeneration.PropertyGenerator" />
 		<Class class = "MonoDevelop.CodeGeneration.OverrideMembersGenerator" />
 		<Class class = "MonoDevelop.CodeGeneration.ToStringGenerator" />
+		<Class class = "MonoDevelop.CodeGeneration.RaiseEventMethodGenerator" />
 		<Class class = "MonoDevelop.CodeGeneration.EqualityMembersGenerator" />
 		<Class class = "MonoDevelop.CodeGeneration.WriteLineGenerator" />
 	</Extension>

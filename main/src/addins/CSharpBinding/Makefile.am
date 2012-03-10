@@ -51,6 +51,8 @@ FILES =  \
 	MonoDevelop.CSharp.CodeGeneration/ICodeGenerator.cs \
 	MonoDevelop.CSharp.CodeGeneration/OverrideMembersGenerator.cs \
 	MonoDevelop.CSharp.CodeGeneration/PropertyGenerator.cs \
+	MonoDevelop.CSharp.CodeGeneration/RaiseEventMethodGenerator.cs \
+	MonoDevelop.CSharp.CodeGeneration/ReadonlyPropertyGenerator.cs \
 	MonoDevelop.CSharp.CodeGeneration/ToStringGenerator.cs \
 	MonoDevelop.CSharp.CodeGeneration/WriteLineGenerator.cs \
 	MonoDevelop.CSharp.Completion/CompletionTextLinkMode.cs \
@@ -77,10 +79,12 @@ FILES =  \
 	MonoDevelop.CSharp.Formatting/CSharpFormattingProperties.cs \
 	MonoDevelop.CSharp.Formatting/CSharpIndentEngine.cs \
 	MonoDevelop.CSharp.Formatting/CSharpIndentEngineStack.cs \
+	MonoDevelop.CSharp.Formatting/CSharpIndentVirtualSpaceManager.cs \
 	MonoDevelop.CSharp.Formatting/CSharpTextEditorIndentation.cs \
 	MonoDevelop.CSharp.Formatting/Indent.cs \
 	MonoDevelop.CSharp.Formatting/NewFormattingProfileDialog.cs \
 	MonoDevelop.CSharp.Formatting/OnTheFlyFormatter.cs \
+	MonoDevelop.CSharp.Formatting/OnTheFlyFormatterTextEditorExtension.cs \
 	MonoDevelop.CSharp.Highlighting/CSharpSyntaxMode.cs \
 	MonoDevelop.CSharp.Highlighting/HighlightUsagesExtension.cs \
 	MonoDevelop.CSharp.Highlighting/MoveToUsagesHandler.cs \
@@ -141,8 +145,15 @@ RES =  \
 	icons/csharp-icon-32.png \
 	icons/csharp-project-16.png \
 	md1format.xml \
-	MonoCSharpPolicy.xml \
 	MonoDevelop.CSharp.Formatting/CSharpFormattingPolicy.xml \
+	MonoDevelop.CSharp.Formatting/policies/AllmanCSharpPolicy.xml \
+	MonoDevelop.CSharp.Formatting/policies/GNUCSharpPolicy.xml \
+	MonoDevelop.CSharp.Formatting/policies/GNUTextStylePolicy.xml \
+	MonoDevelop.CSharp.Formatting/policies/InvariantTextStylePolicy.xml \
+	MonoDevelop.CSharp.Formatting/policies/KRCSharpPolicy.xml \
+	MonoDevelop.CSharp.Formatting/policies/MonoCSharpPolicy.xml \
+	MonoDevelop.CSharp.Formatting/policies/SharpDevelopCSharpPolicy.xml \
+	MonoDevelop.CSharp.Formatting/policies/WhitesmithsCSharpPolicy.xml \
 	templates/AssemblyInfo.xft.xml \
 	templates/ConsoleProject.xpt.xml \
 	templates/EmptyCSharpFile.xft.xml \

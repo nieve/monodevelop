@@ -33,7 +33,7 @@ using System.Text;
 namespace Mono.TextEditor.Tests
 {
 	[TestFixture]
-	public class ViTests
+	public class ViTests : TextEditorTestBase
 	{
 		[Test]
 		public void ColumnMotion ()
@@ -256,17 +256,6 @@ kkk lll", mode.Text);
 			Assert.AreEqual (11, keys.Count);
 			var s = ViKeyNotation.ToString (keys);
 			Assert.AreEqual (command, s);
-		}
-		
-		[TestFixtureSetUp] 
-		public void SetUp()
-		{
-			Gtk.Application.Init ();
-		}
-		
-		[TestFixtureTearDown] 
-		public void Dispose()
-		{
 		}
 	}
 	

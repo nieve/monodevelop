@@ -507,13 +507,7 @@ namespace Mono.TextEditor
 		{
 			if (!data.CanEditSelection)
 				return;
-			LineSegment line = data.Document.GetLine (data.Caret.Line);
-			if (data.Caret.Column > line.EditableLength + 1) {
-				string text = data.GetVirtualSpaces (data.Caret.Line, data.Caret.Column);
-				int offset = data.Caret.Offset;
-				int textLength = data.Insert (offset, text);
-				data.Caret.Offset = offset + textLength;
-			}
+			data.EnsureCaretIsNotVirtual ();
 			PasteFrom (Clipboard.Get (CopyOperation.CLIPBOARD_ATOM), data, true, data.IsSomethingSelected ? data.SelectionRange.Offset : data.Caret.Offset);
 		}
 	}

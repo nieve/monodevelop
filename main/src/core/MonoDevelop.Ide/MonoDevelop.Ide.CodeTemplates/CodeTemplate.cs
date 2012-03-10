@@ -274,8 +274,8 @@ namespace MonoDevelop.Ide.CodeTemplates
 			// format & indent template code
 			TextEditorData data = new TextEditorData ();
 			data.Text = sb.ToString ();
-			data.Document.TextReplaced += delegate(object sender, ReplaceEventArgs e) {
-				int delta = -e.Count + (e.Value != null ? e.Value.Length : 0);
+			data.Document.TextReplaced += delegate(object sender, DocumentChangeEventArgs e) {
+				int delta = e.ChangeDelta;
 				foreach (var link in result.TextLinks) {
 					foreach (var segment in link.Links) {
 						if (segment.Offset > e.Offset) {
@@ -289,7 +289,7 @@ namespace MonoDevelop.Ide.CodeTemplates
 			
 			var formatter = CodeFormatterService.GetFormatter (context.Document.Editor.Document.MimeType);
 			if (formatter != null && context.Document.HasProject) {
-				formatter.OnTheFlyFormat (context.Document.Project.Policies, data, 0, data.Length);
+				formatter.OnTheFlyFormat (context.Document, 0, data.Length);
 			}
 			
 			IndentCode (data, context.LineIndent);

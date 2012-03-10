@@ -155,7 +155,7 @@ namespace MonoDevelop.SourceEditor
 			breakpointStatusChanged = (EventHandler<BreakpointEventArgs>)DispatchService.GuiDispatch (new EventHandler<BreakpointEventArgs> (OnBreakpointStatusChanged));
 			
 			widget = new SourceEditorWidget (this);
-			widget.TextEditor.Document.TextReplaced += delegate(object sender, ReplaceEventArgs args) {
+			widget.TextEditor.Document.TextReplaced += delegate(object sender, DocumentChangeEventArgs args) {
 				if (!inLoad) {
 					if (widget.TextEditor.Document.IsInAtomicUndo) {
 						wasEdited = true;
@@ -164,7 +164,7 @@ namespace MonoDevelop.SourceEditor
 					}
 				}
 				int startIndex = args.Offset;
-				int endIndex = startIndex + Math.Max (args.Count, args.Value != null ? args.Value.Length : 0);
+				int endIndex = startIndex + Math.Max (args.RemovalLength, args.InsertionLength);
 				if (TextChanged != null)
 					TextChanged (this, new TextChangedEventArgs (startIndex, endIndex));
 			};
@@ -408,8 +408,7 @@ namespace MonoDevelop.SourceEditor
 				var formatter = CodeFormatterService.GetFormatter (Document.MimeType);
 				if (formatter != null && formatter.SupportsOnTheFlyFormatting) {
 					using (var undo = TextEditor.OpenUndoGroup ()) {
-						var policies = Project != null ? Project.Policies : null;
-						formatter.OnTheFlyFormat (policies, TextEditor.GetTextEditorData (), 0, Document.Length);
+						formatter.OnTheFlyFormat (WorkbenchWindow.Document, 0, Document.Length);
 						wasEdited = false;
 					}
 				}
@@ -777,16 +776,12 @@ namespace MonoDevelop.SourceEditor
 		
 		string oldReplaceText;
 		
-		void OnTextReplacing (object s, ReplaceEventArgs a)
+		void OnTextReplacing (object s, DocumentChangeEventArgs a)
 		{
-			if (a.Count > 0 && a.Offset >= 0 && a.Offset + a.Count <= widget.TextEditor.Length) {
-				oldReplaceText = widget.TextEditor.Document.GetTextAt (a.Offset, a.Count);
-			} else {
-				oldReplaceText = "";
-			}
+			oldReplaceText = a.RemovedText;
 		}
 		
-		void OnTextReplaced (object s, ReplaceEventArgs a)
+		void OnTextReplaced (object s, DocumentChangeEventArgs a)
 		{
 			this.IsDirty = Document.IsDirty;
 			
@@ -801,9 +796,9 @@ namespace MonoDevelop.SourceEditor
 				}
 			}
 
-			if (a.Value != null) {
+			if (a.InsertedText != null) {
 				i = 0;
-				string sb = a.Value;
+				string sb = a.InsertedText;
 				while (i < sb.Length) {
 					if (sb [i] == '\n')
 						lines++;
@@ -1587,13 +1582,17 @@ namespace MonoDevelop.SourceEditor
 		[CommandHandler (MonoDevelop.Debugger.DebugCommands.ExpressionEvaluator)]
 		protected void ShowExpressionEvaluator ()
 		{
-			string expression;
+			string expression = "";
 			if (TextEditor.IsSomethingSelected)
 				expression = TextEditor.SelectedText;
-			else
-				expression = TextEditor.GetExpression (TextEditor.Caret.Offset);
-			
-			DebuggingService.ShowExpressionEvaluator (expression);
+			else {
+				DomRegion region;
+				var rr = TextEditor.GetLanguageItem (TextEditor.Caret.Offset, out region);
+				if (rr != null && !rr.IsError)
+					expression = TextEditor.GetTextBetween (region.Begin, region.End);
+			}
+			if (!string.IsNullOrEmpty (expression))
+				DebuggingService.ShowExpressionEvaluator (expression);
 		}
 
 		[CommandUpdateHandler (MonoDevelop.Debugger.DebugCommands.ExpressionEvaluator)]

@@ -43,6 +43,7 @@ FILES =  \
 	PatternMatching/OptionalNode.cs \
 	PatternMatching/Pattern.cs \
 	PatternMatching/Repeat.cs \
+	Properties/AssemblyInfo.cs \
 	Role.cs \
 	Semantics/AmbiguousResolveResult.cs \
 	Semantics/ArrayAccessResolveResult.cs \
@@ -52,6 +53,7 @@ FILES =  \
 	Semantics/Conversion.cs \
 	Semantics/ConversionResolveResult.cs \
 	Semantics/ErrorResolveResult.cs \
+	Semantics/ForEachResolveResult.cs \
 	Semantics/InvocationResolveResult.cs \
 	Semantics/LocalResolveResult.cs \
 	Semantics/MemberResolveResult.cs \
@@ -59,6 +61,7 @@ FILES =  \
 	Semantics/OperatorResolveResult.cs \
 	Semantics/ResolveResult.cs \
 	Semantics/ThisResolveResult.cs \
+	Semantics/TypeIsResolveResult.cs \
 	Semantics/TypeOfResolveResult.cs \
 	Semantics/TypeResolveResult.cs \
 	Semantics/UnknownMemberResolveResult.cs \
@@ -68,6 +71,7 @@ FILES =  \
 	TypeSystem/ArrayType.cs \
 	TypeSystem/ByReferenceType.cs \
 	TypeSystem/CecilLoader.cs \
+	TypeSystem/ComHelper.cs \
 	TypeSystem/DomRegion.cs \
 	TypeSystem/EntityType.cs \
 	TypeSystem/Error.cs \
@@ -171,6 +175,7 @@ FILES =  \
 	Utils/FastSerializer.cs \
 	Utils/GraphVizGraph.cs \
 	Utils/ImmutableStack.cs \
+	Utils/KeyComparer.cs \
 	Utils/LazyInit.cs \
 	Utils/Platform.cs \
 	Utils/ProjectedList.cs \

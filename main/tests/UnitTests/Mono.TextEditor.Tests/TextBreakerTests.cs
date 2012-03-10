@@ -28,13 +28,12 @@ using NUnit.Core;
 using Mono.TextEditor;
 using Mono.TextEditor.Utils;
 using NUnit.Framework;
-using NUnit.Framework.SyntaxHelpers;
 using System.Collections.Generic;
 
 namespace Mono.TextEditor.Tests
 {
 	[TestFixture()]
-	public class TextBreakerTests
+	public class TextBreakerTests : TextEditorTestBase
 	{
 		[Test()]
 		public void TestTextBreakerWithSingleWord ()
@@ -107,12 +106,6 @@ namespace Mono.TextEditor.Tests
 		public List<ISegment> BreakAllLines (TextEditor editor)
 		{
 			return TextBreaker.BreakLinesIntoWords (editor.Document, 1, editor.LineCount, false);
-		}
-
-		[TestFixtureSetUp] 
-		public void SetUp ()
-		{
-			Gtk.Application.Init ();
 		}
 	}
 }

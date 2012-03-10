@@ -373,6 +373,7 @@ FILES =  \
 	MonoDevelop.Ide.Extensions/MimeTypeOptionsPanelNode.cs \
 	MonoDevelop.Ide.Extensions/OptionsDialogSection.cs \
 	MonoDevelop.Ide.Extensions/OptionsPanelNode.cs \
+	MonoDevelop.Ide.Extensions/ServiceUrlExtensionNode.cs \
 	MonoDevelop.Ide.Extensions/StartupHandlerExtensionAttribute.cs \
 	MonoDevelop.Ide.Extensions/StockIconCodon.cs \
 	MonoDevelop.Ide.Extensions/TextEditorExtensionNode.cs \
@@ -433,7 +434,6 @@ FILES =  \
 	MonoDevelop.Ide.Gui.Content/IFoldable.cs \
 	MonoDevelop.Ide.Gui.Content/ILocationList.cs \
 	MonoDevelop.Ide.Gui.Content/INavigable.cs \
-	MonoDevelop.Ide.Gui.Content/IndentStyle.cs \
 	MonoDevelop.Ide.Gui.Content/IPathedDocument.cs \
 	MonoDevelop.Ide.Gui.Content/IPrintable.cs \
 	MonoDevelop.Ide.Gui.Content/ISmartIndenter.cs \
@@ -708,6 +708,7 @@ FILES =  \
 	MonoDevelop.Ide/ImageService.cs \
 	MonoDevelop.Ide/LogReportingStartup.cs \
 	MonoDevelop.Ide/MessageService.cs \
+	MonoDevelop.Ide/ProjectCreatedEventArgs.cs \
 	MonoDevelop.Ide/ProjectOperations.cs \
 	MonoDevelop.Ide/RootWorkspace.cs \
 	MonoDevelop.Ide/Services.cs \
