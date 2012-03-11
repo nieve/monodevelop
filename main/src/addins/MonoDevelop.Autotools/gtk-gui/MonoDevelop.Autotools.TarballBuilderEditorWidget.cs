@@ -180,7 +180,8 @@ namespace MonoDevelop.Autotools
 			this.label9 = new global::Gtk.Label ();
 			this.label9.WidthRequest = 550;
 			this.label9.Name = "label9";
-			this.label9.LabelProp = global::Mono.Unix.Catalog.GetString ("<b>Autotools based Makefile</b>\nGenerates a Makefile structure based on Autotools, with the standard targets and configuration scripts.");
+			this.label9.LabelProp = global::Mono.Unix.Catalog.GetString ("<b>Autotools based Makefile</b>\nGenerates a Makefile structure based on Autotools" +
+					", with the standard targets and configuration scripts.");
 			this.label9.UseMarkup = true;
 			this.label9.Wrap = true;
 			this.rbAutotools.Add (this.label9);
@@ -217,7 +218,8 @@ namespace MonoDevelop.Autotools
 			this.label7 = new global::Gtk.Label ();
 			this.label7.WidthRequest = 550;
 			this.label7.Name = "label7";
-			this.label7.LabelProp = global::Mono.Unix.Catalog.GetString ("<b>Simple Makefile</b>\nGenerates set of Makefiles with the most common targets, and a configuration script that does a basic check of package dependencies.");
+			this.label7.LabelProp = global::Mono.Unix.Catalog.GetString ("<b>Simple Makefile</b>\nGenerates set of Makefiles with the most common targets, a" +
+					"nd a configuration script that does a basic check of package dependencies.");
 			this.label7.UseMarkup = true;
 			this.label7.Wrap = true;
 			this.rbSimple.Add (this.label7);

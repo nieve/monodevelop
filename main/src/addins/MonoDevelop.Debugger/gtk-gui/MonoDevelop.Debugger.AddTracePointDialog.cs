@@ -89,7 +89,8 @@ namespace MonoDevelop.Debugger
 			this.label3.WidthRequest = 450;
 			this.label3.Name = "label3";
 			this.label3.Xalign = 0F;
-			this.label3.LabelProp = global::Mono.Unix.Catalog.GetString ("<small>Expressions to be evaluated by the debugger can be included in the text by surrounding them with curly braces, for example: \"Value is {n}\".</small>");
+			this.label3.LabelProp = global::Mono.Unix.Catalog.GetString ("<small>Expressions to be evaluated by the debugger can be included in the text by" +
+					" surrounding them with curly braces, for example: \"Value is {n}\".</small>");
 			this.label3.UseMarkup = true;
 			this.label3.Wrap = true;
 			this.table1.Add (this.label3);
@@ -105,7 +106,8 @@ namespace MonoDevelop.Debugger
 			this.label4.WidthRequest = 450;
 			this.label4.Name = "label4";
 			this.label4.Xalign = 0F;
-			this.label4.LabelProp = global::Mono.Unix.Catalog.GetString ("<small>When set, the text will be printed only when this condition evaluates to true.</small>");
+			this.label4.LabelProp = global::Mono.Unix.Catalog.GetString ("<small>When set, the text will be printed only when this condition evaluates to t" +
+					"rue.</small>");
 			this.label4.UseMarkup = true;
 			this.label4.Wrap = true;
 			this.table1.Add (this.label4);

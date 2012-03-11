@@ -52,7 +52,8 @@ namespace MonoDevelop.ChangeLogAddIn
 			// Container child noneRadioButton.Gtk.Container+ContainerChild
 			this.label3 = new global::Gtk.Label ();
 			this.label3.Name = "label3";
-			this.label3.LabelProp = global::Mono.Unix.Catalog.GetString ("<b>Disable ChangeLog support</b>\nNo ChangeLog entries will be generated for this project.");
+			this.label3.LabelProp = global::Mono.Unix.Catalog.GetString ("<b>Disable ChangeLog support</b>\nNo ChangeLog entries will be generated for this " +
+					"project.");
 			this.label3.UseMarkup = true;
 			this.noneRadioButton.Add (this.label3);
 			this.vbox2.Add (this.noneRadioButton);
@@ -72,7 +73,9 @@ namespace MonoDevelop.ChangeLogAddIn
 			this.label5 = new global::Gtk.Label ();
 			this.label5.WidthRequest = 500;
 			this.label5.Name = "label5";
-			this.label5.LabelProp = global::Mono.Unix.Catalog.GetString ("<b>Update nearest ChangeLog</b>\nThe nearest ChangeLog file in the directory hierarchy will be updated (below the commit directory). If none is found, a warning message will be shown. ChangeLog files will never be automatically created.");
+			this.label5.LabelProp = global::Mono.Unix.Catalog.GetString ("<b>Update nearest ChangeLog</b>\nThe nearest ChangeLog file in the directory hiera" +
+					"rchy will be updated (below the commit directory). If none is found, a warning m" +
+					"essage will be shown. ChangeLog files will never be automatically created.");
 			this.label5.UseMarkup = true;
 			this.label5.Wrap = true;
 			this.nearestRadioButton.Add (this.label5);
@@ -93,7 +96,9 @@ namespace MonoDevelop.ChangeLogAddIn
 			this.label6 = new global::Gtk.Label ();
 			this.label6.WidthRequest = 500;
 			this.label6.Name = "label6";
-			this.label6.LabelProp = global::Mono.Unix.Catalog.GetString ("<b>Single project ChangeLog</b>\nAll changes done in the project files will be logged in a single ChangeLog file, located at the project root directory. The ChangeLog file will be created if it doesn't exist.");
+			this.label6.LabelProp = global::Mono.Unix.Catalog.GetString ("<b>Single project ChangeLog</b>\nAll changes done in the project files will be log" +
+					"ged in a single ChangeLog file, located at the project root directory. The Chang" +
+					"eLog file will be created if it doesn\'t exist.");
 			this.label6.UseMarkup = true;
 			this.label6.Wrap = true;
 			this.oneChangeLogInProjectRootDirectoryRadioButton.Add (this.label6);
@@ -114,7 +119,9 @@ namespace MonoDevelop.ChangeLogAddIn
 			this.label7 = new global::Gtk.Label ();
 			this.label7.WidthRequest = 500;
 			this.label7.Name = "label7";
-			this.label7.LabelProp = global::Mono.Unix.Catalog.GetString ("<b>One ChangeLog in each directory</b>\nFile changes will be logged in a ChangeLog located at the file's directory. The ChangeLog file will be created if it doesn't exist.");
+			this.label7.LabelProp = global::Mono.Unix.Catalog.GetString ("<b>One ChangeLog in each directory</b>\nFile changes will be logged in a ChangeLog" +
+					" located at the file\'s directory. The ChangeLog file will be created if it doesn" +
+					"\'t exist.");
 			this.label7.UseMarkup = true;
 			this.label7.Wrap = true;
 			this.oneChangeLogInEachDirectoryRadioButton.Add (this.label7);

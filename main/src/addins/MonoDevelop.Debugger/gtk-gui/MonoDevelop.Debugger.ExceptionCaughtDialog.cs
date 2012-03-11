@@ -48,7 +48,8 @@ namespace MonoDevelop.Debugger
 			this.labelMessage.WidthRequest = 500;
 			this.labelMessage.Name = "labelMessage";
 			this.labelMessage.Xalign = 0F;
-			this.labelMessage.LabelProp = "test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test";
+			this.labelMessage.LabelProp = "test test test test test test test test test test test test test test test test t" +
+				"est test test test test test test test test test test test test test test test";
 			this.labelMessage.Wrap = true;
 			this.vbox2.Add (this.labelMessage);
 			global::Gtk.Box.BoxChild w3 = ((global::Gtk.Box.BoxChild)(this.vbox2 [this.labelMessage]));

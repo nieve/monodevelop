@@ -393,7 +393,7 @@ namespace MonoDevelop.Gettext
 			this.hbox1.Name = "hbox1";
 			this.hbox1.Spacing = 6;
 			// Container child hbox1.Gtk.Box+BoxChild
-			this.UIManager.AddUiFromString ("<ui><toolbar name='toolbarPages'/></ui>");
+			this.UIManager.AddUiFromString ("<ui><toolbar name=\'toolbarPages\'/></ui>");
 			this.toolbarPages = ((global::Gtk.Toolbar)(this.UIManager.GetWidget ("/toolbarPages")));
 			this.toolbarPages.Name = "toolbarPages";
 			this.toolbarPages.ShowArrow = false;

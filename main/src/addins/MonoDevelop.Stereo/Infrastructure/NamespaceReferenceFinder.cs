@@ -100,11 +100,9 @@ namespace MonoDevelop.Stereo
 			var column = line.IndexOf(nspace) + 1;
 			int position = editor.LocationToOffset(index, column);
 			var document = IdeApp.Workbench.GetDocument(filePath.CanonicalPath);
-//			ITextBuffer text = document.GetContent<ITextBuffer> ();
-//			text.CursorPosition = position + 1;
 			DomRegion region;
-			ResolveResult typeResult = resolver.GetLanguageItem(editor, position + 1, out region);
-			System.Console.WriteLine (typeResult);
+			ResolveResult typeResult = resolver.GetLanguageItem(document, position + 1, out region);
+			region = new DomRegion(filePath,region.Begin,region.End);
 			if (typeResult is NamespaceResolveResult) {
 				return new MemberReference(null, region, position, nspace.Length);
 			}

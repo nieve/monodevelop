@@ -151,11 +151,11 @@ namespace MonoDevelop.Debugger
 			w9.XOptions = ((global::Gtk.AttachOptions)(4));
 			w9.YOptions = ((global::Gtk.AttachOptions)(4));
 			// Container child tableEval.Gtk.Table+TableChild
-			this.spinTimeout = new global::Gtk.SpinButton (0, 1000000, 100);
+			this.spinTimeout = new global::Gtk.SpinButton (0D, 1000000D, 100D);
 			this.spinTimeout.CanFocus = true;
 			this.spinTimeout.Name = "spinTimeout";
-			this.spinTimeout.Adjustment.PageIncrement = 10;
-			this.spinTimeout.ClimbRate = 100;
+			this.spinTimeout.Adjustment.PageIncrement = 10D;
+			this.spinTimeout.ClimbRate = 100D;
 			this.spinTimeout.Numeric = true;
 			this.tableEval.Add (this.spinTimeout);
 			global::Gtk.Table.TableChild w10 = ((global::Gtk.Table.TableChild)(this.tableEval [this.spinTimeout]));
@@ -185,7 +185,8 @@ namespace MonoDevelop.Debugger
 			this.label2.WidthRequest = 417;
 			this.label2.Name = "label2";
 			this.label2.Xalign = 0F;
-			this.label2.LabelProp = global::Mono.Unix.Catalog.GetString ("This priority list will be used by MonoDevelop when selecting the engine to be used for debugging an application.");
+			this.label2.LabelProp = global::Mono.Unix.Catalog.GetString ("This priority list will be used by MonoDevelop when selecting the engine to be us" +
+					"ed for debugging an application.");
 			this.label2.Wrap = true;
 			this.vbox2.Add (this.label2);
 			global::Gtk.Box.BoxChild w13 = ((global::Gtk.Box.BoxChild)(this.vbox2 [this.label2]));

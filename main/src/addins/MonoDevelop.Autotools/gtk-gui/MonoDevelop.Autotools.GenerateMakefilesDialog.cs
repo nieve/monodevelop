@@ -63,7 +63,8 @@ namespace MonoDevelop.Autotools
 			this.label4 = new global::Gtk.Label ();
 			this.label4.WidthRequest = 550;
 			this.label4.Name = "label4";
-			this.label4.LabelProp = global::Mono.Unix.Catalog.GetString ("<b>Simple Makefile</b>\nGenerates set of Makefiles with the most common targets, and a configuration script that does a basic check of package dependencies.");
+			this.label4.LabelProp = global::Mono.Unix.Catalog.GetString ("<b>Simple Makefile</b>\nGenerates set of Makefiles with the most common targets, a" +
+					"nd a configuration script that does a basic check of package dependencies.");
 			this.label4.UseMarkup = true;
 			this.label4.Wrap = true;
 			this.rbSimple.Add (this.label4);
@@ -84,7 +85,8 @@ namespace MonoDevelop.Autotools
 			this.label5 = new global::Gtk.Label ();
 			this.label5.WidthRequest = 550;
 			this.label5.Name = "label5";
-			this.label5.LabelProp = global::Mono.Unix.Catalog.GetString ("<b>Autotools based Makefile</b>\nGenerates a Makefile structure based on Autotools, with the standard targets and configuration scripts.");
+			this.label5.LabelProp = global::Mono.Unix.Catalog.GetString ("<b>Autotools based Makefile</b>\nGenerates a Makefile structure based on Autotools" +
+					", with the standard targets and configuration scripts.");
 			this.label5.UseMarkup = true;
 			this.label5.Wrap = true;
 			this.rbAutotools.Add (this.label5);
@@ -111,7 +113,9 @@ namespace MonoDevelop.Autotools
 			this.label3.WidthRequest = 580;
 			this.label3.Name = "label3";
 			this.label3.Xalign = 0F;
-			this.label3.LabelProp = global::Mono.Unix.Catalog.GetString ("Select the configuration that the Makefile will build by default. Other configurations can be selected via the '--config' option of the generated configure script.");
+			this.label3.LabelProp = global::Mono.Unix.Catalog.GetString ("Select the configuration that the Makefile will build by default. Other configura" +
+					"tions can be selected via the \'--config\' option of the generated configure scrip" +
+					"t.");
 			this.label3.Wrap = true;
 			this.vbox2.Add (this.label3);
 			global::Gtk.Box.BoxChild w9 = ((global::Gtk.Box.BoxChild)(this.vbox2 [this.label3]));

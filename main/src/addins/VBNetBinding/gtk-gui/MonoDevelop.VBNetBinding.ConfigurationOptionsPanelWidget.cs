@@ -241,7 +241,7 @@ namespace MonoDevelop.VBNetBinding
 			this.label93 = new global::Gtk.Label ();
 			this.label93.Name = "label93";
 			this.label93.Xalign = 0F;
-			this.label93.LabelProp = global::Mono.Unix.Catalog.GetString ("Don't warn about:");
+			this.label93.LabelProp = global::Mono.Unix.Catalog.GetString ("Don\'t warn about:");
 			this.label93.UseUnderline = true;
 			this.table3.Add (this.label93);
 			global::Gtk.Table.TableChild w18 = ((global::Gtk.Table.TableChild)(this.table3 [this.label93]));

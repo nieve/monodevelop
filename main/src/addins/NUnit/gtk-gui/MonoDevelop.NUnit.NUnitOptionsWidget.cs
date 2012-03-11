@@ -84,7 +84,7 @@ namespace MonoDevelop.NUnit
 			this.vbox4.Name = "vbox4";
 			this.vbox4.Spacing = 6;
 			// Container child vbox4.Gtk.Box+BoxChild
-			this.noFilterRadio = new global::Gtk.RadioButton (global::Mono.Unix.Catalog.GetString ("Don't apply any filter"));
+			this.noFilterRadio = new global::Gtk.RadioButton (global::Mono.Unix.Catalog.GetString ("Don\'t apply any filter"));
 			this.noFilterRadio.Name = "noFilterRadio";
 			this.noFilterRadio.Active = true;
 			this.noFilterRadio.DrawIndicator = true;

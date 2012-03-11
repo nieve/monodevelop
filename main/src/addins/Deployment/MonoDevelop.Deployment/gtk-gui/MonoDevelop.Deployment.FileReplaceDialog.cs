@@ -103,7 +103,9 @@ namespace MonoDevelop.Deployment
 			// Container child dialog1_VBox.Gtk.Box+BoxChild
 			this.label2 = new global::Gtk.Label ();
 			this.label2.Name = "label2";
-			this.label2.LabelProp = global::Mono.Unix.Catalog.GetString ("There is already a file in the target directory that has the same name as the source file. You can keep the existing target file, or overwrite it with the source file.");
+			this.label2.LabelProp = global::Mono.Unix.Catalog.GetString ("There is already a file in the target directory that has the same name as the sou" +
+					"rce file. You can keep the existing target file, or overwrite it with the source" +
+					" file.");
 			this.label2.Wrap = true;
 			this.label2.Justify = ((global::Gtk.Justification)(3));
 			w1.Add (this.label2);
@@ -339,7 +341,8 @@ namespace MonoDevelop.Deployment
 			this.label20 = new global::Gtk.Label ();
 			this.label20.Name = "label20";
 			this.label20.Xpad = 2;
-			this.label20.LabelProp = global::Mono.Unix.Catalog.GetString ("The source file will replace the existing target file if it has been modified more recently.");
+			this.label20.LabelProp = global::Mono.Unix.Catalog.GetString ("The source file will replace the existing target file if it has been modified mor" +
+					"e recently.");
 			this.label20.Wrap = true;
 			this.vbox7.Add (this.label20);
 			global::Gtk.Box.BoxChild w30 = ((global::Gtk.Box.BoxChild)(this.vbox7 [this.label20]));

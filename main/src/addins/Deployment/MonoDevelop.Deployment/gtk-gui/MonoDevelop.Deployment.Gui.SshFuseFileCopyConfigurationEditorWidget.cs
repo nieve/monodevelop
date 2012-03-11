@@ -95,7 +95,9 @@ namespace MonoDevelop.Deployment.Gui
 			// Container child table1.Gtk.Table+TableChild
 			this.label4 = new global::Gtk.Label ();
 			this.label4.Name = "label4";
-			this.label4.LabelProp = global::Mono.Unix.Catalog.GetString ("Note: the SSH key for this host must be installed on your system. If it is password protected, the password must be loaded into a running SSH authentication daemon, such as <i>ssh-agent</i> or <i>seahorse-agent</i>.");
+			this.label4.LabelProp = global::Mono.Unix.Catalog.GetString ("Note: the SSH key for this host must be installed on your system. If it is passwo" +
+					"rd protected, the password must be loaded into a running SSH authentication daem" +
+					"on, such as <i>ssh-agent</i> or <i>seahorse-agent</i>.");
 			this.label4.UseMarkup = true;
 			this.label4.Wrap = true;
 			this.label4.Justify = ((global::Gtk.Justification)(3));

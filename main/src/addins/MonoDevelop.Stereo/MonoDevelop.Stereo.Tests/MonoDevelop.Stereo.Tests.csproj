@@ -67,10 +67,6 @@
     <Folder Include="Refactoring\NewTypeFormatProviders\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MonoDevelop.Stereo.csproj">
-      <Project>{6BE494EC-0268-4887-B396-49B13F03FDCD}</Project>
-      <Name>MonoDevelop.Stereo</Name>
-    </ProjectReference>
     <ProjectReference Include="..\MonoDevelop.Stereo.Gui\MonoDevelop.Stereo.Gui.csproj">
       <Project>{AF19E650-C170-48CA-B187-34A64D5F73FC}</Project>
       <Name>MonoDevelop.Stereo.Gui</Name>
@@ -94,6 +90,10 @@
     <ProjectReference Include="..\..\..\..\contrib\ICSharpCode.NRefactory\ICSharpCode.NRefactory.csproj">
       <Project>{3B2A5653-EC97-4001-BB9B-D90F1AF2C371}</Project>
       <Name>ICSharpCode.NRefactory</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MonoDevelop.Stereo.csproj">
+      <Project>{6BE494EC-0268-4887-B396-49B13F03FDCD}</Project>
+      <Name>MonoDevelop.Stereo</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

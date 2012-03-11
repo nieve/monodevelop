@@ -59,7 +59,7 @@ namespace Mono.Instrumentation.Monitor
 			this.dialog1_VBox = new global::Gtk.VBox ();
 			this.dialog1_VBox.Name = "dialog1_VBox";
 			// Container child dialog1_VBox.Gtk.Box+BoxChild
-			this.UIManager.AddUiFromString ("<ui><menubar name='menubar1'><menu name='FileAction' action='FileAction'><menuitem name='openAction' action='openAction'/><menuitem name='connectAction' action='connectAction'/><separator/><menuitem name='ExitAction' action='ExitAction'/></menu><menu name='ToolsAction' action='ToolsAction'><menuitem name='FlushMemoryAction' action='FlushMemoryAction'/></menu></menubar></ui>");
+			this.UIManager.AddUiFromString (@"<ui><menubar name='menubar1'><menu name='FileAction' action='FileAction'><menuitem name='openAction' action='openAction'/><menuitem name='connectAction' action='connectAction'/><separator/><menuitem name='ExitAction' action='ExitAction'/></menu><menu name='ToolsAction' action='ToolsAction'><menuitem name='FlushMemoryAction' action='FlushMemoryAction'/></menu></menubar></ui>");
 			this.menubar1 = ((global::Gtk.MenuBar)(this.UIManager.GetWidget ("/menubar1")));
 			this.menubar1.Name = "menubar1";
 			this.dialog1_VBox.Add (this.menubar1);

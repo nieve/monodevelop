@@ -202,7 +202,8 @@ namespace MonoDevelop.ChangeLogAddIn
 			this.label9.WidthRequest = 500;
 			this.label9.Name = "label9";
 			this.label9.Xalign = 0F;
-			this.label9.LabelProp = global::Mono.Unix.Catalog.GetString ("To change the ChangeLog creation and update policies, open the options dialog of the project or solution and click on the 'ChangeLog Integration\" section.");
+			this.label9.LabelProp = global::Mono.Unix.Catalog.GetString ("To change the ChangeLog creation and update policies, open the options dialog of " +
+					"the project or solution and click on the \'ChangeLog Integration\" section.");
 			this.label9.UseMarkup = true;
 			this.label9.Wrap = true;
 			this.hbox3.Add (this.label9);

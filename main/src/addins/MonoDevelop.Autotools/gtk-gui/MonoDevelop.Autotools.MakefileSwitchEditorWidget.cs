@@ -54,7 +54,9 @@ namespace MonoDevelop.Autotools
 			this.label2 = new global::Gtk.Label ();
 			this.label2.Name = "label2";
 			this.label2.Xalign = 0F;
-			this.label2.LabelProp = global::Mono.Unix.Catalog.GetString ("Use the following list to define new switches usable with autotools configure script. Each switch is mapped to a define that you can use to do conditional compilation in your source files.");
+			this.label2.LabelProp = global::Mono.Unix.Catalog.GetString ("Use the following list to define new switches usable with autotools configure scr" +
+					"ipt. Each switch is mapped to a define that you can use to do conditional compil" +
+					"ation in your source files.");
 			this.label2.Wrap = true;
 			this.label2.WidthChars = 78;
 			this.alignment2.Add (this.label2);

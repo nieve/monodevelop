@@ -299,7 +299,8 @@ namespace MonoDevelop.Autotools
 			this.label8.WidthRequest = 500;
 			this.label8.Name = "label8";
 			this.label8.Xalign = 0F;
-			this.label8.LabelProp = global::Mono.Unix.Catalog.GetString ("Select the makefile targets that should be executed for the build and clean operations:");
+			this.label8.LabelProp = global::Mono.Unix.Catalog.GetString ("Select the makefile targets that should be executed for the build and clean opera" +
+					"tions:");
 			this.label8.Wrap = true;
 			this.table1.Add (this.label8);
 			global::Gtk.Table.TableChild w18 = ((global::Gtk.Table.TableChild)(this.table1 [this.label8]));
@@ -351,13 +352,13 @@ namespace MonoDevelop.Autotools
 			w22.XOptions = ((global::Gtk.AttachOptions)(4));
 			w22.YOptions = ((global::Gtk.AttachOptions)(4));
 			// Container child table1.Gtk.Table+TableChild
-			this.spinProcesses = new global::Gtk.SpinButton (1, 64, 1);
+			this.spinProcesses = new global::Gtk.SpinButton (1D, 64D, 1D);
 			this.spinProcesses.CanFocus = true;
 			this.spinProcesses.Name = "spinProcesses";
-			this.spinProcesses.Adjustment.PageIncrement = 1;
-			this.spinProcesses.ClimbRate = 1;
+			this.spinProcesses.Adjustment.PageIncrement = 1D;
+			this.spinProcesses.ClimbRate = 1D;
 			this.spinProcesses.Numeric = true;
-			this.spinProcesses.Value = 1;
+			this.spinProcesses.Value = 1D;
 			this.table1.Add (this.spinProcesses);
 			global::Gtk.Table.TableChild w23 = ((global::Gtk.Table.TableChild)(this.table1 [this.spinProcesses]));
 			w23.TopAttach = ((uint)(8));
@@ -565,7 +566,9 @@ namespace MonoDevelop.Autotools
 			this.label5.WidthRequest = 500;
 			this.label5.Name = "label5";
 			this.label5.Xalign = 0F;
-			this.label5.LabelProp = global::Mono.Unix.Catalog.GetString ("Select the kind of files you want to synchronize with the makefile. For each file kind please specify the makefile variable that holds the list and optionally a prefix to be prepended to each file name.");
+			this.label5.LabelProp = global::Mono.Unix.Catalog.GetString ("Select the kind of files you want to synchronize with the makefile. For each file" +
+					" kind please specify the makefile variable that holds the list and optionally a " +
+					"prefix to be prepended to each file name.");
 			this.label5.Wrap = true;
 			this.table3.Add (this.label5);
 			global::Gtk.Table.TableChild w41 = ((global::Gtk.Table.TableChild)(this.table3 [this.label5]));
@@ -755,7 +758,7 @@ namespace MonoDevelop.Autotools
 			this.label6.WidthRequest = 500;
 			this.label6.Name = "label6";
 			this.label6.Xalign = 0F;
-			this.label6.LabelProp = global::Mono.Unix.Catalog.GetString ("Select the kind of references you want to synchronize with the makefile. For each reference type please specify the makefile variable that holds the list, and optionally a prefix to be prepended to each reference name. You can specify the same variable name for several types of references.");
+			this.label6.LabelProp = global::Mono.Unix.Catalog.GetString (@"Select the kind of references you want to synchronize with the makefile. For each reference type please specify the makefile variable that holds the list, and optionally a prefix to be prepended to each reference name. You can specify the same variable name for several types of references.");
 			this.label6.Wrap = true;
 			this.table4.Add (this.label6);
 			global::Gtk.Table.TableChild w57 = ((global::Gtk.Table.TableChild)(this.table4 [this.label6]));
@@ -856,7 +859,7 @@ namespace MonoDevelop.Autotools
 			this.label7.WidthRequest = 500;
 			this.label7.Name = "label7";
 			this.label7.Xalign = 0F;
-			this.label7.LabelProp = global::Mono.Unix.Catalog.GetString ("Select the Compiler message format for parsing the compiler errors and warnings. You can either select one of the built-in options, or specify custom regular expressions for errors and warnings. The regex must be the .net style regex. The following named groups are relevant : file, line, column, number (error number) and message.");
+			this.label7.LabelProp = global::Mono.Unix.Catalog.GetString (@"Select the Compiler message format for parsing the compiler errors and warnings. You can either select one of the built-in options, or specify custom regular expressions for errors and warnings. The regex must be the .net style regex. The following named groups are relevant : file, line, column, number (error number) and message.");
 			this.label7.Wrap = true;
 			this.label7.Justify = ((global::Gtk.Justification)(3));
 			this.vbox3.Add (this.label7);

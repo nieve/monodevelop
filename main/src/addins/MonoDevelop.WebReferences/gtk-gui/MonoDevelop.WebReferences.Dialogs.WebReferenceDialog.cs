@@ -59,7 +59,7 @@ namespace MonoDevelop.WebReferences.Dialogs
 			this.vbxContainer = new global::Gtk.VBox ();
 			this.vbxContainer.Name = "vbxContainer";
 			// Container child vbxContainer.Gtk.Box+BoxChild
-			this.UIManager.AddUiFromString ("<ui><toolbar name='tlbNavigate'><toolitem name='btnBack' action='btnBack'/><toolitem name='btnNext' action='btnNext'/><toolitem name='btnRefresh' action='btnRefresh'/><toolitem name='btnStop' action='btnStop'/><toolitem name='btnHome' action='btnHome'/></toolbar></ui>");
+			this.UIManager.AddUiFromString (@"<ui><toolbar name='tlbNavigate'><toolitem name='btnBack' action='btnBack'/><toolitem name='btnNext' action='btnNext'/><toolitem name='btnRefresh' action='btnRefresh'/><toolitem name='btnStop' action='btnStop'/><toolitem name='btnHome' action='btnHome'/></toolbar></ui>");
 			this.tlbNavigate = ((global::Gtk.Toolbar)(this.UIManager.GetWidget ("/tlbNavigate")));
 			this.tlbNavigate.Name = "tlbNavigate";
 			this.tlbNavigate.ShowArrow = false;

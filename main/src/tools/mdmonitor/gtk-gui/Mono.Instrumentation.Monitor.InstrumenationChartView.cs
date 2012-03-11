@@ -137,10 +137,10 @@ namespace Mono.Instrumentation.Monitor
 			// Container child frameCharts.Gtk.Box+BoxChild
 			this.chartScroller = new global::Gtk.HScrollbar (null);
 			this.chartScroller.Name = "chartScroller";
-			this.chartScroller.Adjustment.Upper = 100;
-			this.chartScroller.Adjustment.PageIncrement = 10;
-			this.chartScroller.Adjustment.PageSize = 10;
-			this.chartScroller.Adjustment.StepIncrement = 1;
+			this.chartScroller.Adjustment.Upper = 100D;
+			this.chartScroller.Adjustment.PageIncrement = 10D;
+			this.chartScroller.Adjustment.PageSize = 10D;
+			this.chartScroller.Adjustment.StepIncrement = 1D;
 			this.frameCharts.Add (this.chartScroller);
 			global::Gtk.Box.BoxChild w22 = ((global::Gtk.Box.BoxChild)(this.frameCharts [this.chartScroller]));
 			w22.PackType = ((global::Gtk.PackType)(1));

@@ -94,13 +94,13 @@ namespace MonoDevelop.Debugger
 			this.hboxLineColumn.Name = "hboxLineColumn";
 			this.hboxLineColumn.Spacing = 6;
 			// Container child hboxLineColumn.Gtk.Box+BoxChild
-			this.spinLine = new global::Gtk.SpinButton (1, 100, 1);
+			this.spinLine = new global::Gtk.SpinButton (1D, 100D, 1D);
 			this.spinLine.CanFocus = true;
 			this.spinLine.Name = "spinLine";
-			this.spinLine.Adjustment.PageIncrement = 10;
-			this.spinLine.ClimbRate = 1;
+			this.spinLine.Adjustment.PageIncrement = 10D;
+			this.spinLine.ClimbRate = 1D;
 			this.spinLine.Numeric = true;
-			this.spinLine.Value = 1;
+			this.spinLine.Value = 1D;
 			this.hboxLineColumn.Add (this.spinLine);
 			global::Gtk.Box.BoxChild w4 = ((global::Gtk.Box.BoxChild)(this.hboxLineColumn [this.spinLine]));
 			w4.Position = 0;
@@ -121,11 +121,11 @@ namespace MonoDevelop.Debugger
 			w5.Expand = false;
 			w5.Fill = false;
 			// Container child hboxColumn.Gtk.Box+BoxChild
-			this.spinColumn = new global::Gtk.SpinButton (1, 100, 1);
+			this.spinColumn = new global::Gtk.SpinButton (1D, 100D, 1D);
 			this.spinColumn.CanFocus = true;
 			this.spinColumn.Name = "spinColumn";
-			this.spinColumn.Adjustment.PageIncrement = 10;
-			this.spinColumn.ClimbRate = 1;
+			this.spinColumn.Adjustment.PageIncrement = 10D;
+			this.spinColumn.ClimbRate = 1D;
 			this.spinColumn.Numeric = true;
 			this.hboxColumn.Add (this.spinColumn);
 			global::Gtk.Box.BoxChild w6 = ((global::Gtk.Box.BoxChild)(this.hboxColumn [this.spinColumn]));
@@ -302,13 +302,13 @@ namespace MonoDevelop.Debugger
 			w23.Expand = false;
 			w23.Fill = false;
 			// Container child hbox7.Gtk.Box+BoxChild
-			this.spinHitCount = new global::Gtk.SpinButton (0, 100000000, 1);
+			this.spinHitCount = new global::Gtk.SpinButton (0D, 100000000D, 1D);
 			this.spinHitCount.CanFocus = true;
 			this.spinHitCount.Name = "spinHitCount";
-			this.spinHitCount.Adjustment.PageIncrement = 10;
-			this.spinHitCount.ClimbRate = 1;
+			this.spinHitCount.Adjustment.PageIncrement = 10D;
+			this.spinHitCount.ClimbRate = 1D;
 			this.spinHitCount.Numeric = true;
-			this.spinHitCount.Value = 1;
+			this.spinHitCount.Value = 1D;
 			this.hbox7.Add (this.spinHitCount);
 			global::Gtk.Box.BoxChild w24 = ((global::Gtk.Box.BoxChild)(this.hbox7 [this.spinHitCount]));
 			w24.Position = 1;

@@ -38,7 +38,9 @@ namespace MonoDevelop.VersionControl.Git
 			this.label1.WidthRequest = 503;
 			this.label1.Name = "label1";
 			this.label1.Xalign = 0F;
-			this.label1.LabelProp = global::Mono.Unix.Catalog.GetString ("The user name and email configured for the Git repository does not match the user information configured in MonoDevelop. Which user information do you want to use?");
+			this.label1.LabelProp = global::Mono.Unix.Catalog.GetString ("The user name and email configured for the Git repository does not match the user" +
+					" information configured in MonoDevelop. Which user information do you want to us" +
+					"e?");
 			this.label1.Wrap = true;
 			this.vbox2.Add (this.label1);
 			global::Gtk.Box.BoxChild w2 = ((global::Gtk.Box.BoxChild)(this.vbox2 [this.label1]));
