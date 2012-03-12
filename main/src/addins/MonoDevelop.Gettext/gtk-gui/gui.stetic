@@ -7,9 +7,8 @@
   <import>
     <widget-library name="../../../../build/AddIns/MonoDevelop.DesignerSupport/MonoDevelop.DesignerSupport.dll" />
     <widget-library name="../../../../build/bin/MonoDevelop.Ide.dll" />
-    <widget-library name="../../../../build/AddIns/MonoDevelop.Deployment/MonoDevelop.Deployment.dll" />
     <widget-library name="../../../../build/bin/Mono.TextEditor.dll" />
-    <widget-library name="../../../../build/AddIns/MonoDevelop.Gettext/MonoDevelop.Gettext.dll" internal="true" />
+    <widget-library name="../../../../build/AddIns/DisplayBindings/Gettext/MonoDevelop.Gettext.dll" internal="true" />
   </import>
   <widget class="Gtk.Bin" id="MonoDevelop.Gettext.Editor.CatalogHeadersWidget" design-size="672 613">
     <property name="MemberName" />

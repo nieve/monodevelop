@@ -41,19 +41,16 @@ namespace MonoDevelop.Stereo
 		
 		public IEnumerable<MemberReference> FindReferences(Solution solution, NamespaceResolveResult resolveResult, IProgressMonitor monitor){
 			string nspace = resolveResult.Namespace.FullName;
-			ICSharpCode.NRefactory.CSharp.Resolver.FindReferences findRefs = new ICSharpCode.NRefactory.CSharp.Resolver.FindReferences();
-			foreach (var t in resolveResult.Namespace.Types) {
-				var fileName = t.BodyRegion.FileName;
-				
-				//TODO: can I get where type is being referenced?
-//				var scopes = findRefs.GetSearchScopes(t);
-//				foreach (var scope in scopes) {
-//					var fs = findRefs.GetInterestingFiles (scope, t.Compilation);
-//					foreach (var file in fs) {
-//						Console.WriteLine ("Ref: " + file.FileName);
-//					}
+//			foreach (var t in resolveResult.Namespace.Types) {
+//				System.Console.WriteLine ("type: " + t.FullName);
+//				var fileName = t.BodyRegion.FileName;
+//				System.Console.WriteLine ("type: " + fileName);
+//				
+//				var refs = ReferenceFinder.FindReferences(t, (IProgressMonitor)null);
+//				foreach (var r in refs) {
+//					System.Console.WriteLine ("Ref: " + r.FileName + "offset: " + r.Offset);
 //				}
-			}
+//			}
 			
 			IEnumerable<FilePath> projFiles = projectFilesExtractor.GetFileNames (solution, monitor);
 			foreach (FilePath filePath in projFiles) {
@@ -65,30 +62,32 @@ namespace MonoDevelop.Stereo
 					TextEditorData editor = TextFileProvider.Instance.GetTextEditorData(filePath);
 					
 					int lastFoundIndex = 0;
-					int column;
 					int lineOffset;
 					for (var i = 0; i < editor.Lines.Count(); i++){
 						var line = editor.GetLineText(i);
 						if (string.IsNullOrWhiteSpace(line)) continue;
 						
-						DomRegion region = new DomRegion(filePath, i, 0);
-						if (line != null && line.Contains("using " + nspace + ";")) {
-							column = line.IndexOf (nspace);
-							lineOffset = editor.Text.IndexOf(line, lastFoundIndex);
-							lastFoundIndex = lineOffset + line.Length;
-							var offset = editor.LocationToOffset(i, column + 1);
-							yield return new MemberReference(null, region, offset, nspace.Length);
-						}
-						if (LineContainsNamespaceDeclaration(line, nspace)) {
-							column = line.IndexOf (nspace);
-							lineOffset = editor.Text.IndexOf(line, lastFoundIndex);
-							lastFoundIndex = lineOffset + line.Length;
-							var offset = editor.LocationToOffset(i, column + 1);
-							yield return new MemberReference(null, region, offset, nspace.Length);
-						}
-						else if (line.Contains(nspace + ".")) {
-							MemberReference memRef = TryFindTypePrefixNamespaceRef(nspace, filePath, line, i, editor);
-							if (memRef != null) yield return memRef;
+						var column = -1;
+						while ((column = line.IndexOf(nspace, column + 1)) > -1) {
+							//TODO: Extract to different class, unit test!
+							DomRegion region = new DomRegion (filePath, i, 0);
+							if (line != null && line.Contains ("using " + nspace + ";")) {
+								lineOffset = editor.Text.IndexOf (line, lastFoundIndex);
+								lastFoundIndex = lineOffset + line.Length;
+								var offset = editor.LocationToOffset (i, column + 1);
+								yield return new MemberReference(null, region, offset, nspace.Length);
+							}
+							if (LineContainsNamespaceDeclaration (line, nspace)) {
+								lineOffset = editor.Text.IndexOf (line, lastFoundIndex);
+								lastFoundIndex = lineOffset + line.Length;
+								var offset = editor.LocationToOffset (i, column + 1);
+								yield return new MemberReference(null, region, offset, nspace.Length);
+							} else if (line.Contains (nspace + ".")) {
+								column = line.IndexOf(nspace + ".", column);
+								MemberReference memRef = TryFindTypePrefixNamespaceRef (nspace, filePath, i, column, editor);
+								if (memRef != null)
+									yield return memRef;
+							}
 						}
 					}
 				}
@@ -96,9 +95,8 @@ namespace MonoDevelop.Stereo
 			yield break;
 		}
 		
-		private MemberReference TryFindTypePrefixNamespaceRef(string nspace, FilePath filePath, string line, int index, TextEditorData editor){
-			var column = line.IndexOf(nspace) + 1;
-			int position = editor.LocationToOffset(index, column);
+		private MemberReference TryFindTypePrefixNamespaceRef(string nspace, FilePath filePath, int lineIndex, int column, TextEditorData editor){
+			int position = editor.LocationToOffset(lineIndex, column + 1);
 			var document = IdeApp.Workbench.GetDocument(filePath.CanonicalPath);
 			DomRegion region;
 			ResolveResult typeResult = resolver.GetLanguageItem(document, position + 1, out region);
