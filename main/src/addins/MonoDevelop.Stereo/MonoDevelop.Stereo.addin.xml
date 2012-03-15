@@ -41,6 +41,7 @@
 	<Extension path = "/MonoDevelop/Ide/Commands/Refactoring">
 		<Command id = "MonoDevelop.Refactoring.RefactoryCommands.RenameNamespace"
 				defaultHandler = "MonoDevelop.Stereo.Refactoring.Rename.RenameNamespaceHandler"
+				shortcut="Ctrl|Alt|R"
 				_label = "_Rename namespace"/>
 	</Extension>
 

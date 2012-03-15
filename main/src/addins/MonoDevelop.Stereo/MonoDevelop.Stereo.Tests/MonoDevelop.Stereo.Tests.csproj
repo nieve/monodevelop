@@ -54,6 +54,7 @@
     <Compile Include="Refactoring\CreateDerivedType\CreateDerivedTypeRefactoringTest.cs" />
     <Compile Include="Refactoring\NewTypeFormatProviders\NewTypeFileContentProviderTest.cs" />
     <Compile Include="Refactoring\NewTypeFormatProviders\TypeContentResolverTest.cs" />
+    <Compile Include="Refactoring\Rename\NamespaceSearchedLineTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

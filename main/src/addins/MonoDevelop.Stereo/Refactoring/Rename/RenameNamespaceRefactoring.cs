@@ -14,23 +14,33 @@ namespace MonoDevelop.Stereo.Refactoring.Rename
 {
 	public class RenameNamespaceRefactoring : RenameRefactoring, IRefactorWithNaming
 	{
-		IFindNamespaceReference finder;
+		INamespaceReferenceController finder;
 		INameValidator validator;
 		IProgressMonitorFactory factory;
+		IFindNamespaceReferenceInline extractor;
 		
-		public RenameNamespaceRefactoring () : this(new NamespaceReferenceFinder(), new NamespaceValidator(), new ProgressMonitorFactory()) { }
+		public RenameNamespaceRefactoring () : this(new NamespaceReferenceController(), new NamespaceValidator(), 
+            new ProgressMonitorFactory(), new InlineNamespaceReferenceFinder()) { }
 		
-		public RenameNamespaceRefactoring (IFindNamespaceReference namespaceRefFinder, INameValidator validator, IProgressMonitorFactory factory)
+		public RenameNamespaceRefactoring (INamespaceReferenceController namespaceRefFinder, INameValidator validator, 
+       		IProgressMonitorFactory factory, IFindNamespaceReferenceInline extactor)
 		{
 			this.Name = "Rename Namespace";
 			finder = namespaceRefFinder;
 			this.validator = validator;
 			this.factory = factory;
+			this.extractor = extactor;
 		}
 		
 		public override bool IsValid (RefactoringOptions options)
 		{
 			return options.ResolveResult is NamespaceResolveResult;
+		}
+		
+		public override string AccelKey {
+			get {
+				return "Ctrl+Alt+R";
+			}
 		}
 		
 		public override string GetMenuDescription(RefactoringOptions options)
@@ -44,7 +54,8 @@ namespace MonoDevelop.Stereo.Refactoring.Rename
 		
 		public override void Run (RefactoringOptions options)
 		{
-			MessageService.ShowCustomDialog((Dialog) new RefactoringNamingDialog(options, this, new NamespaceValidator()));
+			if (IsValid (options))
+				MessageService.ShowCustomDialog((Dialog) new RefactoringNamingDialog(options, this, new NamespaceValidator()));
 		}
 		
 		public override List<Change> PerformChanges (RefactoringOptions options, object prop)

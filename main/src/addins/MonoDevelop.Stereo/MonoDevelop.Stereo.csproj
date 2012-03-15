@@ -60,7 +60,6 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="StringsExtensions.cs" />
     <Compile Include="Refactoring\Rename\RenameNamespaceRefactoring.cs" />
-    <Compile Include="Infrastructure\NamespaceReferenceFinder.cs" />
     <Compile Include="Infrastructure\ExtractProjectFiles.cs" />
     <Compile Include="Refactoring\GenerateNewType\GenerateNewTypeRefactoring.cs" />
     <Compile Include="TextEditor\DuplicateTextHandler.cs" />
@@ -79,6 +78,11 @@
     <Compile Include="Refactoring\AppendingNewTypeRefactoringOperation.cs" />
     <Compile Include="Refactoring\NewTypeFormatProviders\NewTypeFileContentProvider.cs" />
     <Compile Include="Refactoring\NewTypeFormatProviders\TypeContentResolver.cs" />
+    <Compile Include="Refactoring\Rename\RenameNamespaceHandler.cs" />
+    <Compile Include="Refactoring\Rename\NamespaceReferenceExtraction.cs" />
+    <Compile Include="Refactoring\Rename\NamespaceSearchedLine.cs" />
+    <Compile Include="Refactoring\Rename\NamespaceReferenceController.cs" />
+    <Compile Include="Refactoring\Rename\InlineNamespaceReferenceFinder.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

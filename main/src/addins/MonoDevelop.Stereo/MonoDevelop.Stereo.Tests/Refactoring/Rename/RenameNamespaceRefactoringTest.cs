@@ -29,7 +29,8 @@ namespace MonoDevelop.Stereo.RenameNamespaceRefactoringTest
 	public class PerformChanges
 	{
 		RenameNamespaceRefactoring renameNamespaceRefactoring;
-		IFindNamespaceReference refFinder = MockRepository.GenerateStub<IFindNamespaceReference>();
+		INamespaceReferenceController refFinder = MockRepository.GenerateStub<INamespaceReferenceController>();
+		IFindNamespaceReferenceInline lineExtractor = MockRepository.GenerateStub<IFindNamespaceReferenceInline>();
 		RefactoringOptions options = new RefactoringOptions();
 		INameValidator validator = MockRepository.GenerateStub<INameValidator>();
 		MonoDevelop.Stereo.Refactoring.Rename.IProgressMonitorFactory factory = MockRepository.GenerateStub<MonoDevelop.Stereo.Refactoring.Rename.IProgressMonitorFactory>();
@@ -37,7 +38,7 @@ namespace MonoDevelop.Stereo.RenameNamespaceRefactoringTest
 		[SetUp]
 		public void SetUp(){
 			factory.Stub (f=>f.Create()).Return(MockRepository.GenerateStub<IProgressMonitor>());
-			renameNamespaceRefactoring = new RenameNamespaceRefactoring(refFinder, validator, factory);
+			renameNamespaceRefactoring = new RenameNamespaceRefactoring(refFinder, validator, factory, lineExtractor);
 			var ns = MockRepository.GenerateStub<INamespace>();
 			ns.Expect(n=>n.FullName).Return ("My.Namespace");
 			options.ResolveResult = new NamespaceResolveResult(ns);
