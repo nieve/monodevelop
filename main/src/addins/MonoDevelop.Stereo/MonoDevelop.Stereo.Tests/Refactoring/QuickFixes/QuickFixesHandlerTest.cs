@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using MonoDevelop.Refactoring;
-using MonoDevelop.Stereo.Refactoring.MoveToAnotherFile;
 using MonoDevelop.Stereo.Refactoring.QuickFixes;
 using NUnit.Framework;
 using Rhino.Mocks;

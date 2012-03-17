@@ -46,22 +46,19 @@
     <Compile Include="Refactoring\Rename\NamespaceValidatorTest.cs" />
     <Compile Include="Refactoring\Rename\RenameNamespaceRefactoringTest.cs" />
     <Compile Include="Refactoring\GenerateNewType\GenerateNewTypeRefactoringTest.cs" />
-    <Compile Include="Refactoring\MoveToAnotherFile\MoveToAnotherFileRefactoringTest.cs" />
     <Compile Include="TextEditor\DuplicateTextHandlerTest.cs" />
-    <Compile Include="Refactoring\MoveToAnotherFile\MoveToAnotherFileHandlerTest.cs" />
     <Compile Include="Refactoring\QuickFixes\RefactoringTasksProviderTest.cs" />
     <Compile Include="Refactoring\QuickFixes\QuickFixesControllerTest.cs" />
     <Compile Include="Refactoring\CreateDerivedType\CreateDerivedTypeRefactoringTest.cs" />
-    <Compile Include="Refactoring\NewTypeFormatProviders\NewTypeFileContentProviderTest.cs" />
     <Compile Include="Refactoring\NewTypeFormatProviders\TypeContentResolverTest.cs" />
     <Compile Include="Refactoring\Rename\NamespaceSearchedLineTest.cs" />
+    <Compile Include="Refactoring\QuickFixes\QuickFixesHandlerTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Folder Include="Refactoring\" />
     <Folder Include="Refactoring\Rename\" />
     <Folder Include="Refactoring\GenerateNewType\" />
-    <Folder Include="Refactoring\MoveToAnotherFile\" />
     <Folder Include="TextEditor\" />
     <Folder Include="Refactoring\QuickFixes\" />
     <Folder Include="Refactoring\CreateDerivedType\" />

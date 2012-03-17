@@ -65,10 +65,8 @@
     <Compile Include="TextEditor\DuplicateTextHandler.cs" />
     <Compile Include="TextEditor\DuplicateText.cs" />
     <Compile Include="Infrastructure\Contexts\DocumentContext.cs" />
-    <Compile Include="Infrastructure\Contexts\MoveTypeContext.cs" />
     <Compile Include="Infrastructure\Contexts\NonexistantTypeContext.cs" />
     <Compile Include="Infrastructure\Contexts\TextDuplicationContext.cs" />
-    <Compile Include="Refactoring\MoveToAnotherFile\MoveToAnotherFileRefactoring.cs" />
     <Compile Include="Refactoring\QuickFixes\RefactoringTasksProvider.cs" />
     <Compile Include="Refactoring\QuickFixes\QuickFixesController.cs" />
     <Compile Include="Refactoring\QuickFixes\QuickFixesHandler.cs" />
@@ -76,7 +74,6 @@
     <Compile Include="Refactoring\CreateDerivedType\CreateDerivedTypeRefactoring.cs" />
     <Compile Include="Infrastructure\Contexts\NonConcreteTypeContext.cs" />
     <Compile Include="Refactoring\AppendingNewTypeRefactoringOperation.cs" />
-    <Compile Include="Refactoring\NewTypeFormatProviders\NewTypeFileContentProvider.cs" />
     <Compile Include="Refactoring\NewTypeFormatProviders\TypeContentResolver.cs" />
     <Compile Include="Refactoring\Rename\RenameNamespaceHandler.cs" />
     <Compile Include="Refactoring\Rename\NamespaceReferenceExtraction.cs" />
@@ -97,7 +94,6 @@
     <Folder Include="Refactoring\GenerateNewType\" />
     <Folder Include="TextEditor\" />
     <Folder Include="Infrastructure\Contexts\" />
-    <Folder Include="Refactoring\MoveToAnotherFile\" />
     <Folder Include="Refactoring\QuickFixes\" />
     <Folder Include="Refactoring\CreateDerivedType\" />
     <Folder Include="Refactoring\NewTypeFormatProviders\" />
