@@ -65,22 +65,16 @@ namespace MonoDevelop.Stereo.Refactoring.GenerateNewType
 		public bool IsValid(){
 			ResolveResult resolvedTypeName = context.GetUnknownTypeResolvedResult();
 			return resolvedTypeName != null;
-//				&& resolvedTypeName.ResolvedExpression != null && resolvedTypeName.ResolvedType.Type == null;
 		}
 		
 		public override void Run (RefactoringOptions options)
 		{
-			var declaringType = options.ResolveResult.Type; //TODO: this will probably be wrong, needs calling type...
 			MonoDevelop.Ide.Gui.Document doc = options.Document;
-//			var fileName = doc.FileName;
-//			MonoDevelop.Ide.Gui.Document openDocument = IdeApp.Workbench.OpenDocument(fileName, (OpenDocumentOptions) 39);
-//			if (openDocument == null) {
-//				MessageService.ShowError(string.Format("Can't open file {0}.", fileName));
-//			}
-//			else {
-				insertionPoint = GetInsertionPoint(doc, declaringType);
-				base.Run(options);
-//			}
+			var parsedDocument = doc.ParsedDocument;
+			var comp = doc.Compilation;
+			var type = parsedDocument.GetTypeResolveContext(comp, options.Location).CurrentTypeDefinition;
+			insertionPoint = GetInsertionPoint(doc, type);
+			base.Run(options);
 		}
 				
 		public override List<Change> PerformChanges (RefactoringOptions options, object properties)
@@ -92,11 +86,10 @@ namespace MonoDevelop.Stereo.Refactoring.GenerateNewType
 			int num = data.Document.LocationToOffset(insertionPoint.Location);
 			textReplaceChange.Offset = num;
 			
-			var resolveResult = context.GetUnknownTypeResolvedResult ();
+			var resolveResult = options.ResolveResult;
 			if (resolveResult == null) throw new InvalidOperationException("Cannot generate class here");
-			var nspace = resolveResult.Type.Namespace; //TODO: was CallingType.Namespace
 			
-			string newTypeName = (resolveResult as UnknownIdentifierResolveResult).Identifier; //TODO: need to cater for ErrorResolveResult
+			string newTypeName = (resolveResult as UnknownIdentifierResolveResult).Identifier;
 			StringBuilder contentBuilder = new StringBuilder();
 			if (insertionPoint.LineBefore == NewLineInsertion.Eol) contentBuilder.Append(data.EolMarker);
 			contentBuilder.Append(data.EolMarker);

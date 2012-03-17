@@ -12,7 +12,7 @@ using ICSharpCode.NRefactory.TypeSystem;
 
 namespace MonoDevelop.Stereo.GenerateNewTypeRefactoringTest {
 	[TestFixture]
-	public class PerformingChanges
+	public class PerformChanges
 	{
 		INonexistantTypeContext ctx = MockRepository.GenerateMock<INonexistantTypeContext>();
 		IResolveTypeContent resolver = MockRepository.GenerateMock<IResolveTypeContent>();
@@ -33,13 +33,14 @@ namespace MonoDevelop.Stereo.GenerateNewTypeRefactoringTest {
 		
 		[SetUp]
 		public void SetTest(){
+			RefactoringOptions options = new RefactoringOptions();
 			UnknownIdentifierResolveResult result = new UnknownIdentifierResolveResult("NonExistant", 0);
-			ctx.Stub(c=>c.GetUnknownTypeResolvedResult()).Return(result);
+			options.ResolveResult = result;
 			ctx.Stub(c=>c.GetCurrentFilePath()).Return(new FilePath(dir + fileName));
 			
 			resolver.Stub(r=>r.GetNewTypeContent(Arg<string>.Is.Equal("NonExistant"), Arg<string>.Is.Anything, Arg<string>.Is.Anything)).Return (fileContent);
 			
-			changes = generateClassRefactoring.PerformChanges(null, null);
+			changes = generateClassRefactoring.PerformChanges(options, null);
 		}
 		
 		[Test()]

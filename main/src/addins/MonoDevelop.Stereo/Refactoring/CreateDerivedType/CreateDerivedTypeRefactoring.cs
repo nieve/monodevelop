@@ -43,7 +43,7 @@ namespace MonoDevelop.Stereo.Refactoring.CreateDerivedType
 		{
 			string name = (string) prop;
 			var type = context.GetNonConcreteType();
-			var fileName = options.Document.FileName;// type.CompilationUnit.FileName;
+			var fileName = options.Document.FileName;
 			MonoDevelop.Ide.Gui.Document openDocument = IdeApp.Workbench.OpenDocument(fileName, (OpenDocumentOptions) 39);
 			if (openDocument == null) MessageService.ShowError(string.Format("Can't open file {0}.", fileName));
 			else insertionPoint = GetInsertionPoint(openDocument, type);

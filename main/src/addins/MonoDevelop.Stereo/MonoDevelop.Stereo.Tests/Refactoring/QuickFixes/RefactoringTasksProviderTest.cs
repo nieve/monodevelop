@@ -21,7 +21,7 @@ namespace MonoDevelop.Stereo.RefactoringTasksProviderTest
 		public void Returns_two_tasks ()
 		{
 			var tasks = subject.GetPossibleRefactoring();
-			Assert.That(tasks.Count() == 3, "should have returned 2 tasks, but returned " + tasks.Count());
+			Assert.That(tasks.Count() == 2, "should have returned 2 tasks, but returned " + tasks.Count());
 		}
 		
 		[Test()]
@@ -29,13 +29,6 @@ namespace MonoDevelop.Stereo.RefactoringTasksProviderTest
 		{
 			var tasks = subject.GetPossibleRefactoring();
 			Assert.That(tasks.Any(t=>t.GetType().Name == "GenerateNewTypeRefactoring"), "should have returned GenerateNewTypeRefactoring");
-		}
-		
-		[Test()]
-		public void Returns_move_to_another_file ()
-		{
-			var tasks = subject.GetPossibleRefactoring();
-			Assert.That(tasks.Any(t=>t.GetType().Name == "MoveToAnotherFileRefactoring"), "should have returned MoveToAnotherFileRefactoring");
 		}
 		
 		[Test()]
