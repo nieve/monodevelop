@@ -1,6 +1,8 @@
 #Autosave files
 *~
 
+TODO.txt
+
 #build stuff
 obj/
 /main/build/bin

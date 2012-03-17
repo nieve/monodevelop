@@ -1,5 +1,6 @@
 using System;
 using ICSharpCode.NRefactory.TypeSystem;
+using ICSharpCode.NRefactory.TypeSystem.Implementation;
 
 namespace MonoDevelop.Stereo
 {
@@ -7,11 +8,10 @@ namespace MonoDevelop.Stereo
 	{
 		public bool IsCurrentLocationNonConcreteType ()
 		{
-			//TODO: Works only for interfaces currently. make it work for abstracts as well.
 			var result = GetResolvedResult();
-			if (result.Type != null) {
+			if (result != null) {
 				var type = result.Type;
-				if (type != null) return type.Kind == TypeKind.Interface;
+				if (type != null) return (type is ITypeDefinition && (type as ITypeDefinition).IsAbstract) || type.Kind == TypeKind.Interface;
 			}
 			return false;
 		}

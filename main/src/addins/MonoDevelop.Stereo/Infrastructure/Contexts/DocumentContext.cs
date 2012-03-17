@@ -14,7 +14,6 @@ namespace MonoDevelop.Stereo
 	
 	public class DocumentContext : IDocumentContext
 	{
-		MonoDevelop.Ide.Gui.Document activeDocument = null;
 		ITextBuffer data = null;
 		
 		public FilePath GetCurrentFilePath(){
@@ -25,7 +24,7 @@ namespace MonoDevelop.Stereo
 		
 		protected Document GetActiveDocument ()
 		{
-			return activeDocument ?? IdeApp.Workbench.ActiveDocument;
+			return IdeApp.Workbench.ActiveDocument;
 		}
 
 		protected ITextBuffer GetData (Document doc)
