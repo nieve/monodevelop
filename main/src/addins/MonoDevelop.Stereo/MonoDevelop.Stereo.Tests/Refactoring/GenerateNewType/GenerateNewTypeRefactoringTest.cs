@@ -4,7 +4,7 @@ using MonoDevelop.Core;
 using MonoDevelop.Refactoring;
 using MonoDevelop.Stereo;
 using MonoDevelop.Stereo.Refactoring.GenerateNewType;
-using MonoDevelop.Stereo.Refactoring.NewTypeFormatProviders;
+using MonoDevelop.Stereo.Refactoring.NewTypeContentBuilders;
 using NUnit.Framework;
 using Rhino.Mocks;
 using ICSharpCode.NRefactory.Semantics;

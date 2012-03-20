@@ -5,7 +5,7 @@ using Mono.TextEditor;
 using MonoDevelop.Ide;
 using MonoDevelop.Ide.Gui;
 using MonoDevelop.Refactoring;
-using MonoDevelop.Stereo.Refactoring.NewTypeFormatProviders;
+using MonoDevelop.Stereo.Refactoring.NewTypeContentBuilders;
 using MonoDevelop.Stereo.Refactoring.QuickFixes;
 using ICSharpCode.NRefactory.Semantics;
 

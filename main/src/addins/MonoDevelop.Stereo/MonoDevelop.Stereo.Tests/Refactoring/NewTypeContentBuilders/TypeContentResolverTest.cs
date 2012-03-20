@@ -1,4 +1,4 @@
-using MonoDevelop.Stereo.Refactoring.NewTypeFormatProviders;
+using MonoDevelop.Stereo.Refactoring.NewTypeContentBuilders;
 using NUnit.Framework;
 
 namespace MonoDevelop.Stereo.TypeContentResolverTest

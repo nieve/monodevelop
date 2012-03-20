@@ -50,9 +50,10 @@
     <Compile Include="Refactoring\QuickFixes\RefactoringTasksProviderTest.cs" />
     <Compile Include="Refactoring\QuickFixes\QuickFixesControllerTest.cs" />
     <Compile Include="Refactoring\CreateDerivedType\CreateDerivedTypeRefactoringTest.cs" />
-    <Compile Include="Refactoring\NewTypeFormatProviders\TypeContentResolverTest.cs" />
     <Compile Include="Refactoring\Rename\NamespaceSearchedLineTest.cs" />
     <Compile Include="Refactoring\QuickFixes\QuickFixesHandlerTest.cs" />
+    <Compile Include="Refactoring\NewTypeContentBuilders\TypeContentResolverTest.cs" />
+    <Compile Include="Refactoring\NewTypeContentBuilders\DerivedTypeContentBuilderTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -62,7 +63,7 @@
     <Folder Include="TextEditor\" />
     <Folder Include="Refactoring\QuickFixes\" />
     <Folder Include="Refactoring\CreateDerivedType\" />
-    <Folder Include="Refactoring\NewTypeFormatProviders\" />
+    <Folder Include="Refactoring\NewTypeContentBuilders\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoDevelop.Stereo.Gui\MonoDevelop.Stereo.Gui.csproj">

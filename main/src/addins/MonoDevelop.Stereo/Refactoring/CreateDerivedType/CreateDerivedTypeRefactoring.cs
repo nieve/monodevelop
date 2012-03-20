@@ -7,8 +7,10 @@ using MonoDevelop.Ide.Gui;
 using MonoDevelop.Refactoring;
 using MonoDevelop.Stereo.Gui;
 using MonoDevelop.Stereo.Refactoring.GenerateNewType;
-using MonoDevelop.Stereo.Refactoring.NewTypeFormatProviders;
+using MonoDevelop.Stereo.Refactoring.NewTypeContentBuilders;
 using MonoDevelop.Stereo.Refactoring.QuickFixes;
+using ICSharpCode.NRefactory.TypeSystem;
+using System.Collections;
 
 namespace MonoDevelop.Stereo.Refactoring.CreateDerivedType
 {
@@ -18,15 +20,15 @@ namespace MonoDevelop.Stereo.Refactoring.CreateDerivedType
 	{
 		INonConcreteTypeContext context;
 		InsertionPoint insertionPoint = null;
-		IResolveTypeContent fileFormatResolver;
+		IBuildDerivedTypeContent builder;
 		INameValidator validator;
 		
-		public CreateDerivedTypeRefactoring () : this(new NonConcreteTypeContext(), new TypeContentResolver(), new TypeNameValidator()) { }		
+		public CreateDerivedTypeRefactoring () : this(new NonConcreteTypeContext(), new DerivedTypeContentBuilder(), new TypeNameValidator()) { }		
 		
-		public CreateDerivedTypeRefactoring (INonConcreteTypeContext context, IResolveTypeContent resolver, INameValidator validator)
+		public CreateDerivedTypeRefactoring (INonConcreteTypeContext context, IBuildDerivedTypeContent builder, INameValidator validator)
 		{
 			this.context = context;
-			fileFormatResolver = resolver;
+			this.builder = builder;
 			this.validator = validator;
 		}
 		
@@ -41,15 +43,15 @@ namespace MonoDevelop.Stereo.Refactoring.CreateDerivedType
 		
 		public override List<Change> PerformChanges (RefactoringOptions options, object prop)
 		{
-			string name = (string) prop;
+			string newTypeName = (string) prop;
 			var type = context.GetNonConcreteType();
 			var fileName = options.Document.FileName;
 			MonoDevelop.Ide.Gui.Document openDocument = IdeApp.Workbench.OpenDocument(fileName, (OpenDocumentOptions) 39);
 			if (openDocument == null) MessageService.ShowError(string.Format("Can't open file {0}.", fileName));
 			else insertionPoint = GetInsertionPoint(openDocument, type);
 			
+			var methods = GetMethodsToImplement(type);
 			List<Change> changes = new List<Change>();
-			var newTypeName = name + " : " + type.Name;
 			var textReplaceChange = new TextReplaceChange();
 			textReplaceChange.FileName = fileName;
 			textReplaceChange.RemovedChars = 0;
@@ -61,8 +63,7 @@ namespace MonoDevelop.Stereo.Refactoring.CreateDerivedType
 			contentBuilder.Append(data.EolMarker);
 			contentBuilder.Append(data.EolMarker);
 			
-			// TODO: Add methods implementations
-			var content = fileFormatResolver.GetNewTypeContent(newTypeName, indent, data.EolMarker);
+			var content = builder.Build(newTypeName, type.Name, indent, data.EolMarker, methods, IsImplementInterface(type));
 			contentBuilder.Append(content);
 			
 			if (insertionPoint.LineAfter == NewLineInsertion.None) contentBuilder.Append(data.EolMarker);
@@ -70,6 +71,18 @@ namespace MonoDevelop.Stereo.Refactoring.CreateDerivedType
 			
 			changes.Add(textReplaceChange);			
 			return changes;
+		}
+
+		bool IsImplementInterface (IType type)
+		{
+			return type.Kind == TypeKind.Interface;
+		}
+
+		public IEnumerable<IMethod> GetMethodsToImplement (IType type)
+		{
+			return IsImplementInterface (type) ? 
+				type.GetMethods(m=>true, GetMemberOptions.IgnoreInheritedMembers) : 
+				type.GetMethods(m=>m.IsAbstract, GetMemberOptions.IgnoreInheritedMembers);
 		}
 		
 		public override bool IsValid (RefactoringOptions options)

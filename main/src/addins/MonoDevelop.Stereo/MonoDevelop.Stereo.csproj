@@ -80,6 +80,7 @@
     <Compile Include="Refactoring\Rename\NamespaceSearchedLine.cs" />
     <Compile Include="Refactoring\Rename\NamespaceReferenceController.cs" />
     <Compile Include="Refactoring\Rename\InlineNamespaceReferenceFinder.cs" />
+    <Compile Include="Refactoring\NewTypeFormatProviders\DerivedTypeContentBuilder.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

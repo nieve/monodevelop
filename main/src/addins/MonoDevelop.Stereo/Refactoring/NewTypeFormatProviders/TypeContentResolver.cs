@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace MonoDevelop.Stereo.Refactoring.NewTypeFormatProviders
+namespace MonoDevelop.Stereo.Refactoring.NewTypeContentBuilders
 {
 	public interface IResolveTypeContent
 	{
