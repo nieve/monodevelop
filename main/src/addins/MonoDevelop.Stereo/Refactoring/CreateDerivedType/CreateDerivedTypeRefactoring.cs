@@ -22,6 +22,10 @@ namespace MonoDevelop.Stereo.Refactoring.CreateDerivedType
 		InsertionPoint insertionPoint = null;
 		IBuildDerivedTypeContent builder;
 		INameValidator validator;
+		string fileName;
+		public IType Type {get;set;}
+		public TextEditorData Data {set{data=value;}}
+		public InsertionPoint InsertionPoint {set{insertionPoint=value;}}
 		
 		public CreateDerivedTypeRefactoring () : this(new NonConcreteTypeContext(), new DerivedTypeContentBuilder(), new TypeNameValidator()) { }		
 		
@@ -38,35 +42,35 @@ namespace MonoDevelop.Stereo.Refactoring.CreateDerivedType
 		
 		public override void Run (RefactoringOptions options)
 		{
+			Type = context.GetNonConcreteType();
+			fileName = options.Document.FileName;
+			MonoDevelop.Ide.Gui.Document openDocument = IdeApp.Workbench.OpenDocument(fileName, (OpenDocumentOptions) 39);
+			if (openDocument == null) MessageService.ShowError(string.Format("Can't open file {0}.", fileName));
+			else insertionPoint = GetInsertionPoint(openDocument, Type);
 			MessageService.ShowCustomDialog((Dialog) new RefactoringNamingDialog(options, this, validator));
 		}
 		
 		public override List<Change> PerformChanges (RefactoringOptions options, object prop)
 		{
 			string newTypeName = (string) prop;
-			var type = context.GetNonConcreteType();
-			var fileName = options.Document.FileName;
-			MonoDevelop.Ide.Gui.Document openDocument = IdeApp.Workbench.OpenDocument(fileName, (OpenDocumentOptions) 39);
-			if (openDocument == null) MessageService.ShowError(string.Format("Can't open file {0}.", fileName));
-			else insertionPoint = GetInsertionPoint(openDocument, type);
 			
-			var methods = GetMethodsToImplement(type);
+			var methods = GetMethodsToImplement(Type);
 			List<Change> changes = new List<Change>();
 			var textReplaceChange = new TextReplaceChange();
 			textReplaceChange.FileName = fileName;
-			textReplaceChange.RemovedChars = 0;
-			int num = data.Document.LocationToOffset(insertionPoint.Location);
-			textReplaceChange.Offset = num;
+			textReplaceChange.RemovedChars = 0;			
+			textReplaceChange.Offset = context.GetOffset(data, insertionPoint.Location);
 			
 			StringBuilder contentBuilder = new StringBuilder();
-			if (insertionPoint.LineBefore == NewLineInsertion.Eol) contentBuilder.Append(data.EolMarker);
-			contentBuilder.Append(data.EolMarker);
-			contentBuilder.Append(data.EolMarker);
+			string eol = data.EolMarker;
+			if (insertionPoint.LineBefore == NewLineInsertion.Eol) contentBuilder.Append(eol);
+			contentBuilder.Append(eol);
+			contentBuilder.Append(eol);
 			
-			var content = builder.Build(newTypeName, type.Name, indent, data.EolMarker, methods, IsImplementInterface(type));
+			var content = builder.Build(newTypeName, Type.Name, indent, eol, methods, IsImplementInterface(Type));
 			contentBuilder.Append(content);
 			
-			if (insertionPoint.LineAfter == NewLineInsertion.None) contentBuilder.Append(data.EolMarker);
+			if (insertionPoint.LineAfter == NewLineInsertion.None) contentBuilder.Append(eol);
 			textReplaceChange.InsertedText = contentBuilder.ToString();
 			
 			changes.Add(textReplaceChange);			

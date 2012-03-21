@@ -1,6 +1,7 @@
 using System;
 using ICSharpCode.NRefactory.TypeSystem;
 using ICSharpCode.NRefactory.TypeSystem.Implementation;
+using Mono.TextEditor;
 
 namespace MonoDevelop.Stereo
 {
@@ -21,12 +22,18 @@ namespace MonoDevelop.Stereo
 			var result = GetResolvedResult();
 			return result.Type;
 		}
+		
+		public int GetOffset (TextEditorData data, Mono.TextEditor.DocumentLocation location)
+		{
+			return data.Document.LocationToOffset(location);
+		}
 	}
 	
 	public interface INonConcreteTypeContext : IDocumentContext
 	{
 		bool IsCurrentLocationNonConcreteType();
 		IType GetNonConcreteType();
+		int GetOffset (TextEditorData data, DocumentLocation location);
 	}
 }
 
