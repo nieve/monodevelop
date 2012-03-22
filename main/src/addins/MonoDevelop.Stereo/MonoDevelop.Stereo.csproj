@@ -81,6 +81,8 @@
     <Compile Include="Refactoring\Rename\NamespaceReferenceController.cs" />
     <Compile Include="Refactoring\Rename\InlineNamespaceReferenceFinder.cs" />
     <Compile Include="Refactoring\NewTypeFormatProviders\DerivedTypeContentBuilder.cs" />
+    <Compile Include="Refactoring\Extract\ExtractFieldHandler.cs" />
+    <Compile Include="Infrastructure\Contexts\VariableContext.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -98,6 +100,7 @@
     <Folder Include="Refactoring\QuickFixes\" />
     <Folder Include="Refactoring\CreateDerivedType\" />
     <Folder Include="Refactoring\NewTypeFormatProviders\" />
+    <Folder Include="Refactoring\Extract\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\core\MonoDevelop.Core\MonoDevelop.Core.csproj">

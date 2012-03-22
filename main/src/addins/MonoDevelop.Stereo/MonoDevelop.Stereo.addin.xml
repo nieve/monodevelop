@@ -44,5 +44,12 @@
 				shortcut="Ctrl|Alt|R"
 				_label = "_Rename namespace"/>
 	</Extension>
+	
+	<Extension path = "/MonoDevelop/Ide/Commands/Refactoring">
+		<Command id = "MonoDevelop.Refactoring.RefactoryCommands.ExtractField"
+				defaultHandler = "MonoDevelop.Stereo.Refactoring.ExtractFieldHandler"
+				shortcut="Ctrl+R|Ctrl+F"
+				_label = "Extract _field"/>
+	</Extension>
 
 </Addin>

@@ -9,7 +9,11 @@ namespace MonoDevelop.Stereo
 {
 	public interface IDocumentContext
 	{
-		FilePath GetCurrentFilePath();		
+		FilePath GetCurrentFilePath();
+		Document GetActiveDocument ();
+		ITextBuffer GetData (Document doc);
+		ITextBuffer GetData ();
+		ResolveResult GetResolvedResult ();
 	}
 	
 	public class DocumentContext : IDocumentContext
@@ -22,22 +26,22 @@ namespace MonoDevelop.Stereo
 			return doc.FileName;
 		}
 		
-		protected Document GetActiveDocument ()
+		public Document GetActiveDocument ()
 		{
 			return IdeApp.Workbench.ActiveDocument;
 		}
 
-		protected ITextBuffer GetData (Document doc)
+		public ITextBuffer GetData (Document doc)
 		{
 			return data ?? doc.GetContent<ITextBuffer> ();
 		}
 
-		protected ITextBuffer GetData ()
+		public ITextBuffer GetData ()
 		{
 			return GetData(GetActiveDocument());
 		}
 
-		protected ResolveResult GetResolvedResult ()
+		public ResolveResult GetResolvedResult ()
 		{
 			Document doc = GetActiveDocument();
 			if (doc == null || doc.FileName == FilePath.Null || IdeApp.ProjectOperations.CurrentSelectedSolution == null)
