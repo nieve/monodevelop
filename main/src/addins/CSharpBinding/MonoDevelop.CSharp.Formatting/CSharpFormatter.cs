@@ -25,62 +25,19 @@
 // THE SOFTWARE.
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using System.Text;
 
 
 using Mono.TextEditor;
 using MonoDevelop.CSharp.Formatting;
-using MonoDevelop.CSharp.Resolver;
 using MonoDevelop.Ide.Gui.Content;
-using MonoDevelop.Projects.Text;
 using MonoDevelop.Projects.Policies;
-using MonoDevelop.Ide;
 using System.Linq;
 using MonoDevelop.Ide.CodeFormatting;
-using ICSharpCode.NRefactory;
 using ICSharpCode.NRefactory.CSharp;
-using ICSharpCode.NRefactory.CSharp.Refactoring;
-using MonoDevelop.CSharp.ContextAction;
-using ICSharpCode.NRefactory.TypeSystem;
 using MonoDevelop.Core;
 
 namespace MonoDevelop.CSharp.Formatting
 {
-
-	class FormattingActionFactory : AbstractActionFactory
-	{
-		Mono.TextEditor.TextEditorData data;
-
-		class ConcreteTextReplaceAction : TextReplaceAction
-		{
-			Mono.TextEditor.TextEditorData data;
-
-			public ConcreteTextReplaceAction (Mono.TextEditor.TextEditorData data, int offset, int removedChars, string insertedText) : base (offset, removedChars, insertedText)
-			{
-				this.data = data;
-			}
-			
-			public override void Perform (Script script)
-			{
-				data.Replace (Offset, RemovedChars, InsertedText);
-			}
-		}
-
-		public FormattingActionFactory (Mono.TextEditor.TextEditorData data)
-		{
-			if (data == null)
-				throw new ArgumentNullException ("data");
-			this.data = data;
-		}
-		
-		public override TextReplaceAction CreateTextReplaceAction (int offset, int removedChars, string insertedText)
-		{
-			return new ConcreteTextReplaceAction (data, offset, removedChars, insertedText);
-		}
-	}
-	
 	public class CSharpFormatter : AbstractAdvancedFormatter
 	{
 		static internal readonly string MimeType = "text/x-csharp";
@@ -137,7 +94,7 @@ namespace MonoDevelop.CSharp.Formatting
 			// System.Console.WriteLine ("-----");
 			// System.Console.WriteLine (data.Text.Replace (" ", ".").Replace ("\t", "->"));
 			// System.Console.WriteLine ("-----");
-			
+
 			var parser = new CSharpParser ();
 			var compilationUnit = parser.Parse (data);
 			bool hadErrors = parser.HasErrors;
@@ -147,22 +104,16 @@ namespace MonoDevelop.CSharp.Formatting
 //					Console.WriteLine (e.Message);
 				return input.Substring (startOffset, Math.Max (0, Math.Min (endOffset, input.Length) - startOffset));
 			}
-			var factory = new FormattingActionFactory (data);
-			var formattingVisitor = new ICSharpCode.NRefactory.CSharp.AstFormattingVisitor (policy.CreateOptions (), data.Document, factory, data.Options.TabsToSpaces, data.Options.IndentationSize) {
+
+			var originalVersion = data.Document.Version;
+
+			var formattingVisitor = new ICSharpCode.NRefactory.CSharp.AstFormattingVisitor (policy.CreateOptions (), data.Document, data.Options.TabsToSpaces, data.Options.IndentationSize) {
 				HadErrors = hadErrors,
 				EolMarker = data.EolMarker
 			};
-			
 			compilationUnit.AcceptVisitor (formattingVisitor);
-			
-			var changes = new List<ICSharpCode.NRefactory.CSharp.Refactoring.Action> ();
-			changes.AddRange (formattingVisitor.Changes.
-				Where (c => (startOffset <= c.Offset && c.Offset < endOffset)));
-			var endPositionChange = factory.CreateTextReplaceAction (endOffset, 0, "//end");
-			changes.Add (endPositionChange);
-			changes.Sort ((x, y) => ((TextReplaceAction)x).Offset.CompareTo (((TextReplaceAction)y).Offset));
-			MDRefactoringContext.MdScript.RunActions (changes, null);
-			
+			formattingVisitor.ApplyChanges (startOffset, endOffset - startOffset);
+
 			// check if the formatter has produced errors
 			parser = new CSharpParser ();
 			parser.Parse (data);
@@ -170,11 +121,10 @@ namespace MonoDevelop.CSharp.Formatting
 				LoggingService.LogError ("C# formatter produced source code errors. See console for output.");
 				return input.Substring (startOffset, Math.Max (0, Math.Min (endOffset, input.Length) - startOffset));
 			}
-			
-/*			System.Console.WriteLine ("-----");
-			System.Console.WriteLine (data.Text.Replace (" ", "^").Replace ("\t", "->"));
-			System.Console.WriteLine ("-----");*/
-			string result = data.GetTextBetween (startOffset, Math.Min (data.Length, endPositionChange.Offset));
+
+			var currentVersion = data.Document.Version;
+
+			string result = data.GetTextBetween (startOffset, originalVersion.MoveOffsetTo (currentVersion, endOffset, ICSharpCode.NRefactory.Editor.AnchorMovementType.Default));
 			data.Dispose ();
 			return result;
 		}

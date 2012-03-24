@@ -2,7 +2,6 @@
 DEPS =  \
 	$(top_builddir)/build/bin/ICSharpCode.NRefactory.CSharp.dll \
 	$(top_builddir)/build/bin/ICSharpCode.NRefactory.dll \
-	$(top_builddir)/build/bin/Mono.Cecil.dll \
 	$(top_builddir)/build/bin/Mono.TextEditor.dll \
 	$(top_builddir)/build/bin/MonoDevelop.Core.dll \
 	$(top_builddir)/build/bin/MonoDevelop.Projects.Formats.MSBuild.exe
@@ -14,6 +13,7 @@ REFS =  \
 	$(MONO_ADDINS_LIBS) \
 	$(MONO_ADDINS_SETUP_LIBS) \
 	$(MONODOC_LIBS) \
+	-r:../../../build/bin/Mono.Cecil.dll \
 	-r:ICSharpCode.SharpZipLib \
 	-r:Mono.Cairo \
 	-r:Mono.Posix \
@@ -386,6 +386,7 @@ FILES =  \
 	MonoDevelop.Ide.FindInFiles/FindInFilesDialog.cs \
 	MonoDevelop.Ide.FindInFiles/FindReplace.cs \
 	MonoDevelop.Ide.FindInFiles/ISearchProgressMonitor.cs \
+	MonoDevelop.Ide.FindInFiles/MemberCollector.cs \
 	MonoDevelop.Ide.FindInFiles/MemberReference.cs \
 	MonoDevelop.Ide.FindInFiles/ReferencesFinder.cs \
 	MonoDevelop.Ide.FindInFiles/Scope.cs \
@@ -445,7 +446,6 @@ FILES =  \
 	MonoDevelop.Ide.Gui.Content/IUrlHandler.cs \
 	MonoDevelop.Ide.Gui.Content/IZoomable.cs \
 	MonoDevelop.Ide.Gui.Content/TextEditorExtension.cs \
-	MonoDevelop.Ide.Gui.Content/TextEditorProperties.cs \
 	MonoDevelop.Ide.Gui.Content/TextStylePolicy.cs \
 	MonoDevelop.Ide.Gui.Dialogs/AboutMonoDevelopTabPage.cs \
 	MonoDevelop.Ide.Gui.Dialogs/AddinLoadErrorDialog.cs \

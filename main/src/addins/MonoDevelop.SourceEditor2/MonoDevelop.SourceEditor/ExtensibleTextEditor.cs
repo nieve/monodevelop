@@ -64,7 +64,7 @@ namespace MonoDevelop.SourceEditor
 			get { return (ISourceEditorOptions)base.Options; }
 		}
 		
-		public ExtensibleTextEditor (SourceEditorView view, ISourceEditorOptions options, Mono.TextEditor.Document doc) : base(doc, options)
+		public ExtensibleTextEditor (SourceEditorView view, ISourceEditorOptions options, Mono.TextEditor.TextDocument doc) : base(doc, options)
 		{
 			Initialize (view);
 		}
@@ -105,7 +105,6 @@ namespace MonoDevelop.SourceEditor
 			};
 			
 			UpdateEditMode ();
-			this.GetTextEditorData ().Paste += HandleTextPaste;
 			this.DoPopupMenu = ShowPopup;
 		}
 		
@@ -253,7 +252,7 @@ namespace MonoDevelop.SourceEditor
 			}
 		}
 		
-		static IEnumerable<KeyValuePair <char, int>> GetTextWithoutCommentsAndStrings (Mono.TextEditor.Document doc, int start, int end) 
+		static IEnumerable<KeyValuePair <char, int>> GetTextWithoutCommentsAndStrings (Mono.TextEditor.TextDocument doc, int start, int end) 
 		{
 			bool isInString = false, isInChar = false;
 			bool isInLineComment = false, isInBlockComment = false;
@@ -316,9 +315,11 @@ namespace MonoDevelop.SourceEditor
 			bool inChar = false;
 			bool inComment = false;
 			bool inString = false;
-//			string escape = "\"";
+			//			string escape = "\"";
 			var stack = line.StartSpan.Clone ();
-			Mono.TextEditor.Highlighting.SyntaxModeService.ScanSpans (Document, Document.SyntaxMode, Document.SyntaxMode, stack, line.Offset, Caret.Offset);
+			var sm = Document.SyntaxMode as SyntaxMode;
+			if (sm != null)
+				Mono.TextEditor.Highlighting.SyntaxModeService.ScanSpans (Document, sm, sm, stack, line.Offset, Caret.Offset);
 			foreach (Span span in stack) {
 				if (string.IsNullOrEmpty (span.Color))
 					continue;
@@ -625,25 +626,7 @@ namespace MonoDevelop.SourceEditor
 			return false;
 		}
 		
-		void HandleTextPaste (int insertionOffset, string text, int insertedChars)
-		{
-			if (PropertyService.Get ("OnTheFlyFormatting", true)) {
-				var prettyPrinter = CodeFormatterService.GetFormatter (Document.MimeType);
-				if (prettyPrinter != null && Project != null && text != null) {
-					try {
-						var policies = Project.Policies;
-						string newText = prettyPrinter.FormatText (policies, Document.Text, insertionOffset, insertionOffset + insertedChars);
-						if (!string.IsNullOrEmpty (newText)) {
-							int replaceResult = Replace (insertionOffset, insertedChars, newText);
-							Caret.Offset = insertionOffset + replaceResult;
-						}
-					} catch (Exception e) {
-						LoggingService.LogError ("Error formatting pasted text", e);
-					}
-				}
-			}
-		}
-		
+
 		internal void InsertTemplate (CodeTemplate template, MonoDevelop.Ide.Gui.Document document)
 		{
 			using (var undo = Document.OpenUndoGroup ()) {
@@ -656,18 +639,13 @@ namespace MonoDevelop.SourceEditor
 						int endOffset = result.InsertPosition + result.Code.Length;
 						string oldText = Document.GetTextAt (result.InsertPosition, result.Code.Length);
 						var policies = document.Project != null ? document.Project.Policies : null;
-						string text = prettyPrinter.FormatText (policies, Document.Text, result.InsertPosition, endOffset);
-						
-						if (text != null)
-							Replace (result.InsertPosition, result.Code.Length, text);
-						else
-							//if formatting failed, just use the unformatted text
-							text = oldText;
-						
-						Caret.Offset = result.InsertPosition + TranslateOffset (oldText, text, Caret.Offset - result.InsertPosition);
+						var oldVersion = Document.Version;
+						prettyPrinter.OnTheFlyFormat (document, result.InsertPosition, endOffset);
+
 						foreach (TextLink textLink in tle.Links) {
-							foreach (ISegment segment in textLink.Links) {
-								segment.Offset = TranslateOffset (oldText, text, segment.Offset);
+							for (int i = 0; i < textLink.Links.Count; i++) {
+								var segment = textLink.Links [i];
+								textLink.Links [i] = new TextSegment (oldVersion.MoveOffsetTo (Document.Version, segment.Offset, ICSharpCode.NRefactory.Editor.AnchorMovementType.Default), segment.Length);
 							}
 						}
 					}
@@ -680,30 +658,7 @@ namespace MonoDevelop.SourceEditor
 				}
 			}
 		}
-		
-		static int TranslateOffset (string baseInput, string formattedInput, int offset)
-		{
-			int i = 0;
-			int j = 0;
-			while (i < baseInput.Length && j < formattedInput.Length && i < offset) {
-				char ch1 = baseInput[i];
-				char ch2 = formattedInput[j];
-				bool ch1IsWs = Char.IsWhiteSpace (ch1);
-				bool ch2IsWs = Char.IsWhiteSpace (ch2);
-				if (ch1 == ch2 || ch1IsWs && ch2IsWs) {
-					i++;
-					j++;
-				} else if (!ch1IsWs && ch2IsWs) {
-					j++;
-				} else if (ch1IsWs && !ch2IsWs) {
-					i++;
-				} else {
-					return -1;
-				}
-			}
-			return j;
-		}
-		
+
 		protected override void HAdjustmentValueChanged ()
 		{
 			base.HAdjustmentValueChanged ();

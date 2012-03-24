@@ -72,15 +72,9 @@ namespace MonoDevelop.CSharp.Completion
 			}
 		}
 		
-		CSharpParsedFile CSharpParsedFile {
+		public CSharpParsedFile CSharpParsedFile {
 			get;
 			set;
-		}
-		
-		static bool EnableParameterInsight {
-			get {
-				return PropertyService.Get ("EnableParameterInsight", true);
-			}
 		}
 		
 		public ParsedDocument ParsedDocument {
@@ -191,9 +185,9 @@ namespace MonoDevelop.CSharp.Completion
 		
 		public override ICompletionDataList HandleCodeCompletion (CodeCompletionContext completionContext, char completionChar, ref int triggerWordLength)
 		{
-			if (!TextEditorProperties.EnableCodeCompletion)
+			if (!EnableCodeCompletion)
 				return null;
-			if (!TextEditorProperties.EnableAutoCodeCompletion && char.IsLetter (completionChar))
+			if (!EnableAutoCodeCompletion && char.IsLetter (completionChar))
 				return null;
 
 			//	var timer = Counters.ResolveTime.BeginTiming ();
@@ -371,20 +365,32 @@ namespace MonoDevelop.CSharp.Completion
 		
 		public override IParameterDataProvider HandleParameterCompletion (CodeCompletionContext completionContext, char completionChar)
 		{
-			if (!TextEditorProperties.EnableCodeCompletion)
+			if (!EnableCodeCompletion)
 				return null;
 			if (Unit == null || CSharpParsedFile == null)
 				return null;
-			var engine = new CSharpParameterCompletionEngine (
-				textEditorData.Document,
-				this,
-				Document.GetProjectContext (),
-				CSharpParsedFile.GetTypeResolveContext (Document.Compilation, document.Editor.Caret.Location) as CSharpTypeResolveContext,
-				Unit,
-				CSharpParsedFile
-			);
-			engine.MemberProvider = typeSystemSegmentTree;
-			return engine.GetParameterDataProvider (completionContext.TriggerOffset, completionChar);
+			try {
+				var engine = new CSharpParameterCompletionEngine (
+					textEditorData.Document,
+					this,
+					Document.GetProjectContext (),
+					CSharpParsedFile.GetTypeResolveContext (Document.Compilation, document.Editor.Caret.Location) as CSharpTypeResolveContext,
+					Unit,
+					CSharpParsedFile
+				);
+				engine.MemberProvider = typeSystemSegmentTree;
+				return engine.GetParameterDataProvider (completionContext.TriggerOffset, completionChar);
+			} catch (Exception e) {
+				LoggingService.LogError ("Unexpected parameter completion exception." + Environment.NewLine + 
+					"FileName: " + Document.FileName + Environment.NewLine + 
+					"Position: line=" + completionContext.TriggerLine + " col=" + completionContext.TriggerLineOffset + Environment.NewLine + 
+					"Line text: " + Document.Editor.GetLineText (completionContext.TriggerLine), 
+					e);
+				return null;
+			} finally {
+				//			if (timer != null)
+				//				timer.Dispose ();
+			}
 		}
 		
 		List<string> GetUsedNamespaces ()

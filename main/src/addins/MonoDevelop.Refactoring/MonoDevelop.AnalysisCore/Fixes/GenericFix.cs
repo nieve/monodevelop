@@ -25,16 +25,28 @@
 // THE SOFTWARE.
 using System;
 using System.Collections.Generic;
-using MonoDevelop.SourceEditor;
 using ICSharpCode.NRefactory.TypeSystem;
+using ICSharpCode.NRefactory.CSharp;
+using MonoDevelop.CodeIssues;
 
 namespace MonoDevelop.AnalysisCore.Fixes
 {
+	public class InspectorResults : GenericResults
+	{
+		public CodeIssueProvider Inspector { get; private set; }
+
+		public InspectorResults (CodeIssueProvider inspector, DomRegion region, string message, Severity level, IssueMarker mark, params GenericFix[] fixes)
+			: base (region, message, level, mark, fixes)
+		{
+			this.Inspector = inspector;
+		}
+	}
+
 	public class GenericResults : FixableResult
 	{
-		public GenericResults (DomRegion region, string message, QuickTaskSeverity level,
-			ResultCertainty certainty, ResultImportance importance, params GenericFix[] fixes)
-			: base (region, message, level, certainty, importance)
+		public GenericResults (DomRegion region, string message, Severity level,
+			IssueMarker mark, params GenericFix[] fixes)
+			: base (region, message, level, mark)
 		{
 			this.Fixes = fixes;
 		}

@@ -33,6 +33,8 @@ using System.Collections.Generic;
 using Gtk;
 using MonoDevelop.AnalysisCore.Gui;
 using MonoDevelop.SourceEditor;
+using MonoDevelop.SourceEditor.QuickTasks;
+using ICSharpCode.NRefactory.CSharp;
 
 namespace MonoDevelop.AnalysisCore
 {
@@ -118,12 +120,6 @@ namespace MonoDevelop.AnalysisCore
 			int c = ((int)r1.Level).CompareTo ((int)r2.Level);
 			if (c != 0)
 				return c;
-			c = ((int)r1.Importance).CompareTo ((int)r2.Importance);
-			if (c != 0)
-				return c;
-			c = ((int)r1.Certainty).CompareTo ((int)r2.Certainty);
-			if (c != 0)
-				return c;
 			return r1.Message.CompareTo (r2.Message);
 		}
 		
@@ -158,14 +154,14 @@ namespace MonoDevelop.AnalysisCore
 						yield return action;
 		}
 		
-		static string GetIcon (QuickTaskSeverity severity)
+		static string GetIcon (Severity severity)
 		{
 			switch (severity) {
-			case QuickTaskSeverity.Error:
+			case Severity.Error:
 				return Gtk.Stock.DialogError;
-			case QuickTaskSeverity.Warning:
+			case Severity.Warning:
 				return Gtk.Stock.DialogWarning;
-			case QuickTaskSeverity.Hint:
+			case Severity.Hint:
 				return Gtk.Stock.Info;
 			default:
 				return null;

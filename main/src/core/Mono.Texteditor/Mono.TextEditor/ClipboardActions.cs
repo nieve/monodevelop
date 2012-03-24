@@ -121,31 +121,31 @@ namespace Mono.TextEditor
 				// NOTHING ?
 			}
 	
-			public Document copiedDocument;
-			public Document monoDocument; // has a slightly different format !!!
+			public TextDocument copiedDocument;
+			public TextDocument monoDocument; // has a slightly different format !!!
 			public Mono.TextEditor.Highlighting.ColorSheme docStyle;
 			ITextEditorOptions options;
-			Mono.TextEditor.Highlighting.SyntaxMode mode;
+			Mono.TextEditor.Highlighting.ISyntaxMode mode;
 			
-			static string GenerateRtf (Document doc, Mono.TextEditor.Highlighting.SyntaxMode mode, Mono.TextEditor.Highlighting.ColorSheme style, ITextEditorOptions options)
+			static string GenerateRtf (TextDocument doc, Mono.TextEditor.Highlighting.ISyntaxMode mode, Mono.TextEditor.Highlighting.ColorSheme style, ITextEditorOptions options)
 			{
 				StringBuilder rtfText = new StringBuilder ();
 				List<Gdk.Color> colorList = new List<Gdk.Color> ();
 	
-				ISegment selection = new Segment (0, doc.Length);
+				var selection = new TextSegment (0, doc.Length);
 				int startLineNumber = doc.OffsetToLineNumber (selection.Offset);
-				int endLineNumber   = doc.OffsetToLineNumber (selection.EndOffset);
+				int endLineNumber = doc.OffsetToLineNumber (selection.EndOffset);
 				
 				bool isItalic = false;
-				bool isBold   = false;
-				int curColor  = -1;
+				bool isBold = false;
+				int curColor = -1;
 
 				foreach (var line in doc.GetLinesBetween (startLineNumber, endLineNumber)) {
 					bool appendSpace = false;
-					for (Chunk chunk = mode.GetChunks (style, line, line.Offset, line.EditableLength); chunk != null; chunk = chunk.Next) {
+					foreach (Chunk chunk in mode.GetChunks (style, line, line.Offset, line.EditableLength)) {
 						int start = System.Math.Max (selection.Offset, chunk.Offset);
-						int end   = System.Math.Min (chunk.EndOffset, selection.EndOffset);
-						ChunkStyle chunkStyle = chunk.GetChunkStyle (style);
+						int end = System.Math.Min (chunk.EndOffset, selection.EndOffset);
+						ChunkStyle chunkStyle = style.GetChunkStyle (chunk);
 						if (start < end) {
 							if (isBold != chunkStyle.Bold) {
 								rtfText.Append (chunkStyle.Bold ? @"\b" : @"\b0");
@@ -166,7 +166,7 @@ namespace Mono.TextEditor
 								appendSpace = true;
 							}
 							for (int i = start; i < end; i++) {
-								char ch = chunk.GetCharAt (doc, i);
+								char ch = doc.GetCharAt (i);
 								
 								switch (ch) {
 								case '\\':
@@ -270,8 +270,8 @@ namespace Mono.TextEditor
 				copiedDocument = null;
 				monoDocument = null;
 				if (selection != null && data != null && data.Document != null) {
-					copiedDocument = new Document ();
-					monoDocument = new Document ();
+					copiedDocument = new TextDocument ();
+					monoDocument = new TextDocument ();
 					this.docStyle = data.ColorStyle;
 					this.options = data.Options;
 					this.mode = data.Document.SyntaxMode != null && data.Options.EnableSyntaxHighlighting ? data.Document.SyntaxMode : new SyntaxMode (data.Document);
@@ -279,12 +279,12 @@ namespace Mono.TextEditor
 					case SelectionMode.Normal:
 						isBlockMode = false;
 						var segment = selection.GetSelectionRange (data);
-						var text = this.mode.GetTextWithoutMarkup (data.ColorStyle, segment.Offset, segment.Length);
+						var text = data.GetTextAt (segment);
 						copiedDocument.Text = text;
 						monoDocument.Text = text;
 						var line = data.Document.GetLineByOffset (segment.Offset);
 						var spanStack = line.StartSpan.Clone ();
-						SyntaxModeService.ScanSpans (data.Document, this.mode, this.mode, spanStack, line.Offset, segment.Offset);
+						SyntaxModeService.ScanSpans (data.Document, this.mode as SyntaxMode, this.mode as SyntaxMode, spanStack, line.Offset, segment.Offset);
 						this.copiedDocument.GetLine (DocumentLocation.MinLine).StartSpan = spanStack;
 						break;
 					case SelectionMode.Block:
@@ -310,7 +310,7 @@ namespace Mono.TextEditor
 						}
 						line = data.Document.GetLine (selection.MinLine);
 						spanStack = line.StartSpan.Clone ();
-						SyntaxModeService.ScanSpans (data.Document, this.mode, this.mode, spanStack, line.Offset, line.Offset + startCol);
+						SyntaxModeService.ScanSpans (data.Document, this.mode as SyntaxMode, this.mode as SyntaxMode, spanStack, line.Offset, line.Offset + startCol);
 						this.copiedDocument.GetLine (DocumentLocation.MinLine).StartSpan = spanStack;
 						break;
 					}
@@ -463,7 +463,7 @@ namespace Mono.TextEditor
 							data.Caret.PreserveSelection = false;
 							data.Document.CommitMultipleLineUpdate (data.MainSelection.MinLine, data.MainSelection.MaxLine);
 						} else {
-							ISegment selection = data.SelectionRange;
+							TextSegment selection = data.SelectionRange;
 							if (preserveSelection && data.IsSomethingSelected)
 								data.DeleteSelectedText ();
 							data.Caret.PreserveSelection = true;
@@ -472,7 +472,7 @@ namespace Mono.TextEditor
 							result = textLength;
 		
 							if (data.IsSomethingSelected && data.SelectionRange.Offset >= insertionOffset)
-								data.SelectionRange.Offset += textLength;
+								data.SelectionRange = new TextSegment (data.SelectionRange.Offset + textLength, data.SelectionRange.Length);
 							if (data.IsSomethingSelected && data.MainSelection.GetAnchorOffset (data) >= insertionOffset)
 								data.MainSelection.Anchor = data.Document.OffsetToLocation (data.MainSelection.GetAnchorOffset (data) + textLength);
 							
@@ -482,11 +482,11 @@ namespace Mono.TextEditor
 							} else {
 								if (caretPos >= insertionOffset)
 									data.Caret.Offset += textLength;
-								if (selection != null) {
+								if (!selection.IsInvalid) {
 									int offset = selection.Offset;
 									if (offset >= insertionOffset)
 										offset += textLength;
-									data.SelectionRange = new Segment (offset, selection.Length);
+									data.SelectionRange = new TextSegment (offset, selection.Length);
 								}
 							}
 							data.PasteText (insertionOffset, text, textLength);
@@ -507,8 +507,10 @@ namespace Mono.TextEditor
 		{
 			if (!data.CanEditSelection)
 				return;
-			data.EnsureCaretIsNotVirtual ();
-			PasteFrom (Clipboard.Get (CopyOperation.CLIPBOARD_ATOM), data, true, data.IsSomethingSelected ? data.SelectionRange.Offset : data.Caret.Offset);
+			using (var undo = data.OpenUndoGroup ()) {
+				data.EnsureCaretIsNotVirtual ();
+				PasteFrom (Clipboard.Get (CopyOperation.CLIPBOARD_ATOM), data, true, data.IsSomethingSelected ? data.SelectionRange.Offset : data.Caret.Offset);
+			}
 		}
 	}
 }

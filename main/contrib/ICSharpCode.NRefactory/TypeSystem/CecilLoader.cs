@@ -424,7 +424,7 @@ namespace ICSharpCode.NRefactory.TypeSystem
 		static readonly ITypeReference methodImplAttributeTypeRef = typeof(MethodImplAttribute).ToTypeReference();
 		static readonly ITypeReference methodImplOptionsTypeRef = typeof(MethodImplOptions).ToTypeReference();
 		
-		bool HasAnyAttributes(MethodDefinition methodDefinition)
+		static bool HasAnyAttributes(MethodDefinition methodDefinition)
 		{
 			if (methodDefinition.HasPInvokeInfo)
 				return true;
@@ -869,9 +869,8 @@ namespace ICSharpCode.NRefactory.TypeSystem
 			
 			public IList<ResolveResult> PositionalArguments {
 				get {
-					var result = this.positionalArguments;
+					var result = LazyInit.VolatileRead(ref this.positionalArguments);
 					if (result != null) {
-						LazyInit.ReadBarrier();
 						return result;
 					}
 					DecodeBlob();
@@ -881,18 +880,13 @@ namespace ICSharpCode.NRefactory.TypeSystem
 			
 			public IList<KeyValuePair<IMember, ResolveResult>> NamedArguments {
 				get {
-					var result = this.namedArguments;
+					var result = LazyInit.VolatileRead(ref this.namedArguments);
 					if (result != null) {
-						LazyInit.ReadBarrier();
 						return result;
 					}
 					DecodeBlob();
 					return namedArguments;
 				}
-			}
-			
-			public ICompilation Compilation {
-				get { return context.Compilation; }
 			}
 			
 			public override string ToString()
@@ -1034,22 +1028,6 @@ namespace ICSharpCode.NRefactory.TypeSystem
 						|(uint) ReadByte() << 16
 						|(uint) ReadByte() << 8
 						| ReadByte();
-				}
-			}
-
-			public int ReadCompressedInt32()
-			{
-				unchecked {
-					var value =(int)(ReadCompressedUInt32() >> 1);
-					if((value & 1) == 0)
-						return value;
-					if(value < 0x40)
-						return value - 0x40;
-					if(value < 0x2000)
-						return value - 0x2000;
-					if(value < 0x10000000)
-						return value - 0x10000000;
-					return value - 0x20000000;
 				}
 			}
 

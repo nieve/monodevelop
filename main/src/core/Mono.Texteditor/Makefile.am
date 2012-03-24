@@ -25,6 +25,7 @@ FILES =  \
 	Mono.TextEditor.Highlighting/ColorSheme.cs \
 	Mono.TextEditor.Highlighting/DefaultStyle.cs \
 	Mono.TextEditor.Highlighting/HighlightingPartitioner.cs \
+	Mono.TextEditor.Highlighting/ISyntaxMode.cs \
 	Mono.TextEditor.Highlighting/IXmlProvider.cs \
 	Mono.TextEditor.Highlighting/JaySyntaxMode.cs \
 	Mono.TextEditor.Highlighting/Keywords.cs \
@@ -56,6 +57,7 @@ FILES =  \
 	Mono.TextEditor.Utils/Diff.cs \
 	Mono.TextEditor.Utils/RedBlackTree.cs \
 	Mono.TextEditor.Utils/TextBreaker.cs \
+	Mono.TextEditor.Utils/TextFileReader.cs \
 	Mono.TextEditor.Vi/ViActionMaps.cs \
 	Mono.TextEditor.Vi/ViActions.cs \
 	Mono.TextEditor.Vi/ViBuilderContext.cs \
@@ -81,7 +83,6 @@ FILES =  \
 	Mono.TextEditor/DashedLineMargin.cs \
 	Mono.TextEditor/DefaultEditActions.cs \
 	Mono.TextEditor/DeleteActions.cs \
-	Mono.TextEditor/Document.cs \
 	Mono.TextEditor/DocumentChangeEventArgs.cs \
 	Mono.TextEditor/DocumentLocation.cs \
 	Mono.TextEditor/DocumentUpdateRequest.cs \
@@ -103,13 +104,11 @@ FILES =  \
 	Mono.TextEditor/IBracketMatcher.cs \
 	Mono.TextEditor/IBuffer.cs \
 	Mono.TextEditor/IconMargin.cs \
-	Mono.TextEditor/IDocumentPartitioner.cs \
 	Mono.TextEditor/IIndentationTracker.cs \
 	Mono.TextEditor/ILineSplitter.cs \
 	Mono.TextEditor/IndentStyle.cs \
 	Mono.TextEditor/InsertionCursorEditMode.cs \
 	Mono.TextEditor/ISearchEngine.cs \
-	Mono.TextEditor/ISegment.cs \
 	Mono.TextEditor/ITextEditorOptions.cs \
 	Mono.TextEditor/ITooltipProvider.cs \
 	Mono.TextEditor/IWordFindStrategy.cs \
@@ -124,13 +123,13 @@ FILES =  \
 	Mono.TextEditor/PrimitiveLineSplitter.cs \
 	Mono.TextEditor/SearchRequest.cs \
 	Mono.TextEditor/SearchResult.cs \
-	Mono.TextEditor/Segment.cs \
 	Mono.TextEditor/SegmentTree.cs \
 	Mono.TextEditor/Selection.cs \
 	Mono.TextEditor/SelectionActions.cs \
 	Mono.TextEditor/SharpDevelopWordFindStrategy.cs \
 	Mono.TextEditor/SimpleEditMode.cs \
 	Mono.TextEditor/StringBuffer.cs \
+	Mono.TextEditor/TextDocument.cs \
 	Mono.TextEditor/TextEditor.cs \
 	Mono.TextEditor/TextEditorAccessibility.cs \
 	Mono.TextEditor/TextEditorContainer.cs \
@@ -139,8 +138,8 @@ FILES =  \
 	Mono.TextEditor/TextLinkEditMode.cs \
 	Mono.TextEditor/TextMarker.cs \
 	Mono.TextEditor/TextMarkerEvent.cs \
-	Mono.TextEditor/TextViewMargin.cs \
-	Mono.TextEditor/TypedSegment.cs 
+	Mono.TextEditor/TextSegment.cs \
+	Mono.TextEditor/TextViewMargin.cs 
 	Mono.TextEditor.Highlighting/Match.cs \
 	Mono.TextEditor.Highlighting/Style.cs \
 	Mono.TextEditor.Highlighting/SyntaxMode.cs \

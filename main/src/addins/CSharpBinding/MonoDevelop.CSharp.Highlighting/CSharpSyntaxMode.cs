@@ -34,13 +34,10 @@ using Mono.TextEditor;
 using System.Xml;
 using MonoDevelop.Projects;
 using MonoDevelop.CSharp.Project;
-using MonoDevelop.Core;
 using MonoDevelop.Ide.Gui;
 using MonoDevelop.Ide;
 using MonoDevelop.Ide.Tasks;
 using ICSharpCode.NRefactory.CSharp;
-using MonoDevelop.CSharp.ContextAction;
-using MonoDevelop.CSharp.Resolver;
 using ICSharpCode.NRefactory.TypeSystem;
 using MonoDevelop.TypeSystem;
 using ICSharpCode.NRefactory.CSharp.Resolver;
@@ -71,6 +68,7 @@ namespace MonoDevelop.CSharp.Highlighting
 		MonoDevelop.Ide.Gui.Document guiDocument;
 		CompilationUnit unit;
 		CSharpParsedFile parsedFile;
+		ICompilation compilation;
 		
 		internal class StyledTreeSegment : TreeSegment
 		{
@@ -131,6 +129,7 @@ namespace MonoDevelop.CSharp.Highlighting
 						highlightedSegmentCache.Clear ();
 					unit = parsedDocument.GetAst<CompilationUnit> ();
 					parsedFile = parsedDocument.ParsedFile as CSharpParsedFile;
+					compilation = guiDocument.Compilation;
 				}
 			}
 		}
@@ -342,7 +341,7 @@ namespace MonoDevelop.CSharp.Highlighting
 					tags.Add (tag.Tag);
 				}
 				if (csharpSyntaxMode.unit != null && csharpSyntaxMode.parsedFile != null)
-					visitor = new CSharpAstResolver (csharpSyntaxMode.guiDocument.Compilation, csharpSyntaxMode.unit, csharpSyntaxMode.parsedFile);
+					visitor = new CSharpAstResolver (csharpSyntaxMode.compilation, csharpSyntaxMode.unit, csharpSyntaxMode.parsedFile);
 			}
 			
 			#region IResolveVisitorNavigator implementation
@@ -439,7 +438,10 @@ namespace MonoDevelop.CSharp.Highlighting
 						var st = (SimpleType)node;
 						
 						var result = visitor.Resolve (st);
-						
+						if (result.IsError) {
+							endOffset = chunk.Offset + st.Identifier.Length;
+							return "keyword.semantic.error";
+						}
 						if (result is TypeResolveResult && st.IdentifierToken.Contains (loc) && unit.GetNodeAt<UsingDeclaration> (loc) == null) {
 							endOffset = chunk.Offset + st.Identifier.Length;
 							return "keyword.semantic.type";
@@ -450,7 +452,10 @@ namespace MonoDevelop.CSharp.Highlighting
 						var mt = (ICSharpCode.NRefactory.CSharp.MemberType)node;
 						
 						var result = visitor.Resolve (mt);
-						
+						if (result.IsError) {
+							endOffset = chunk.Offset + mt.MemberName.Length;
+							return "keyword.semantic.error";
+						}
 						if (result is TypeResolveResult && mt.MemberNameToken.Contains (loc) && unit.GetNodeAt<UsingDeclaration> (loc) == null) {
 							endOffset = chunk.Offset + mt.MemberName.Length;
 							return "keyword.semantic.type";
@@ -459,7 +464,7 @@ namespace MonoDevelop.CSharp.Highlighting
 					}
 					
 					if (node is Identifier) {
-						if (node.Parent is TypeDeclaration && node.Role == TypeDeclaration.Roles.Identifier) {
+						if (node.Parent is TypeDeclaration && node.Role == Roles.Identifier) {
 							endOffset = chunk.Offset + ((Identifier)node).Name.Length;
 							return "keyword.semantic.type";
 						}
@@ -473,6 +478,11 @@ namespace MonoDevelop.CSharp.Highlighting
 					var id = node as IdentifierExpression;
 					if (id != null) {
 						var result = visitor.Resolve (id);
+						if (result.IsError) {
+							endOffset = chunk.Offset + id.Identifier.Length;
+							return "keyword.semantic.error";
+						}
+						
 						if (result is MemberResolveResult) {
 							var member = ((MemberResolveResult)result).Member;
 							if (member is IField && !member.IsStatic && !((IField)member).IsConst) {
@@ -494,6 +504,11 @@ namespace MonoDevelop.CSharp.Highlighting
 							return null;
 						
 						var result = visitor.Resolve (memberReferenceExpression);
+						if (result.IsError) {
+							endOffset = chunk.Offset + memberReferenceExpression.MemberName.Length;
+							return "keyword.semantic.error";
+						}
+						
 						if (result is MemberResolveResult) {
 							var member = ((MemberResolveResult)result).Member;
 							if (member is IField && !member.IsStatic && !((IField)member).IsConst) {
@@ -562,7 +577,7 @@ namespace MonoDevelop.CSharp.Highlighting
 				HashSet<string> symbols = new HashSet<string> ();
 				
 			
-				MonoDevelop.Projects.Project GetProject (Mono.TextEditor.Document doc)
+				MonoDevelop.Projects.Project GetProject (Mono.TextEditor.TextDocument doc)
 				{
 					// There is no reference between document & higher level infrastructure,
 					// therefore it's a bit tricky to find the right project.
@@ -584,7 +599,7 @@ namespace MonoDevelop.CSharp.Highlighting
 					return project;
 				}
 				
-				public ConditinalExpressionEvaluator (Mono.TextEditor.Document doc)
+				public ConditinalExpressionEvaluator (Mono.TextEditor.TextDocument doc)
 				{
 					var project = GetProject (doc);
 					

@@ -42,8 +42,24 @@ namespace ICSharpCode.NRefactory.CSharp
 			get { return GetChildrenByRole (AttributeRole); }
 		}
 		
+		VarianceModifier variance;
+		
 		public VarianceModifier Variance {
-			get; set;
+			get { return variance; }
+			set { ThrowIfFrozen(); variance = value; }
+		}
+		
+		public CSharpTokenNode VarianceToken {
+			get {
+				switch (Variance) {
+					case VarianceModifier.Covariant:
+						return GetChildByRole(OutVarianceKeywordRole);
+					case VarianceModifier.Contravariant:
+						return GetChildByRole(InVarianceKeywordRole);
+					default:
+						return CSharpTokenNode.Null;
+				}
+			}
 		}
 		
 		public string Name {
@@ -68,7 +84,7 @@ namespace ICSharpCode.NRefactory.CSharp
 		{
 			visitor.VisitTypeParameterDeclaration (this);
 		}
-			
+		
 		public override T AcceptVisitor<T> (IAstVisitor<T> visitor)
 		{
 			return visitor.VisitTypeParameterDeclaration (this);

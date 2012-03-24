@@ -108,8 +108,8 @@ namespace ICSharpCode.NRefactory.CSharp.TypeSystem
 			if (node == null || node.IsNull)
 				return DomRegion.Empty;
 			else
-				return MakeRegion(node.GetChildByRole(AstNode.Roles.LBrace).StartLocation,
-				                  node.GetChildByRole(AstNode.Roles.RBrace).EndLocation);
+				return MakeRegion(node.GetChildByRole(Roles.LBrace).StartLocation,
+				                  node.GetChildByRole(Roles.RBrace).EndLocation);
 		}
 		
 		#region Compilation Unit
@@ -437,6 +437,12 @@ namespace ICSharpCode.NRefactory.CSharp.TypeSystem
 				m.IsExtensionMethod = true;
 				currentTypeDefinition.HasExtensionMethods = true;
 			}
+			if (methodDeclaration.HasModifier(Modifiers.Partial)) {
+				if (methodDeclaration.Body.IsNull)
+					m.IsPartialMethodDeclaration = true;
+				else
+					m.IsPartialMethodImplementation = true;
+			}
 			
 			ConvertParameters(m.Parameters, methodDeclaration.Parameters);
 			if (!methodDeclaration.PrivateImplementationType.IsNull) {
@@ -671,6 +677,13 @@ namespace ICSharpCode.NRefactory.CSharp.TypeSystem
 				return null;
 			var a = new DefaultUnresolvedMethod(currentTypeDefinition, prefix + p.Name);
 			a.Accessibility = GetAccessibility(accessor.Modifiers) ?? p.Accessibility;
+			a.IsAbstract = p.IsAbstract;
+			a.IsOverride = p.IsOverridable;
+			a.IsSealed = p.IsSealed;
+			a.IsStatic = p.IsStatic;
+			a.IsSynthetic = p.IsSynthetic;
+			a.IsVirtual = p.IsVirtual;
+			
 			a.Region = MakeRegion(accessor);
 			if (p.EntityType == EntityType.Indexer) {
 				foreach (var indexerParam in ((IUnresolvedProperty)p).Parameters)
@@ -715,8 +728,8 @@ namespace ICSharpCode.NRefactory.CSharp.TypeSystem
 				ev.ReturnType = eventDeclaration.ReturnType.ToTypeReference();
 				
 				var valueParameter = new DefaultUnresolvedParameter(ev.ReturnType, "value");
-				ev.AddAccessor = CreateDefaultEventAccessor(ev, "get_" + ev.Name, valueParameter);
-				ev.RemoveAccessor = CreateDefaultEventAccessor(ev, "set_" + ev.Name, valueParameter);
+				ev.AddAccessor = CreateDefaultEventAccessor(ev, "add_" + ev.Name, valueParameter);
+				ev.RemoveAccessor = CreateDefaultEventAccessor(ev, "remove_" + ev.Name, valueParameter);
 				
 				foreach (AttributeSection section in eventDeclaration.Attributes) {
 					if (section.AttributeTarget == "method") {
@@ -744,6 +757,12 @@ namespace ICSharpCode.NRefactory.CSharp.TypeSystem
 			a.Region = ev.BodyRegion;
 			a.BodyRegion = ev.BodyRegion;
 			a.Accessibility = ev.Accessibility;
+			a.IsAbstract = ev.IsAbstract;
+			a.IsOverride = ev.IsOverridable;
+			a.IsSealed = ev.IsSealed;
+			a.IsStatic = ev.IsStatic;
+			a.IsSynthetic = ev.IsSynthetic;
+			a.IsVirtual = ev.IsVirtual;
 			a.ReturnType = KnownTypeReference.Void;
 			a.Parameters.Add(valueParameter);
 			return a;
@@ -852,7 +871,7 @@ namespace ICSharpCode.NRefactory.CSharp.TypeSystem
 		internal static ITypeReference ConvertAttributeType(AstType type)
 		{
 			ITypeReference tr = type.ToTypeReference();
-			if (!type.GetChildByRole(AstNode.Roles.Identifier).IsVerbatim) {
+			if (!type.GetChildByRole(Roles.Identifier).IsVerbatim) {
 				// Try to add "Attribute" suffix, but only if the identifier
 				// (=last identifier in fully qualified name) isn't a verbatim identifier.
 				SimpleTypeOrNamespaceReference st = tr as SimpleTypeOrNamespaceReference;

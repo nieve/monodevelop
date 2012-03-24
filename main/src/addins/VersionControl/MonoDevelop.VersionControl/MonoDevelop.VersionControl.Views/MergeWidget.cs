@@ -39,17 +39,12 @@ using MonoDevelop.Ide.Gui;
 
 namespace MonoDevelop.VersionControl.Views
 {
-	[ToolboxItem (true)]
 	public class MergeWidget : EditorCompareWidgetBase
 	{
 		protected override TextEditor MainEditor {
 			get {
 				return editors != null && editors.Length >= 2 ? editors[1] : null;
 			}
-		}
-
-		protected MergeWidget (IntPtr ptr) : base (ptr)
-		{
 		}
 
 		public MergeWidget ()
@@ -87,7 +82,7 @@ namespace MonoDevelop.VersionControl.Views
 		public void Load (string fileName)
 		{
 			MainEditor.Document.MimeType = DesktopService.GetMimeTypeForUri (fileName);
-			MainEditor.Document.Text = System.IO.File.ReadAllText (fileName);
+			MainEditor.Document.Text = Mono.TextEditor.Utils.TextFileReader.ReadAllText (fileName);
 
 			this.CreateDiff ();
 			Show ();
@@ -108,9 +103,9 @@ namespace MonoDevelop.VersionControl.Views
 		protected override void CreateComponents ()
 		{
 			this.editors = new [] {
-				new TextEditor (new Mono.TextEditor.Document (), new CommonTextEditorOptions ()),
-				new TextEditor (new Mono.TextEditor.Document (), new CommonTextEditorOptions ()),
-				new TextEditor (new Mono.TextEditor.Document (), new CommonTextEditorOptions ()),
+				new TextEditor (new Mono.TextEditor.TextDocument (), new CommonTextEditorOptions ()),
+				new TextEditor (new Mono.TextEditor.TextDocument (), new CommonTextEditorOptions ()),
+				new TextEditor (new Mono.TextEditor.TextDocument (), new CommonTextEditorOptions ()),
 			};
 			
 			this.editors[0].Document.ReadOnly = true;
@@ -124,7 +119,7 @@ namespace MonoDevelop.VersionControl.Views
 		}
 
 		// todo: move to version control backend
-		IEnumerable<Conflict> Conflicts (Mono.TextEditor.Document doc)
+		IEnumerable<Conflict> Conflicts (Mono.TextEditor.TextDocument doc)
 		{
 			foreach (int mergeStart in doc.SearchForward ("<<<<<<<", 0)) {
 				LineSegment start = doc.GetLineByOffset (mergeStart);
@@ -133,27 +128,27 @@ namespace MonoDevelop.VersionControl.Views
 				int dividerOffset = doc.SearchForward ("=======", mergeStart).First ();
 				LineSegment divider = doc.GetLineByOffset (dividerOffset);
 
-				int endOffset      = doc.SearchForward (">>>>>>>", dividerOffset).First ();
+				int endOffset = doc.SearchForward (">>>>>>>", dividerOffset).First ();
 				LineSegment end = doc.GetLineByOffset (endOffset);
 
-				yield return new Conflict (new Mono.TextEditor.Segment (start.EndOffset, divider.Offset - start.EndOffset),
-					new Mono.TextEditor.Segment (divider.EndOffset, end.Offset - divider.EndOffset),
-					new Mono.TextEditor.Segment (start),
-					new Mono.TextEditor.Segment (divider),
-					new Mono.TextEditor.Segment (end));
+				yield return new Conflict (new TextSegment (start.EndOffset, divider.Offset - start.EndOffset),
+					new TextSegment (divider.EndOffset, end.Offset - divider.EndOffset),
+					start,
+					divider,
+					end);
 			}
 		}
 
 		class Conflict
 		{
-			public readonly Mono.TextEditor.Segment MySegment;
-			public readonly Mono.TextEditor.Segment TheirSegment;
+			public TextSegment MySegment;
+			public TextSegment TheirSegment;
 
-			public readonly Mono.TextEditor.Segment StartSegment;
-			public readonly Mono.TextEditor.Segment DividerSegment;
-			public readonly Mono.TextEditor.Segment EndSegment;
+			public TextSegment StartSegment;
+			public TextSegment DividerSegment;
+			public TextSegment EndSegment;
 
-			public Conflict (Mono.TextEditor.Segment mySegment, Mono.TextEditor.Segment theirSegment, Mono.TextEditor.Segment startSegment, Mono.TextEditor.Segment dividerSegment, Mono.TextEditor.Segment endSegment)
+			public Conflict (TextSegment mySegment, TextSegment theirSegment, TextSegment startSegment, TextSegment dividerSegment, TextSegment endSegment)
 			{
 				this.MySegment = mySegment;
 				this.TheirSegment = theirSegment;
@@ -235,21 +230,16 @@ namespace MonoDevelop.VersionControl.Views
 			UpdateDiff ();
 		}
 
-		IEnumerable<ISegment> GetAllConflictingSegments ()
-		{
-			foreach (var conflict in currentConflicts) {
-				yield return conflict.StartSegment;
-				yield return conflict.DividerSegment;
-				yield return conflict.EndSegment;
-				yield return conflict.MySegment;
-				yield return conflict.TheirSegment;
-			}
-		}
-
 		void UpdateConflictsOnTextReplace (object sender, DocumentChangeEventArgs e)
 		{
 			this.UpdateDiff ();
-			Mono.TextEditor.Document.UpdateSegments (GetAllConflictingSegments (), e);
+			foreach (var conflict in currentConflicts) {
+				conflict.StartSegment = conflict.StartSegment.AdjustSegment (e);
+				conflict.DividerSegment = conflict.DividerSegment.AdjustSegment (e);
+				conflict.EndSegment = conflict.EndSegment.AdjustSegment (e);
+				conflict.MySegment = conflict.MySegment.AdjustSegment (e);
+				conflict.TheirSegment = conflict.TheirSegment.AdjustSegment (e);
+			}
 		}
 	}
 }

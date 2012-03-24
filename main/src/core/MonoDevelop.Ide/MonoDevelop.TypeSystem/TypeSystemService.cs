@@ -207,30 +207,32 @@ namespace MonoDevelop.TypeSystem
 			try {
 				if (!File.Exists (fileName))
 					return null;
-				text = File.ReadAllText (fileName);
+				text = Mono.TextEditor.Utils.TextFileReader.ReadAllText (fileName);
 			} catch (Exception) {
 				return null;
 			}
 			
 			return ParseFile (project, fileName, DesktopService.GetMimeTypeForUri (fileName), text);
 		}
-		
+		static object projectWrapperUpdateLock = new object ();
 		public static ParsedDocument ParseFile (Project project, string fileName, string mimeType, TextReader content)
 		{
-			ProjectContentWrapper wrapper;
-			if (project != null) {
-				projectContents.TryGetValue (project, out wrapper);
-			} else {
-				wrapper = null;
-			}
-			
+
 			var parser = GetParser (mimeType);
 			if (parser == null)
 				return null;
 			try {
 				var result = parser.Parse (true, fileName, content, project);
-				if (wrapper != null && (result.Flags & ParsedDocumentFlags.NonSerializable) != ParsedDocumentFlags.NonSerializable)
-					wrapper.Content = wrapper.Content.UpdateProjectContent (wrapper.Content.GetFile (fileName), result.ParsedFile);
+				lock (projectWrapperUpdateLock) {
+					ProjectContentWrapper wrapper;
+					if (project != null) {
+						projectContents.TryGetValue (project, out wrapper);
+					} else {
+						wrapper = null;
+					}
+					if (wrapper != null && (result.Flags & ParsedDocumentFlags.NonSerializable) != ParsedDocumentFlags.NonSerializable)
+						wrapper.UpdateContent (c => c.UpdateProjectContent (c.GetFile (fileName), result.ParsedFile));
+				}
 				return result;
 			} catch (Exception e) {
 				LoggingService.LogError ("Exception while parsing :" + e);
@@ -262,8 +264,10 @@ namespace MonoDevelop.TypeSystem
 				return null;
 			try {
 				var result = parser.Parse (true, fileName, content);
-				if (wrapper != null && (result.Flags & ParsedDocumentFlags.NonSerializable) != ParsedDocumentFlags.NonSerializable)
-					wrapper.Content = wrapper.Content.UpdateProjectContent (wrapper.Content.GetFile (fileName), result.ParsedFile);
+				lock (projectWrapperUpdateLock) {
+					if (wrapper != null && (result.Flags & ParsedDocumentFlags.NonSerializable) != ParsedDocumentFlags.NonSerializable)
+						wrapper.UpdateContent (c => c.UpdateProjectContent (c.GetFile (fileName), result.ParsedFile));
+				}
 				return result;
 			} catch (Exception e) {
 				LoggingService.LogError ("Exception while parsing :" + e);
@@ -595,8 +599,12 @@ namespace MonoDevelop.TypeSystem
 				get {
 					return content;
 				}
-				set {
-					content = value;
+			}
+			
+			public void UpdateContent (Func<IProjectContent, IProjectContent> updateFunc)
+			{
+				lock (this) {
+					content = updateFunc (content);
 					compilation = null;
 					WasChanged = true;
 				}
@@ -627,7 +635,7 @@ namespace MonoDevelop.TypeSystem
 				if (content == null)
 					throw new ArgumentNullException ("content");
 				this.Project = project;
-				this.content = content;
+				this.content = content.SetAssemblyName (project.Name);
 			}
 			
 			public IEnumerable<Project> ReferencedProjects {
@@ -679,8 +687,8 @@ namespace MonoDevelop.TypeSystem
 							contexts.Add (ctx);
 					}
 					bool changed = WasChanged;
-					Content = Content.RemoveAssemblyReferences (Content.AssemblyReferences);
-					Content = Content.AddAssemblyReferences (contexts);
+					UpdateContent (c => c.RemoveAssemblyReferences (Content.AssemblyReferences));
+					UpdateContent (c => c.AddAssemblyReferences (contexts));
 					WasChanged = changed;
 				} catch (Exception e) {
 					if (netProject.TargetRuntime == null) {
@@ -735,18 +743,7 @@ namespace MonoDevelop.TypeSystem
 		{
 			if (entity == null)
 				throw new ArgumentNullException ("entity");
-
-			ITypeDefinition def;
-			if (entity is IType) {
-				def = ((IType)entity).GetDefinition ();
-			} else {
-				def = entity.DeclaringTypeDefinition;
-			}
-			if (def == null)
-				return null;
-			
-			return GetProject (def.Compilation.MainAssembly.UnresolvedAssembly.Location);
-				
+			return GetProject (entity.ParentAssembly.UnresolvedAssembly.Location);
 		}
 		
 		public static Project GetProject (string location)
@@ -778,7 +775,7 @@ namespace MonoDevelop.TypeSystem
 		{
 			var project = (Project)sender;
 			foreach (ProjectFileEventInfo fargs in args) {
-				projectContents [project].Content = projectContents [project].Content.UpdateProjectContent (projectContents [project].Content.GetFile (fargs.ProjectFile.Name), null);
+				projectContents [project].UpdateContent (c => c.UpdateProjectContent (c.GetFile (fargs.ProjectFile.Name), null));
 			}
 		}
 
@@ -786,7 +783,7 @@ namespace MonoDevelop.TypeSystem
 		{
 			var project = (Project)sender;
 			foreach (ProjectFileRenamedEventInfo fargs in args) {
-				projectContents [project].Content = projectContents [project].Content.UpdateProjectContent (projectContents [project].Content.GetFile (fargs.OldName), null);
+				projectContents [project].UpdateContent (c => c.UpdateProjectContent (c.GetFile (fargs.OldName), null));
 				QueueParseJob (projectContents [project], new [] { fargs.ProjectFile });
 			}
 		}
@@ -1154,17 +1151,21 @@ namespace MonoDevelop.TypeSystem
 					}
 				} catch (Exception) {
 				}
-				
+
 				var asm = ReadAssembly (fileName);
 				if (asm == null)
 					return null;
 				
-				var loader = new CecilLoader ();
-				FilePath xmlDocFile;
-				
-				var assembly = loader.LoadAssembly (asm);
-				assembly.Location = fileName;
-				
+				IUnresolvedAssembly assembly;
+				try {
+					var loader = new CecilLoader ();
+					assembly = loader.LoadAssembly (asm);
+					assembly.Location = fileName;
+				} catch (Exception e) {
+					LoggingService.LogError ("Can't convert assembly: " + fileName, e);
+					return null;
+				}
+
 				if (cache != null)
 					SerializeObject (assemblyPath, assembly);
 				return assembly;
@@ -1375,7 +1376,7 @@ namespace MonoDevelop.TypeSystem
 					
 					using (var stream = new System.IO.StreamReader (fileName)) {
 						var parsedDocument = parser.Parse (false, fileName, stream, Context.Project);
-						Context.Content = Context.Content.UpdateProjectContent (Context.Content.GetFile (fileName), parsedDocument.ParsedFile);
+						Context.UpdateContent (c => c.UpdateProjectContent (c.GetFile (fileName), parsedDocument.ParsedFile));
 					}
 //					if (ParseCallback != null)
 //						ParseCallback (file.FilePath, monitor);
@@ -1543,7 +1544,7 @@ namespace MonoDevelop.TypeSystem
 			// check if file needs to be removed from project content 
 			foreach (var file in content.Content.Files) {
 				if (project.GetProjectFile (file.FileName) == null)
-					content.Content = content.Content.UpdateProjectContent (file, null);
+					content.UpdateContent (c => c.UpdateProjectContent (file, null));
 			}
 			
 			if (modifiedFiles == null)

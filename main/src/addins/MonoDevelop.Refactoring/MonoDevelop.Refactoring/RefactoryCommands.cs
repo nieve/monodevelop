@@ -48,7 +48,7 @@ using ICSharpCode.NRefactory.CSharp.Refactoring;
 using Mono.TextEditor;
 using ICSharpCode.NRefactory.CSharp;
 using ICSharpCode.NRefactory.Semantics;
-using MonoDevelop.ContextAction;
+using MonoDevelop.CodeActions;
 
 namespace MonoDevelop.Refactoring
 {
@@ -70,7 +70,7 @@ namespace MonoDevelop.Refactoring
 		QuickFix
 	}
 	
-	public class CurrentRefactoryOperationsHandler: CommandHandler
+	public class CurrentRefactoryOperationsHandler : CommandHandler
 	{
 		protected override void Run (object data)
 		{
@@ -198,42 +198,7 @@ namespace MonoDevelop.Refactoring
 				FindDerivedClassesHandler.FindDerivedClasses (type);
 			}
 		}
-		
-		class AddImport
-		{
-			RefactoringOptions options;
-			string ns;
-			bool addUsing;
-			
-			public AddImport (RefactoringOptions options, string ns, bool addUsing)
-			{
-				this.options = options;
-				this.ns = ns;
-				this.addUsing = addUsing;
-			}
-			
-			public void Run ()
-			{
-				if (!addUsing) {
-					var unit  = options.Document.ParsedDocument.GetAst<CompilationUnit> ();
-					var node = unit.GetNodeAt (options.Location, n => n is Expression || n is AstType);
-					int offset = options.Document.Editor.LocationToOffset (node.StartLocation.Line, node.StartLocation.Column);
-					options.Document.Editor.Insert (offset, ns + ".");
-					options.Document.Editor.Document.CommitLineUpdate (options.Location.Line);
-					return;
-				}
-				
-				var generator = options.CreateCodeGenerator ();
-				if (generator == null)
-					return;
-				if (options.ResolveResult is NamespaceResolveResult) {
-					generator.AddLocalNamespaceImport (options.Document, ns, options.Location);
-				} else {
-					generator.AddGlobalNamespaceImport (options.Document, ns);
-				}
-			}
-		}
-		
+
 		protected override void Update (CommandArrayInfo ainfo)
 		{
 			var doc = IdeApp.Workbench.ActiveDocument;
@@ -248,8 +213,7 @@ namespace MonoDevelop.Refactoring
 			object item = GetItem (doc, out resolveResult);
 			bool added = false;
 			
-			var options = new RefactoringOptions () {
-				Document = doc,
+			var options = new RefactoringOptions (doc) {
 				ResolveResult = resolveResult,
 				SelectedItem = item
 			};
@@ -285,15 +249,14 @@ namespace MonoDevelop.Refactoring
 
 			var loc = doc.Editor.Caret.Location;
 			bool first = true;
-			foreach (var fix in RefactoringService.GetValidActions (doc, loc).Result) {
+			foreach (var fix_ in RefactoringService.GetValidActions (doc, loc).Result) {
+				var fix = fix_;
 				if (first) {
 					first = false;
 					if (ciset.CommandInfos.Count > 0)
 						ciset.CommandInfos.AddSeparator ();
 				}
-				ciset.CommandInfos.Add (fix.GetMenuText (doc, loc), new System.Action (delegate {
-					fix.Run (doc, loc);
-				}));
+				ciset.CommandInfos.Add (fix.Title, new System.Action (() => fix.Run (doc, loc)));
 			}
 
 			if (ciset.CommandInfos.Count > 0) {
@@ -346,84 +309,7 @@ namespace MonoDevelop.Refactoring
 			
 			
 			
-			var resolveMenu = new CommandInfoSet ();
-			resolveMenu.Text = GettextCatalog.GetString ("Resolve");
-			bool resolveDirect = true;
-			HashSet<string> possibleNamespaces = new HashSet<string> ();
-			List<string> usedNamespaces = new List<string> ();
-			
-			var unit = options.Document.ParsedDocument.GetAst<CompilationUnit> ();
-			var attribute = unit != null ? unit.GetNodeAt<ICSharpCode.NRefactory.CSharp.Attribute> (options.Document.Editor.Caret.Location) : null;
-			
-			bool isInsideAttributeType = attribute != null && attribute.Type.Contains (options.Document.Editor.Caret.Location);
-				
-			if (resolveResult is UnknownIdentifierResolveResult) {
-				usedNamespaces = options.GetUsedNamespaces ();
-				var uiResult = resolveResult as UnknownIdentifierResolveResult;
-				string possibleAttributeName = isInsideAttributeType ? uiResult.Identifier + "Attribute" : null;
-				foreach (var typeDefinition in doc.Compilation.GetAllTypeDefinitions ()) {
-					if (typeDefinition.Name == uiResult.Identifier || typeDefinition.Name == possibleAttributeName)
-						possibleNamespaces.Add (typeDefinition.Namespace);
-					
-				}
-			} else if (resolveResult is UnknownMemberResolveResult) {
-				usedNamespaces = options.GetUsedNamespaces ();
-				var umResult = (UnknownMemberResolveResult)resolveResult;
-				var conv = new Conversions (options.Document.Compilation);
-				var baseTypes = new List<IType> (umResult.TargetType.GetAllBaseTypes ());
-				string possibleAttributeName = isInsideAttributeType ? umResult.MemberName + "Attribute" : null;
-				
-				foreach (var typeDefinition in doc.Compilation.GetAllTypeDefinitions ().Where (t => t.HasExtensionMethods && !usedNamespaces.Contains (t.Namespace))) {
-					foreach (var m in typeDefinition.Methods.Where (m => m.IsExtensionMethod && (m.Name == umResult.MemberName || m.Name == possibleAttributeName))) {
-						var pType = m.Parameters.First ().Type;
-						foreach (var baseType in baseTypes) {
-							if (conv.ImplicitConversion (pType, baseType) != Conversion.None) {
-								possibleNamespaces.Add (typeDefinition.Namespace);
-								goto skipType;
-							}
-						}
-					}
-				skipType:
-					;
-				}
-				resolveDirect = false;
-			} else if (resolveResult is ErrorResolveResult && unit != null) {
-				var identifier = unit != null ? unit.GetNodeAt<ICSharpCode.NRefactory.CSharp.Identifier> (options.Document.Editor.Caret.Location) : null;
-				if (identifier != null) {
-					usedNamespaces = options.GetUsedNamespaces ();
-					var uiResult = resolveResult as UnknownIdentifierResolveResult;
-					if (uiResult != null) {
-						string possibleAttributeName = isInsideAttributeType ? uiResult.Identifier + "Attribute" : null;
-						foreach (var typeDefinition in doc.Compilation.GetAllTypeDefinitions ()) {
-							if (identifier.Name == uiResult.Identifier || identifier.Name == possibleAttributeName)
-								possibleNamespaces.Add (typeDefinition.Namespace);
-						}
-					}
-				}
-			}
-			
-			foreach (string ns in possibleNamespaces) {
-				// remove used namespaces for conflict resolving. 
-				if (usedNamespaces.Contains (ns))
-					continue;
-				var info = resolveMenu.CommandInfos.Add ("using " + ns + ";", new System.Action (new AddImport (options, ns, true).Run));
-				info.Icon = MonoDevelop.Ide.Gui.Stock.AddNamespace;
-			}
-			
-			if (resolveDirect) {
-				if (resolveMenu.CommandInfos.Count > 0)
-					resolveMenu.CommandInfos.AddSeparator ();
-				
-				foreach (string ns in possibleNamespaces) {
-					resolveMenu.CommandInfos.Add (ns, new System.Action (new AddImport (options, ns, false).Run));
-				}
-			}
-			
-			if (resolveMenu.CommandInfos.Count > 0) {
-				ainfo.Insert (0, resolveMenu);
-				added = true;
-			}
-			
+
 			
 			if (resolveResult != null) {
 //				List<string> namespaces = QuickFixHandler.GetResolveableNamespaces (options, out resolveDirect);
@@ -659,6 +545,7 @@ namespace MonoDevelop.Refactoring
 				ainfo.AddSeparator ();*/
 		}
 		
+
 		class RefactoringOperationWrapper
 		{
 			RefactoringOperation refactoring;
@@ -675,7 +562,7 @@ namespace MonoDevelop.Refactoring
 				refactoring.Run (options);
 			}
 		}
-		
+
 /*		public class ResolveNameOperation
 		{
 			ProjectDom ctx;
@@ -716,6 +603,8 @@ namespace MonoDevelop.Refactoring
 			}
 		}
 */
+
+
 		bool IsModifiable (object member)
 		{
 			IType t = member as IType;

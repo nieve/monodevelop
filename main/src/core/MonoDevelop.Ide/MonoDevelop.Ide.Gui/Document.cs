@@ -171,6 +171,9 @@ namespace MonoDevelop.Ide.Gui
 				Window.ViewContent.Project = value; 
 				if (value != null)
 					singleFileContext = null;
+				// File needs to be in sync with the project, otherwise the parsed document at start may be invalid.
+				// better solution: create the document with the project attached.
+				StartReparseThread ();
 			}
 		}
 		
@@ -529,14 +532,9 @@ namespace MonoDevelop.Ide.Gui
 		}
 		
 		bool wasEdited;
-		internal void OnDocumentAttached ()
+		
+		void InitializeEditor (IExtensibleTextEditor editor)
 		{
-			window.Document = this;
-			
-			IExtensibleTextEditor editor = GetContent<IExtensibleTextEditor> ();
-			if (editor == null)
-				return;
-			
 			Editor.Document.TextReplaced += (o, a) => {
 				if (Editor.Document.IsInAtomicUndo) {
 					wasEdited = true;
@@ -561,12 +559,11 @@ namespace MonoDevelop.Ide.Gui
 			ExtensionNodeList extensions = window.ExtensionContext.GetExtensionNodes ("/MonoDevelop/Ide/TextEditorExtensions", typeof(TextEditorExtensionNode));
 			editorExtension = null;
 			TextEditorExtension last = null;
-			
 			foreach (TextEditorExtensionNode extNode in extensions) {
 				if (!extNode.Supports (FileName))
 					continue;
 				
-				TextEditorExtension ext = (TextEditorExtension) extNode.CreateInstance ();
+				TextEditorExtension ext = (TextEditorExtension)extNode.CreateInstance ();
 				if (ext.ExtendsEditor (this, editor)) {
 					if (editorExtension == null)
 						editorExtension = ext;
@@ -583,9 +580,19 @@ namespace MonoDevelop.Ide.Gui
 				last.Next = editor.AttachExtension (editorExtension);
 			
 			RunWhenLoaded (() => ReparseDocument ());
+		}
+		
+		internal void OnDocumentAttached ()
+		{
+			IExtensibleTextEditor editor = GetContent<IExtensibleTextEditor> ();
+			if (editor != null)
+				InitializeEditor (editor);
+			
+			window.Document = this;
 			
 			if (window is SdiWorkspaceWindow)
 				((SdiWorkspaceWindow)window).AttachToPathedDocument (GetContent<MonoDevelop.Ide.Gui.Content.IPathedDocument> ());
+			
 		}
 		
 		/// <summary>
@@ -638,23 +645,32 @@ namespace MonoDevelop.Ide.Gui
 					return null;
 				string currentParseText = editor.Text;
 				this.parsedDocument = TypeSystemService.ParseFile (Project, currentParseFile, editor.Document.MimeType, currentParseText);
+				if (Project == null) {
+					singleFileContext = GetProjectContext ().UpdateProjectContent (singleFileContext.GetFile (currentParseFile), parsedDocument.ParsedFile);
+				}
 			} finally {
 				OnDocumentParsed (EventArgs.Empty);
 			}
 			return this.parsedDocument;
 		}
 
+		static readonly Lazy<IUnresolvedAssembly> mscorlib = new Lazy<IUnresolvedAssembly> ( () => new CecilLoader ().LoadAssemblyFile (typeof (object).Assembly.Location));
+		static readonly Lazy<IUnresolvedAssembly> systemCore = new Lazy<IUnresolvedAssembly>( () => new CecilLoader ().LoadAssemblyFile (typeof (System.Linq.Enumerable).Assembly.Location));
+
+		static IUnresolvedAssembly Mscorlib { get { return mscorlib.Value; } }
+		static IUnresolvedAssembly SystemCore { get { return systemCore.Value; } }
+		
 		public virtual IProjectContent GetProjectContext ()
 		{
-			IProjectContent ctx;
 			if (Project == null) {
-				if (singleFileContext == null)
+				if (singleFileContext == null) {
 					singleFileContext = new ICSharpCode.NRefactory.CSharp.CSharpProjectContent ();
-				ctx = singleFileContext;
-			} else {
-				ctx = TypeSystemService.GetProjectContext (Project);
+					singleFileContext = singleFileContext.AddAssemblyReferences (new [] { Mscorlib, SystemCore });
+				}
+				return singleFileContext;
 			}
-			return ctx;
+			
+			return TypeSystemService.GetProjectContext (Project);
 		}
 		
 		uint parseTimeout = 0;

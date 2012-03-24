@@ -33,6 +33,7 @@ using Gtk;
 using MonoDevelop.Components;
 using ICSharpCode.NRefactory.Completion;
 using MonoDevelop.Ide.Gui.Content;
+using System.Collections.Generic;
 
 namespace MonoDevelop.Ide.CodeCompletion
 {
@@ -94,8 +95,8 @@ namespace MonoDevelop.Ide.CodeCompletion
 			ShowAll ();
 			EnableTransparencyControl = true;
 		}
-		
-		public Gtk.Requisition ShowParameterInfo (IParameterDataProvider provider, int overload, int _currentParam, int maxSize)
+		Dictionary<int, bool> doBreakParameters = new Dictionary<int, bool> ();
+		public void ShowParameterInfo (IParameterDataProvider provider, int overload, int _currentParam, int maxSize)
 		{
 			if (provider == null)
 				throw new ArgumentNullException ("provider");
@@ -123,19 +124,17 @@ namespace MonoDevelop.Ide.CodeCompletion
 				goPrev.Hide ();
 				goNext.Hide ();
 			}
-			Gtk.Requisition req = this.SizeRequest ();
-			
-			if (req.Width > maxSize) {
+			var req = this.SizeRequest ();
+
+			if (doBreakParameters.ContainsKey (overload) || req.Width > maxSize) {
 				for (int i = 1; i < numParams; i++) {
 					paramText [i] = Environment.NewLine + "\t" + paramText [i];
 				}
 				text = provider.GetHeading (overload, paramText, currentParam);
 				heading.Markup = text;
-				req = this.SizeRequest ();
+				doBreakParameters [overload] = true;
 			}
-			
-			Resize (req.Width, req.Height);
-			return req;
+			QueueResize ();
 		}
 		
 		// The wrapping of Gtk.Label wasn't exactly what's needed in that case

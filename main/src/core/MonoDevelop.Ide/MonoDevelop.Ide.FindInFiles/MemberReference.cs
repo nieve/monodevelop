@@ -42,13 +42,23 @@ namespace MonoDevelop.Ide.FindInFiles
 			}
 		}
 		
-		public IEntity Entity { get; private set;}
+		public object EntityOrVariable { get; private set;}
 		public DomRegion Region { get; private set;}
 		
-		public MemberReference (IEntity entity, DomRegion region, int offset, int length) : base (offset, length)
+		public MemberReference (object entity, DomRegion region, int offset, int length) : base (offset, length)
 		{
-			this.Entity = entity;
-			this.Region = region;
+			if (entity == null)
+				throw new System.ArgumentNullException ("entity");
+			EntityOrVariable = entity;
+			Region = region;
+		}
+
+		public string GetName ()
+		{
+			if (EntityOrVariable is IEntity) {
+				return ((IEntity)EntityOrVariable).Name;
+			} 
+			return ((IVariable)EntityOrVariable).Name;
 		}
 	}
 }

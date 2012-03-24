@@ -113,6 +113,7 @@ namespace MonoDevelop.VersionControl.Views
 
 		public EditorCompareWidgetBase ()
 		{
+			GtkWorkarounds.FixContainerLeak (this);
 			Intialize ();
 		}
 
@@ -274,12 +275,12 @@ namespace MonoDevelop.VersionControl.Views
 			diffCache.Clear ();
 		}
 		
-		static List<ISegment> BreakTextInWords (TextEditor editor, int start, int count)
+		static List<TextSegment> BreakTextInWords (TextEditor editor, int start, int count)
 		{
 			return TextBreaker.BreakLinesIntoWords(editor, start, count);
 		}
 		
-		List<Cairo.Rectangle> CalculateChunkPath (TextEditor editor, List<Hunk> diff, List<ISegment> words, bool useRemove)
+		List<Cairo.Rectangle> CalculateChunkPath (TextEditor editor, List<Hunk> diff, List<TextSegment> words, bool useRemove)
 		{
 			List<Cairo.Rectangle> result = new List<Cairo.Rectangle> ();
 			int startOffset = -1;
@@ -401,10 +402,6 @@ namespace MonoDevelop.VersionControl.Views
 			get {
 				return children.FirstOrDefault (c => c.Child == w);
 			}
-		}
-
-		protected EditorCompareWidgetBase (IntPtr ptr) : base (ptr)
-		{
 		}
 
 		public override GLib.GType ChildType ()
@@ -574,7 +571,7 @@ namespace MonoDevelop.VersionControl.Views
 			}
 		}
 
-		Dictionary<Mono.TextEditor.Document, TextEditorData> dict = new Dictionary<Mono.TextEditor.Document, TextEditorData> ();
+		Dictionary<Mono.TextEditor.TextDocument, TextEditorData> dict = new Dictionary<Mono.TextEditor.TextDocument, TextEditorData> ();
 
 		List<TextEditorData> localUpdate = new List<TextEditorData> ();
 
@@ -616,7 +613,7 @@ namespace MonoDevelop.VersionControl.Views
 
 		void HandleDataDocumentTextReplaced (object sender, DocumentChangeEventArgs e)
 		{
-			var data = dict [(Document)sender];
+			var data = dict [(TextDocument)sender];
 			localUpdate.Remove (data);
 			var editor = info.Document.GetContent<IEditableTextFile> ();
 			editor.DeleteText (e.Offset, e.RemovalLength);

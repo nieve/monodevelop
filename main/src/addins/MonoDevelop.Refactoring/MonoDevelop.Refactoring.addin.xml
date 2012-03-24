@@ -33,21 +33,24 @@
 		<ExtensionNode name="Class"/>
 	</ExtensionPoint>
 	
-	<ExtensionPoint path = "/MonoDevelop/Refactoring/ContextActions" name = "ContextAction">
-		<ExtensionNode name="Action" type ="MonoDevelop.ContextAction.ContextActionAddinNode"/>
+	<ExtensionPoint path = "/MonoDevelop/Refactoring/CodeActions" name = "CodeAction">
+		<ExtensionNode name="Action" type ="MonoDevelop.CodeActions.CodeActionAddinNode"/>
+	</ExtensionPoint>
+	
+	<ExtensionPoint path = "/MonoDevelop/Refactoring/CodeActionSource" name = "CodeActionSource">
+		<ExtensionNode name="Source"/>
 	</ExtensionPoint>
 
-	<ExtensionPoint path = "/MonoDevelop/Refactoring/Inspectors" name = "Inspector">
-		<ExtensionNode name="Inspector" type ="MonoDevelop.Inspection.InspectorAddinNode"/>
+	<ExtensionPoint path = "/MonoDevelop/Refactoring/CodeIssues" name = "CodeIssue">
+		<ExtensionNode name="CodeIssue" type ="MonoDevelop.CodeIssues.CodeIssueAddinNode"/>
 	</ExtensionPoint>
+	
+	<ExtensionPoint path = "/MonoDevelop/Refactoring/CodeIssueSource" name = "CodeIssueSource">
+		<ExtensionNode name="Source"/>
+	</ExtensionPoint>
+	
 	<!-- Extensions -->
 	<Extension path = "/MonoDevelop/Refactoring/Refactorings">
-	<!--
-		<Class id="Rename" class = "MonoDevelop.Refactoring.Rename.RenameRefactoring" />
-		<Class id="IntroduceConstant" class = "MonoDevelop.Refactoring.IntroduceConstant.IntroduceConstantRefactoring" />
-		<Class id="CreateClass" class = "MonoDevelop.Refactoring.CreateClass.CreateClassCodeGenerator" />
-		<Class id="CreateStruct" class = "MonoDevelop.Refactoring.CreateClass.CreateStructCodeGenerator" />
-	-->
 		<Class id="IntegrateTemporaryVariable" class = "MonoDevelop.Refactoring.IntegrateTemporaryVariable.IntegrateTemporaryVariableRefactoring" />
 		<Class id="ImplementImplicit" class = "MonoDevelop.Refactoring.ImplementInterface.ImplementImplicit" />
 		<Class id="ImplementExplicit" class = "MonoDevelop.Refactoring.ImplementInterface.ImplementExplicit" />
@@ -85,6 +88,10 @@
 	
 	<Extension path = "/MonoDevelop/SourceEditor2/TooltipProviders">
 		<Class id="AnalysisResults" class="MonoDevelop.AnalysisCore.Gui.ResultTooltipProvider" insertafter="Debug" />
+	</Extension>
+	
+	<Extension path = "/MonoDevelop/AnalysisCore/Rules">
+		<Rule _name="Code Issue Analysis" input="Document" func="MonoDevelop.CodeIssues.CodeAnalysisRunner.Check" />
 	</Extension>
 	
 	<!-- RefactoryCommands -->
@@ -136,12 +143,6 @@
 	</Extension>
 	
 	<Extension path = "/MonoDevelop/SourceEditor2/ContextMenu/Editor">
-<!--		<SeparatorItem id = "OrganizeUsingsSeparator" />
-		<ItemSet id = "OrganizeUsings" _label = "_Organize Usings">
-			<CommandItem id = "MonoDevelop.Refactoring.RefactoryCommands.RemoveUnusedImports"/>
-			<CommandItem id = "MonoDevelop.Refactoring.RefactoryCommands.SortImports"/>
-			<CommandItem id = "MonoDevelop.Refactoring.RefactoryCommands.RemoveSortImports"/>
-		</ItemSet>-->
 		<ItemSet id = "Fix" _label = "Fix" autohide="true"
 			insertafter="MonoDevelop.SourceEditor.SourceEditorCommands.MarkerOperations" insertbefore="MonoDevelop.Debugger.DebugCommands.ExpressionEvaluator">
 			<CommandItem id = "MonoDevelop.AnalysisCore.AnalysisCommands.FixOperations" />
@@ -156,7 +157,7 @@
 	
 	<Extension path = "/MonoDevelop/Ide/TextEditorExtensions">
 		<Class class = "MonoDevelop.Refactoring.Rename.RenameTextEditorExtension" />
-		<Class class = "MonoDevelop.ContextAction.ContextActionEditorExtension" />
+		<Class class = "MonoDevelop.CodeActions.CodeActionEditorExtension" />
 	</Extension>
 	
 	<Extension path = "/MonoDevelop/Ide/MainMenu/Edit">
@@ -183,9 +184,10 @@
 	<Extension path = "/MonoDevelop/Ide/GlobalOptionsDialog/SourceCode">
 		<Section id = "C#" _label = "C#">
 			<Section id = "Inspection" _label = "Code inspection" fill="true"
-				class="MonoDevelop.Inspection.InspectionPanel"/>
-			<Section id = "ContextActions" _label = "Context Actions" fill="true"
-				class="MonoDevelop.ContextAction.ContextActionPanel"/>
+				class="MonoDevelop.CodeIssues.CodeIssuePanel"/>
+			<Section id = "CodeActions" _label = "Context Actions" fill="true"
+				icon="md-text-quickfix" 
+				class="MonoDevelop.CodeActions.CodeActionPanel"/>
 		</Section>
 	</Extension>
 	

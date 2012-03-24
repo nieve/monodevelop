@@ -74,7 +74,7 @@ namespace Mono.TextEditor
 		
 		double mx, my;
 		
-		public Document Document {
+		public TextDocument Document {
 			get {
 				return textEditorData.Document;
 			}
@@ -173,7 +173,7 @@ namespace Mono.TextEditor
 		
 		Dictionary<int, double> lineHeights = new Dictionary<int, double> ();
 		
-		public TextEditor () : this(new Document ())
+		public TextEditor () : this(new TextDocument ())
 		{
 		}
 
@@ -273,21 +273,17 @@ namespace Mono.TextEditor
 			this.textEditorData.VAdjustment.ValueChanged += VAdjustmentValueChanged;
 		}
 		
-		protected TextEditor (IntPtr raw) : base (raw)
-		{
-		}
-		
-		public TextEditor (Document doc)
+		public TextEditor (TextDocument doc)
 			: this (doc, null)
 		{
 		}
 		
-		public TextEditor (Document doc, ITextEditorOptions options)
+		public TextEditor (TextDocument doc, ITextEditorOptions options)
 			: this (doc, options, new SimpleEditMode ())
 		{
 		}
 		
-		public TextEditor (Document doc, ITextEditorOptions options, EditMode initialMode)
+		public TextEditor (TextDocument doc, ITextEditorOptions options, EditMode initialMode)
 		{
 			textEditorData = new TextEditorData (doc);
 			textEditorData.Parent = this;
@@ -359,7 +355,7 @@ namespace Mono.TextEditor
 #endif
 		}
 
-		void HandleDocumenthandleEndUndo (object sender, Document.UndoOperationEventArgs e)
+		void HandleDocumenthandleEndUndo (object sender, TextDocument.UndoOperationEventArgs e)
 		{
 			if (this.Document.HeightChanged) {
 				this.Document.HeightChanged = false;
@@ -455,7 +451,7 @@ namespace Mono.TextEditor
 		void TextEditorDataSelectionChanged (object sender, EventArgs args)
 		{
 			if (IsSomethingSelected) {
-				ISegment selectionRange = MainSelection.GetSelectionRange (textEditorData);
+				var selectionRange = MainSelection.GetSelectionRange (textEditorData);
 				if (selectionRange.Offset >= 0 && selectionRange.EndOffset < Document.Length) {
 					ClipboardActions.CopyToPrimary (this.textEditorData);
 				} else {
@@ -1141,7 +1137,7 @@ namespace Mono.TextEditor
 				int dragOffset = Document.LocationToOffset (dragCaretPos);
 				if (context.Action == DragAction.Move) {
 					if (CanEdit (Caret.Line) && selection != null) {
-						ISegment selectionRange = selection.GetSelectionRange (textEditorData);
+						var selectionRange = selection.GetSelectionRange (textEditorData);
 						if (selectionRange.Offset < dragOffset)
 							dragOffset -= selectionRange.Length;
 						Caret.PreserveSelection = true;
@@ -1570,17 +1566,11 @@ namespace Mono.TextEditor
 			double startY = LineToY (startLine);
 			double curY = startY - this.textEditorData.VAdjustment.Value;
 			bool setLongestLine = false;
-			for (int visualLineNumber = startLine; ; visualLineNumber++) {
-				int logicalLineNumber = visualLineNumber;
-				LineSegment line      = Document.GetLine (logicalLineNumber);
-				double lineHeight     = GetLineHeight (line);
-				int lastFold = 0;
-				foreach (FoldSegment fs in Document.GetStartFoldings (line).Where (fs => fs.IsFolded)) {
-					lastFold = System.Math.Max (fs.EndOffset, lastFold);
-				}
-				if (lastFold >= DocumentLocation.MinLine)
-					visualLineNumber = Document.OffsetToLineNumber (lastFold);
-				foreach (Margin margin in this.margins) {
+			for (int visualLineNumber = textEditorData.LogicalToVisualLine (startLine);; visualLineNumber++) {
+				int logicalLineNumber = textEditorData.VisualToLogicalLine (visualLineNumber);
+				var line = Document.GetLine (logicalLineNumber);
+				double lineHeight = GetLineHeight (line);
+				foreach (var margin in this.margins) {
 					if (!margin.IsVisible)
 						continue;
 					try {
@@ -1602,7 +1592,7 @@ namespace Mono.TextEditor
 					break;
 			}
 			
-			foreach (Margin margin in this.margins) {
+			foreach (var margin in this.margins) {
 				if (!margin.IsVisible)
 					continue;
 				foreach (var drawer in margin.MarginDrawer)
@@ -1671,8 +1661,8 @@ namespace Mono.TextEditor
 					animation.Drawer.Draw (cr);
 				}
 				
-				if (HasFocus && e.Area.Contains ((int)TextViewMargin.caretX, (int)TextViewMargin.caretY))
-					textViewMargin.DrawCaret (e.Window);
+				if (HasFocus)
+					textViewMargin.DrawCaret (e.Window, e.Area);
 				
 				OnPainted (new PaintEventArgs (cr, cairoArea));
 			}
@@ -1735,7 +1725,7 @@ namespace Mono.TextEditor
 			}
 		}
 
-		public ISegment SelectionRange {
+		public TextSegment SelectionRange {
 			get {
 				return this.textEditorData.SelectionRange;
 			}
@@ -1785,7 +1775,7 @@ namespace Mono.TextEditor
 			return textEditorData.Insert (offset, value);
 		}
 		
-		public void Remove (ISegment removeSegment)
+		public void Remove (TextSegment removeSegment)
 		{
 			textEditorData.Remove (removeSegment);
 		}
@@ -1924,7 +1914,7 @@ namespace Mono.TextEditor
 			return Document.GetTextAt (offset, count);
 		}
 
-		public string GetTextAt (ISegment segment)
+		public string GetTextAt (TextSegment segment)
 		{
 			return Document.GetTextAt (segment);
 		}
@@ -2234,10 +2224,10 @@ namespace Mono.TextEditor
 		
 		public void AnimateSearchResult (SearchResult result)
 		{
-			if (!IsComposited || !Options.EnableAnimations)
+			if (!IsComposited || !Options.EnableAnimations || result == null)
 				return;
-			TextViewMargin.MainSearchResult = result;
-			if (result != null) {
+			TextViewMargin.MainSearchResult = result.Segment;
+			if (!TextViewMargin.MainSearchResult.IsInvalid) {
 				if (popupWindow != null) {
 					popupWindow.StopPlaying ();
 					popupWindow.Destroy ();
@@ -2296,7 +2286,7 @@ namespace Mono.TextEditor
 			{
 				LineSegment line = Editor.Document.GetLineByOffset (Result.Offset);
 				int lineNr = Editor.Document.OffsetToLineNumber (Result.Offset);
-				SyntaxMode mode = Editor.Document.SyntaxMode != null && Editor.Options.EnableSyntaxHighlighting ? Editor.Document.SyntaxMode : new SyntaxMode (Editor.Document);
+				ISyntaxMode mode = Editor.Document.SyntaxMode != null && Editor.Options.EnableSyntaxHighlighting ? Editor.Document.SyntaxMode : new SyntaxMode (Editor.Document);
 				int logicalRulerColumn = line.GetLogicalColumn (Editor.GetTextEditorData (), Editor.Options.RulerColumn);
 				var lineLayout = Editor.textViewMargin.CreateLinePartLayout (mode, line, logicalRulerColumn, line.Offset, line.EditableLength, -1, -1);
 				if (lineLayout == null)
@@ -2348,7 +2338,7 @@ namespace Mono.TextEditor
 						if (layout == null) {
 							layout = cr.CreateLayout ();
 							layout.FontDescription = Editor.Options.Font;
-							string markup = Editor.Document.SyntaxMode.GetMarkup (Editor.Options, Editor.ColorStyle, Result.Offset, Result.Length, true);
+							string markup = Editor.GetTextEditorData ().GetMarkup (Result.Offset, Result.Length, true);
 							layout.SetMarkup (markup);
 							layout.GetPixelSize (out layoutWidth, out layoutHeight);
 						}

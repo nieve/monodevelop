@@ -38,27 +38,52 @@ namespace MonoDevelop.CSharp.Formatting
 				return Document.Editor;
 			}
 		}
+		
+		public static bool OnTheFlyFormatting {
+			get {
+				return PropertyService.Get ("OnTheFlyFormatting", true);
+			}
+			set {
+				PropertyService.Set ("OnTheFlyFormatting", value);
+			}
+		}
+		
 		void RunFormatter ()
 		{
-			if (PropertyService.Get ("OnTheFlyFormatting", true) && textEditorData != null && !(textEditorData.CurrentMode is TextLinkEditMode)) {
+			if (OnTheFlyFormatting && textEditorData != null && !(textEditorData.CurrentMode is TextLinkEditMode) && !(textEditorData.CurrentMode is InsertionCursorEditMode)) {
 				OnTheFlyFormatter.Format (Document, textEditorData.Caret.Location);
 			}
 		}
 
 		public override void Initialize ()
 		{
-			MonoDevelop.Ide.CodeCompletion.CompletionWindowManager.WordCompleted += HandleWordCompleted;
 			base.Initialize ();
+			Document.Editor.Paste += HandleTextPaste;
 		}
 
-		void HandleWordCompleted (object sender, MonoDevelop.Ide.CodeCompletion.CodeCompletionContextEventArgs e)
+		void HandleTextPaste (int insertionOffset, string text, int insertedChars)
 		{
 			RunFormatter ();
+			/*
+			if (PropertyService.Get ("OnTheFlyFormatting", true)) {
+				var prettyPrinter = CodeFormatterService.GetFormatter (Document.MimeType);
+				if (prettyPrinter != null && Project != null && text != null) {
+					try {
+						var policies = Project.Policies;
+						string newText = prettyPrinter.FormatText (policies, Document.Text, insertionOffset, insertionOffset + insertedChars);
+						if (!string.IsNullOrEmpty (newText)) {
+							int replaceResult = Replace (insertionOffset, insertedChars, newText);
+							Caret.Offset = insertionOffset + replaceResult;
+						}
+					} catch (Exception e) {
+						LoggingService.LogError ("Error formatting pasted text", e);
+					}
+				}
+			}*/
 		}
 
 		public override void Dispose ()
 		{
-			MonoDevelop.Ide.CodeCompletion.CompletionWindowManager.WordCompleted -= HandleWordCompleted;
 			base.Dispose ();
 		}
 

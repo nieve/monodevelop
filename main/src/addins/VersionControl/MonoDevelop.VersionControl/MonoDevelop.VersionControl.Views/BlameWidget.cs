@@ -94,12 +94,10 @@ namespace MonoDevelop.VersionControl.Views
 			}
 		}
 
-		protected BlameWidget (IntPtr ptr) : base (ptr)
-		{
-		}
-
 		public BlameWidget (VersionControlDocumentInfo info)
 		{
+			GtkWorkarounds.FixContainerLeak (this);
+			
 			this.info = info;
 			var sourceEditor = info.Document.GetContent<MonoDevelop.SourceEditor.SourceEditorView> ();
 			
@@ -337,7 +335,7 @@ namespace MonoDevelop.VersionControl.Views
 				sb.Append (ch);
 			}
 			
-			Document doc = new Document ();
+			var doc = new TextDocument ();
 			doc.Text = sb.ToString ();
 			for (int i = 1; i <= doc.LineCount; i++) {
 				string text = doc.GetLineText (i).Trim ();

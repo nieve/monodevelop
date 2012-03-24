@@ -27,6 +27,8 @@
 //
 
 using System;
+using System.Linq;
+using System.Collections.Generic;
 using Mono.TextEditor;
 using MonoDevelop.Core;
 using MonoDevelop.Ide.Gui;
@@ -43,6 +45,7 @@ namespace MonoDevelop.CSharpBinding.Tests
 				return null;
 			}
 		}
+		
 		public TextEditorData Data {
 			get {
 				return this.data;
@@ -50,7 +53,7 @@ namespace MonoDevelop.CSharpBinding.Tests
 		}
 		public TestViewContent ()
 		{
-			document = new Mono.TextEditor.Document ();
+			document = new Mono.TextEditor.TextDocument ();
 			data = new TextEditorData (document);
 			Name = "";
 		}
@@ -71,7 +74,7 @@ namespace MonoDevelop.CSharpBinding.Tests
 			}
 		}
 		
-		Mono.TextEditor.Document document;
+		Mono.TextEditor.TextDocument document;
 		public string Text {
 			get {
 				return document.Text;
@@ -148,7 +151,7 @@ namespace MonoDevelop.CSharpBinding.Tests
 		
 		public void Select (int startPosition, int endPosition)
 		{
-			data.SelectionRange = new Segment (startPosition, endPosition - startPosition);
+			data.SelectionRange = new TextSegment (startPosition, endPosition - startPosition);
 		}
 		
 		public void ShowPosition (int position)
@@ -188,6 +191,13 @@ namespace MonoDevelop.CSharpBinding.Tests
 			public void Dispose ()
 			{
 			}
+		}
+		
+		public List<object> Contents = new List<object> ();
+		
+		public override T GetContent<T> () 
+		{
+			return Contents.OfType<T> ().FirstOrDefault () ??  base.GetContent<T> ();
 		}
 		
 		public IDisposable OpenUndoGroup ()

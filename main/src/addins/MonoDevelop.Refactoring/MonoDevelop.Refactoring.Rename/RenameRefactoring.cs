@@ -82,7 +82,7 @@ namespace MonoDevelop.Refactoring.Rename
 					change.Offset = memberRef.Offset;
 					change.RemovedChars = memberRef.Length;
 					change.InsertedText = newName;
-					change.Description = string.Format (GettextCatalog.GetString ("Replace '{0}' with '{1}'"), memberRef.Entity.Name, newName);
+					change.Description = string.Format (GettextCatalog.GetString ("Replace '{0}' with '{1}'"), memberRef.GetName (), newName);
 					result.Add (change);
 				}
 				if (result.Count > 0) {
@@ -99,6 +99,12 @@ namespace MonoDevelop.Refactoring.Rename
 		public override void Run (RefactoringOptions options)
 		{
 			if (options.SelectedItem is IVariable) {
+				var field = options.SelectedItem as IField;
+				if (field != null && field.Accessibility != Accessibility.Private) {
+					MessageService.ShowCustomDialog (new RenameItemDialog (options, this));
+					return;
+				}
+
 				var col = ReferenceFinder.FindReferences (options.SelectedItem);
 				if (col == null)
 					return;
@@ -116,7 +122,7 @@ namespace MonoDevelop.Refactoring.Rename
 					baseOffset = Math.Min (baseOffset, r.Offset);
 				}
 				foreach (MemberReference r in col) {
-					Segment segment = new Segment (r.Offset - baseOffset, r.Length);
+					var segment = new TextSegment (r.Offset - baseOffset, r.Length);
 					if (segment.Offset <= data.Caret.Offset - baseOffset && data.Caret.Offset - baseOffset <= segment.EndOffset) {
 						link.Links.Insert (0, segment); 
 					} else {
@@ -211,7 +217,7 @@ namespace MonoDevelop.Refactoring.Rename
 					change.Offset = memberRef.Offset;
 					change.RemovedChars = memberRef.Length;
 					change.InsertedText = properties.NewName;
-					change.Description = string.Format (GettextCatalog.GetString ("Replace '{0}' with '{1}'"), memberRef.Entity.Name, properties.NewName);
+					change.Description = string.Format (GettextCatalog.GetString ("Replace '{0}' with '{1}'"), memberRef.GetName (), properties.NewName);
 					result.Add (change);
 				}
 			}

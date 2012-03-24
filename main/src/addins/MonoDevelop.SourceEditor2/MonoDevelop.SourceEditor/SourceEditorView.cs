@@ -49,6 +49,7 @@ using MonoDevelop.Ide.CodeFormatting;
 using ICSharpCode.NRefactory.TypeSystem;
 using MonoDevelop.TypeSystem;
 using ICSharpCode.NRefactory.Semantics;
+using MonoDevelop.SourceEditor.QuickTasks;
 
 namespace MonoDevelop.SourceEditor
 {	
@@ -79,7 +80,7 @@ namespace MonoDevelop.SourceEditor
 		bool writeAllowed;
 		bool writeAccessChecked;
 		
-		public Mono.TextEditor.Document Document {
+		public Mono.TextEditor.TextDocument Document {
 			get {
 				return widget.TextEditor.Document;
 			}
@@ -531,6 +532,10 @@ namespace MonoDevelop.SourceEditor
 						return;
 					foreach (var provider in WorkbenchWindow.Document.GetContents<IQuickTaskProvider> ()) {
 						widget.AddQuickTaskProvider (provider);
+					}
+
+					foreach (var provider in WorkbenchWindow.Document.GetContents<IUsageProvider> ()) {
+						widget.AddUsageTaskProvider (provider);
 					}
 					
 					WorkbenchWindow.Document.DocumentParsed += delegate(object sender, EventArgs e) {
@@ -1175,7 +1180,7 @@ namespace MonoDevelop.SourceEditor
 			set {
 				TextEditor.DeleteSelectedText ();
 				int length = TextEditor.Insert (TextEditor.Caret.Offset, value);
-				TextEditor.SelectionRange = new Segment (TextEditor.Caret.Offset, length);
+				TextEditor.SelectionRange = new TextSegment (TextEditor.Caret.Offset, length);
 				TextEditor.Caret.Offset += length; 
 			}
 		}
@@ -1223,7 +1228,7 @@ namespace MonoDevelop.SourceEditor
 		
 		public void Select (int startPosition, int endPosition)
 		{
-			TextEditor.SelectionRange = new Segment (startPosition, endPosition - startPosition);
+			TextEditor.SelectionRange = new TextSegment (startPosition, endPosition - startPosition);
 			TextEditor.ScrollToCaret ();
 		}
 		
@@ -1944,7 +1949,10 @@ namespace MonoDevelop.SourceEditor
 		#endregion
 		public Mono.TextEditor.TextEditorData GetTextEditorData ()
 		{
-			return TextEditor.GetTextEditorData ();
+			var editor = TextEditor;
+			if (editor == null)
+				return null;
+			return editor.GetTextEditorData ();
 		}
 		
 		public void InsertTemplate (CodeTemplate template, MonoDevelop.Ide.Gui.Document doc)

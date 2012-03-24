@@ -67,6 +67,7 @@ namespace ICSharpCode.NRefactory.Editor
 		/// <summary>
 		/// Gets the whole text as string.
 		/// </summary>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods")]
 		string Text { get; }
 		
 		/// <summary>
@@ -167,7 +168,7 @@ namespace ICSharpCode.NRefactory.Editor
 	/// <remarks>
 	/// Verions can be used to efficiently detect whether a document has changed and needs reparsing;
 	/// or even to implement incremental parsers.
-	/// It is a separate class from ITextBuffer to allow the GC to collect the text buffer while
+	/// It is a separate class from ITextSource to allow the GC to collect the text source while
 	/// the version checkpoint is still in use.
 	/// </remarks>
 	public interface ITextSourceVersion

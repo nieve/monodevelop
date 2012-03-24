@@ -34,7 +34,7 @@ using MonoDevelop.Components.Commands;
 using MonoDevelop.Core;
 using MonoDevelop.Projects;
 using MonoDevelop.Ide.Commands;
-using Document = Mono.TextEditor.Document;
+using Document = Mono.TextEditor.TextDocument;
 using Services = MonoDevelop.Projects.Services;
 using System.Threading;
 using MonoDevelop.Ide;
@@ -43,10 +43,12 @@ using Mono.TextEditor.Theatrics;
 using System.ComponentModel;
 using ICSharpCode.NRefactory.TypeSystem;
 using MonoDevelop.TypeSystem;
+using Mono.TextEditor.Highlighting;
+using MonoDevelop.SourceEditor.QuickTasks;
+using ICSharpCode.NRefactory.CSharp;
 
 namespace MonoDevelop.SourceEditor
 {
-	
 	class SourceEditorWidget : ITextEditorExtension, IQuickTaskProvider
 	{
 		SourceEditorView view;
@@ -102,6 +104,15 @@ namespace MonoDevelop.SourceEditor
 			mainsw.AddQuickTaskStrip (provider); 
 			if (secondsw != null)
 				secondsw.AddQuickTaskStrip (provider);
+		}
+		
+		List<IUsageProvider> usageProvider = new List<IUsageProvider> ();
+		public void AddUsageTaskProvider (IUsageProvider provider)
+		{
+			usageProvider.Add (provider);
+			mainsw.AddUsageProvider (provider); 
+			if (secondsw != null)
+				secondsw.AddUsageProvider (provider);
 		}
 		
 		#region ITextEditorExtension
@@ -225,6 +236,15 @@ namespace MonoDevelop.SourceEditor
 					scrolledWindow.ReplaceVScrollBar (strip);
 				}
 				p.TasksUpdated += (sender, e) => strip.Update (p);
+			}
+			
+			public void AddUsageProvider (IUsageProvider p)
+			{
+				if (!strip.Visible) {
+					strip.VAdjustment = scrolledWindow.Vadjustment;
+					scrolledWindow.ReplaceVScrollBar (strip);
+				}
+				p.UsagesUpdated += (sender, e) => strip.Update (p);
 			}
 			
 			protected override void OnDestroyed ()
@@ -408,7 +428,6 @@ namespace MonoDevelop.SourceEditor
 					foreach (PreProcessorDefine define in parsedDocument.Defines) {
 						symbols.Add (define.Define);
 					}
-					doc.UpdateHighlighting ();
 				}
 				
 				foreach (FoldingRegion region in parsedDocument.Foldings) {
@@ -1341,7 +1360,7 @@ namespace MonoDevelop.SourceEditor
 		}
 		#endregion
 	
-		public Mono.TextEditor.Document Document {
+		public Mono.TextEditor.TextDocument Document {
 			get {
 				var editor = TextEditor;
 				if (editor == null)
@@ -1373,13 +1392,18 @@ namespace MonoDevelop.SourceEditor
 		#region commenting and indentation
 		internal void OnUpdateToggleComment (MonoDevelop.Components.Commands.CommandInfo info)
 		{
+			var mode = Document.SyntaxMode as SyntaxMode;
+			if (mode == null) {
+				info.Visible = false;
+				return;
+			}
 			List<string> lineComments;
-			if (Document.SyntaxMode.Properties.TryGetValue ("LineComment", out lineComments)) {
+			if (mode.Properties.TryGetValue ("LineComment", out lineComments)) {
 				info.Visible = lineComments.Count > 0;
 			} else {
 				List<string> blockStarts;
 				List<string> blockEnds;
-				if (Document.SyntaxMode.Properties.TryGetValue ("BlockCommentStart", out blockStarts) && Document.SyntaxMode.Properties.TryGetValue ("BlockCommentEnd", out blockEnds)) {
+				if (mode.Properties.TryGetValue ("BlockCommentStart", out blockStarts) && mode.Properties.TryGetValue ("BlockCommentEnd", out blockEnds)) {
 					info.Visible = blockStarts.Count > 0 && blockEnds.Count > 0;
 				}
 			}
@@ -1387,13 +1411,16 @@ namespace MonoDevelop.SourceEditor
 		
 		void ToggleCodeCommentWithBlockComments ()
 		{
+			var mode = Document.SyntaxMode as SyntaxMode;
+			if (mode == null)
+				return;
 
 			List<string> blockStarts;
-			if (!Document.SyntaxMode.Properties.TryGetValue ("BlockCommentStart", out blockStarts) || blockStarts.Count == 0)
+			if (!mode.Properties.TryGetValue ("BlockCommentStart", out blockStarts) || blockStarts.Count == 0)
 				return;
 
 			List<string> blockEnds;
-			if (!Document.SyntaxMode.Properties.TryGetValue ("BlockCommentEnd", out blockEnds) || blockEnds.Count == 0)
+			if (!mode.Properties.TryGetValue ("BlockCommentEnd", out blockEnds) || blockEnds.Count == 0)
 				return;
 
 			string blockStart = blockStarts[0];
@@ -1423,22 +1450,27 @@ namespace MonoDevelop.SourceEditor
 					if (TextEditor.IsSomethingSelected) {
 						TextEditor.SelectionAnchor += blockEnd.Length;
 					}
-					
+
 				}
 			}
 		}
 		
 		public void ToggleCodeComment ()
 		{
+			var mode = Document.SyntaxMode as SyntaxMode;
+			if (mode == null)
+				return;
 			bool comment = false;
 			List<string> lineComments;
-			if (!Document.SyntaxMode.Properties.TryGetValue ("LineComment", out lineComments) || lineComments.Count == 0) {
+			if (!mode.Properties.TryGetValue ("LineComment", out lineComments) || lineComments.Count == 0) {
 				ToggleCodeCommentWithBlockComments ();
 				return;
 			}
-			string commentTag = lineComments[0];
-			
+			string commentTag = lineComments [0];
+
 			foreach (LineSegment line in this.textEditor.SelectedLines) {
+				if (line.GetIndentation (TextEditor.Document).Length == line.EditableLength)
+					continue;
 				string text = Document.GetTextAt (line);
 				string trimmedText = text.TrimStart ();
 				if (!trimmedText.StartsWith (commentTag)) {
@@ -1481,15 +1513,17 @@ namespace MonoDevelop.SourceEditor
 		void CommentSelectedLines (string commentTag)
 		{
 			int startLineNr = TextEditor.IsSomethingSelected ? Document.OffsetToLineNumber (TextEditor.SelectionRange.Offset) : TextEditor.Caret.Line;
-			int endLineNr   = TextEditor.IsSomethingSelected ? Document.OffsetToLineNumber (TextEditor.SelectionRange.EndOffset) : TextEditor.Caret.Line;
+			int endLineNr = TextEditor.IsSomethingSelected ? Document.OffsetToLineNumber (TextEditor.SelectionRange.EndOffset) : TextEditor.Caret.Line;
 			if (endLineNr < 0)
 				endLineNr = Document.LineCount;
 			
-			LineSegment anchorLine   = TextEditor.IsSomethingSelected ? TextEditor.Document.GetLineByOffset (TextEditor.SelectionAnchor) : null;
-			int         anchorColumn = TextEditor.IsSomethingSelected ? TextEditor.SelectionAnchor - anchorLine.Offset : -1;
+			LineSegment anchorLine = TextEditor.IsSomethingSelected ? TextEditor.Document.GetLineByOffset (TextEditor.SelectionAnchor) : null;
+			int anchorColumn = TextEditor.IsSomethingSelected ? TextEditor.SelectionAnchor - anchorLine.Offset : -1;
 			
 			using (var undo = Document.OpenUndoGroup ()) {
 				foreach (LineSegment line in TextEditor.SelectedLines) {
+//					if (line.GetIndentation (TextEditor.Document).Length == line.EditableLength)
+//						continue;
 					TextEditor.Insert (line.Offset, commentTag);
 				}
 				if (TextEditor.IsSomethingSelected) {
@@ -1587,12 +1621,12 @@ namespace MonoDevelop.SourceEditor
 			tasks.Clear ();
 			
 			foreach (var cmt in doc.TagComments) {
-				var newTask = new QuickTask (cmt.Text, cmt.Region.Begin, QuickTaskSeverity.Hint);
+				var newTask = new QuickTask (cmt.Text, cmt.Region.Begin, Severity.Hint);
 				tasks.Add (newTask);
 			}
 			
 			foreach (var error in doc.Errors) {
-				var newTask = new QuickTask (error.Message, error.Region.Begin, error.ErrorType == ErrorType.Error ? QuickTaskSeverity.Error : QuickTaskSeverity.Warning);
+				var newTask = new QuickTask (error.Message, error.Region.Begin, error.ErrorType == ErrorType.Error ? Severity.Error : Severity.Warning);
 				tasks.Add (newTask);
 			}
 			

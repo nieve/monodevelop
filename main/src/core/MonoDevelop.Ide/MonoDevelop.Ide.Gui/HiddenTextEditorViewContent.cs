@@ -27,6 +27,7 @@
 using System;
 using MonoDevelop.Ide.Gui.Content;
 using MonoDevelop.Core;
+using Mono.TextEditor;
 
 namespace MonoDevelop.Ide.Gui
 {
@@ -42,7 +43,7 @@ namespace MonoDevelop.Ide.Gui
 		
 		public HiddenTextEditorViewContent ()
 		{
-			document = new Mono.TextEditor.Document ();
+			document = new Mono.TextEditor.TextDocument ();
 			data = new Mono.TextEditor.TextEditorData (document);
 			Name = "";
 		}
@@ -66,7 +67,7 @@ namespace MonoDevelop.Ide.Gui
 			}
 		}
 		
-		Mono.TextEditor.Document document;
+		Mono.TextEditor.TextDocument document;
 		public string Text {
 			get {
 				return document.Text;
@@ -143,7 +144,7 @@ namespace MonoDevelop.Ide.Gui
 		
 		public void Select (int startPosition, int endPosition)
 		{
-			data.SelectionRange = new Mono.TextEditor.Segment (startPosition, endPosition - startPosition);
+			data.SelectionRange = new TextSegment (startPosition, endPosition - startPosition);
 		}
 		
 		public void ShowPosition (int position)

@@ -42,8 +42,10 @@ namespace MonoDevelop.Ide.Gui.Content
 	{
 		internal protected Document document;
 		
-		internal protected void Initialize (Document document)
+		public void Initialize (Document document)
 		{
+			if (this.document != null)
+				throw new InvalidOperationException ("Extension is already initialized.");
 			this.document = document;
 			Initialize ();
 		}
@@ -58,7 +60,7 @@ namespace MonoDevelop.Ide.Gui.Content
 		}
 
 		protected TextEditorData Editor {
-			get { return document.Editor; }
+			get { return document != null ? document.Editor : null; }
 		}
 
 		protected FilePath FileName {

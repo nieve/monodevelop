@@ -79,12 +79,12 @@ FILES =  \
 	Ast/IAstVisitor.cs \
 	Ast/Identifier.cs \
 	Ast/IdentifierExpressionBackreference.cs \
-	Ast/IRelocatable.cs \
 	Ast/MemberType.cs \
 	Ast/Modifiers.cs \
 	Ast/NodeType.cs \
 	Ast/ObservableAstVisitor.cs \
 	Ast/PrimitiveType.cs \
+	Ast/Roles.cs \
 	Ast/SimpleType.cs \
 	Ast/Statements/BlockStatement.cs \
 	Ast/Statements/BreakStatement.cs \
@@ -205,45 +205,60 @@ FILES =  \
 	Parser/mcs/typespec.cs \
 	Parser/mcs/visit.cs \
 	Properties/AssemblyInfo.cs \
-	Refactoring/Action.cs \
-	Refactoring/ContextAction/AddAnotherAccessor.cs \
-	Refactoring/ContextAction/CheckIfParameterIsNull.cs \
-	Refactoring/ContextAction/ConvertDecToHex.cs \
-	Refactoring/ContextAction/ConvertForeachToFor.cs \
-	Refactoring/ContextAction/ConvertHexToDec.cs \
-	Refactoring/ContextAction/CreateBackingStore.cs \
-	Refactoring/ContextAction/CreateEventInvocator.cs \
-	Refactoring/ContextAction/CreateField.cs \
-	Refactoring/ContextAction/CreateLocalVariable.cs \
-	Refactoring/ContextAction/CreateProperty.cs \
-	Refactoring/ContextAction/FlipOperatorArguments.cs \
-	Refactoring/ContextAction/GenerateGetter.cs \
-	Refactoring/ContextAction/GenerateProperty.cs \
-	Refactoring/ContextAction/GenerateSwitchLabels.cs \
-	Refactoring/ContextAction/InsertAnonymousMethodSignature.cs \
-	Refactoring/ContextAction/IntroduceFormatItem.cs \
-	Refactoring/ContextAction/InvertIf.cs \
-	Refactoring/ContextAction/RemoveBackingStore.cs \
-	Refactoring/ContextAction/RemoveBraces.cs \
-	Refactoring/ContextAction/RemoveRegion.cs \
-	Refactoring/ContextAction/ReplaceEmptyString.cs \
-	Refactoring/ContextAction/SplitDeclarationAndAssignment.cs \
-	Refactoring/ContextAction/SplitString.cs \
-	Refactoring/ContextAction/UseExplicitType.cs \
-	Refactoring/ContextAction/UseVarKeyword.cs \
-	Refactoring/CreateLinkAction.cs \
-	Refactoring/FormatTextAction.cs \
-	Refactoring/IActionFactory.cs \
-	Refactoring/IContextAction.cs \
-	Refactoring/NodeOutputAction.cs \
-	Refactoring/NodeSelectionAction.cs \
+	Refactoring/BaseRefactoringContext.cs \
+	Refactoring/CodeAction.cs \
+	Refactoring/CodeActions/AddAnotherAccessorAction.cs \
+	Refactoring/CodeActions/CheckIfParameterIsNullAction.cs \
+	Refactoring/CodeActions/ConvertDecToHexAction.cs \
+	Refactoring/CodeActions/ConvertForeachToForAction.cs \
+	Refactoring/CodeActions/ConvertHexToDecAction.cs \
+	Refactoring/CodeActions/CreateBackingStoreAction.cs \
+	Refactoring/CodeActions/CreateEventInvocatorAction.cs \
+	Refactoring/CodeActions/CreateFieldAction.cs \
+	Refactoring/CodeActions/CreateLocalVariableAction.cs \
+	Refactoring/CodeActions/CreatePropertyAction.cs \
+	Refactoring/CodeActions/FlipOperatorArgumentsAction.cs \
+	Refactoring/CodeActions/GenerateGetterAction.cs \
+	Refactoring/CodeActions/GeneratePropertyAction.cs \
+	Refactoring/CodeActions/GenerateSwitchLabelsAction.cs \
+	Refactoring/CodeActions/InsertAnonymousMethodSignatureAction.cs \
+	Refactoring/CodeActions/IntroduceFormatItemAction.cs \
+	Refactoring/CodeActions/InvertIfAction.cs \
+	Refactoring/CodeActions/RemoveBackingStoreAction.cs \
+	Refactoring/CodeActions/RemoveBracesAction.cs \
+	Refactoring/CodeActions/RemoveRegionAction.cs \
+	Refactoring/CodeActions/ReplaceEmptyStringAction.cs \
+	Refactoring/CodeActions/SplitDeclarationAndAssignmentAction.cs \
+	Refactoring/CodeActions/SplitStringAction.cs \
+	Refactoring/CodeActions/UseExplicitTypeAction.cs \
+	Refactoring/CodeActions/UseVarKeywordAction.cs \
+	Refactoring/CodeIssue.cs \
+	Refactoring/CodeIssues/ConditionalToNullCoalescingIssue.cs \
+	Refactoring/CodeIssues/GatherVisitorBase.cs \
+	Refactoring/CodeIssues/IssueCategories.cs \
+	Refactoring/CodeIssues/NotImplementedExceptionIssue.cs \
+	Refactoring/CodeIssues/RedundantInternalIssue.cs \
+	Refactoring/CodeIssues/RedundantNamespaceUsageIssue.cs \
+	Refactoring/CodeIssues/RedundantPrivateIssue.cs \
+	Refactoring/CodeIssues/RedundantThisIssue.cs \
+	Refactoring/CodeIssues/RedundantUsingIssue.cs \
+	Refactoring/CodeIssues/StringIsNullOrEmptyIssue.cs \
+	Refactoring/CodeIssues/UseVarKeywordIssue.cs \
+	Refactoring/ContextActionAttribute.cs \
+	Refactoring/DocumentScript.cs \
+	Refactoring/ICodeActionProvider.cs \
+	Refactoring/ICodeIssueProvider.cs \
+	Refactoring/IssueAttribute.cs \
+	Refactoring/IssueMarker.cs \
+	Refactoring/PatternHelper.cs \
+	Refactoring/RefactoringAstHelper.cs \
 	Refactoring/RefactoringContext.cs \
 	Refactoring/Script.cs \
-	Refactoring/TextReplaceAction.cs \
+	Refactoring/Severity.cs \
 	Refactoring/TypeSystemAstBuilder.cs \
 	Resolver/CompositeResolveVisitorNavigator.cs \
-	Resolver/Conversions.cs \
 	Resolver/CSharpAstResolver.cs \
+	Resolver/CSharpConversions.cs \
 	Resolver/CSharpInvocationResolveResult.cs \
 	Resolver/CSharpOperators.cs \
 	Resolver/CSharpResolver.cs \

@@ -200,6 +200,7 @@ namespace MonoDevelop.SourceEditor.OptionPanels
 			
 			new ColorMetaData ("keyword.semantic.type", GettextCatalog.GetString ("Types (semantic)"), ColorsAvailable.Text),
 			new ColorMetaData ("keyword.semantic.field", GettextCatalog.GetString ("Field (semantic)"), ColorsAvailable.Text),
+			new ColorMetaData ("keyword.semantic.error", GettextCatalog.GetString ("Error (semantic)"), ColorsAvailable.Text),
 			
 			new ColorMetaData ("keyword", GettextCatalog.GetString ("Keywords"), ColorsAvailable.Text),
 			new ColorMetaData ("keyword.access", GettextCatalog.GetString ("Access keywords"), ColorsAvailable.Text),
@@ -281,6 +282,19 @@ namespace MonoDevelop.SourceEditor.OptionPanels
 			}
 		}
 
+		public static void RefreshAllColors ()
+		{
+			foreach (var doc in Ide.IdeApp.Workbench.Documents) {
+				var editor = doc.Editor;
+				if (editor == null)
+					continue;
+				doc.UpdateParseDocument ();
+				editor.Parent.TextViewMargin.PurgeLayoutCache ();
+				editor.Document.CommitUpdateAll ();
+			}
+		
+		}
+
 		void HandleButtonOkClicked (object sender, EventArgs e)
 		{
 			ApplyStyle (colorSheme);
@@ -290,15 +304,7 @@ namespace MonoDevelop.SourceEditor.OptionPanels
 			} catch (Exception ex) {
 				MessageService.ShowException (ex);
 			}
-			
-			foreach (var doc in Ide.IdeApp.Workbench.Documents) {
-				var editor = doc.Editor;
-				if (editor == null)
-					continue;
-				Console.WriteLine ("refresh editor !!!");
-				editor.Parent.TextViewMargin.PurgeLayoutCache ();
-				editor.Document.CommitUpdateAll ();
-			}
+			RefreshAllColors ();
 		}
 
 		void Stylechanged (object sender, EventArgs e)

@@ -60,20 +60,24 @@ FILES =  \
 	Mono.TextEditor.Tests/SmartIndentModeTests.cs \
 	Mono.TextEditor.Tests/SyntaxHighlightingTests.cs \
 	Mono.TextEditor.Tests/TextBreakerTests.cs \
+	Mono.TextEditor.Tests/TextFileReaderTests.cs \
 	Mono.TextEditor.Tests/UndoRedoTests.cs \
 	Mono.TextEditor.Tests/VirtualIndentModeTests.cs \
 	Mono.TextEditor.Tests/VirtualSpacesTests.cs \
 	Mono.TextEditor.Tests/ViTests.cs \
+	MonoDevelop.CSharpBinding.Refactoring/ImplementInterfaceTests.cs \
+	MonoDevelop.CSharpBinding.Refactoring/ResolveNamespaceTests.cs \
 	MonoDevelop.CSharpBinding/CSharpTextEditorIndentationTests.cs \
 	MonoDevelop.CSharpBinding/FindMemberVisitorTests.cs \
 	MonoDevelop.CSharpBinding/FoldingParserTests.cs \
 	MonoDevelop.CSharpBinding/MemberTests.cs \
+	MonoDevelop.CSharpBinding/OnTheFlyFormatterTests.cs \
 	MonoDevelop.CSharpBinding/ProjectDomTests.cs \
 	MonoDevelop.CSharpBinding/TestDocument.cs \
 	MonoDevelop.CSharpBinding/TestViewContent.cs \
 	MonoDevelop.CSharpBinding/TestWorkbenchWindow.cs \
-	MonoDevelop.CSharpBinding/TopLevelTests.cs \
-	MonoDevelop.Projects.Gui/CompletionListWindowTests.cs \
+	MonoDevelop.Ide.FindInFiles/MemberCollectorTests.cs \
+	MonoDevelop.Ide.Gui/CompletionListWindowTests.cs \
 	MonoDevelop.Projects/LocalCopyTests.cs \
 	MonoDevelop.Projects/MakefileTests.cs \
 	MonoDevelop.Projects/MdsTests.cs \
@@ -85,7 +89,6 @@ FILES =  \
 	MonoDevelop.Projects/TestProjectsChecks.cs \
 	MonoDevelop.Projects/TextFormatterTests.cs \
 	MonoDevelop.Projects/WorkspaceTests.cs \
-	MonoDevelop.Refactoring/ImplementInterfaceTests.cs \
 	MonoDevelop.VersionControl.Git/GitUtilsTests.cs \
 	MonoDevelop.VersionControl.Views/EditorCompareWidgetBaseTest.cs \
 	TestBase.cs \

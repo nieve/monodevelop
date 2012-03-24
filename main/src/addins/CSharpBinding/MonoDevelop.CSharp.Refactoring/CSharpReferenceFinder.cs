@@ -103,7 +103,13 @@ namespace MonoDevelop.CSharp.Refactoring
 			} else if (result is TypeResolveResult) {
 				valid = searchedMembers.FirstOrDefault (n => n is IType && result.Type.Equals ((IType)n));
 			}
-			
+
+			if (node is ConstructorInitializer)
+				return null;
+
+			if (node is ObjectCreateExpression)
+				node = ((ObjectCreateExpression)node).Type;
+
 			if (node is InvocationExpression)
 				node = ((InvocationExpression)node).Target;
 			
@@ -123,9 +129,11 @@ namespace MonoDevelop.CSharp.Refactoring
 				node = ((ParameterDeclaration)node).NameToken;
 			if (node is ConstructorDeclaration)
 				node = ((ConstructorDeclaration)node).NameToken;
+			if (node is DestructorDeclaration)
+				node = ((DestructorDeclaration)node).NameToken;
 			var region = new DomRegion (fileName, node.StartLocation, node.EndLocation);
 			
-			return new MemberReference (valid as IEntity, region, editor.LocationToOffset (region.Begin), memberName.Length);
+			return new MemberReference (valid, region, editor.LocationToOffset (region.Begin), memberName.Length);
 		}
 
 		bool IsNodeValid (object searchedMember, AstNode node)
@@ -135,26 +143,24 @@ namespace MonoDevelop.CSharp.Refactoring
 			return true;
 		}
 		
-		public IEnumerable<MemberReference> FindInDocument (MonoDevelop.Ide.Gui.Document doc, ICompilation compilation = null)
+		public IEnumerable<MemberReference> FindInDocument (MonoDevelop.Ide.Gui.Document doc)
 		{
 			if (string.IsNullOrEmpty (memberName))
 				return Enumerable.Empty<MemberReference> ();
 			var editor = doc.Editor;
 			var unit = doc.ParsedDocument.GetAst<CompilationUnit> ();
 			var file = doc.ParsedDocument.ParsedFile as CSharpParsedFile;
-			if (compilation == null)
-				compilation = doc.Compilation;
 			var result = new List<MemberReference> ();
 			
 			foreach (var obj in searchedMembers) {
 				if (obj is IEntity) {
-					refFinder.FindReferencesInFile (refFinder.GetSearchScopes ((IEntity)obj), file, unit, compilation, (astNode, r) => {
+					refFinder.FindReferencesInFile (refFinder.GetSearchScopes ((IEntity)obj), file, unit, doc.Compilation, (astNode, r) => {
 						if (IsNodeValid (obj, astNode))
 							result.Add (GetReference (r, astNode, editor.FileName, editor)); 
 					}, CancellationToken.None);
 				} else if (obj is IVariable) {
-					refFinder.FindLocalReferences ((IVariable)obj, file, unit, compilation, (astNode, r) => { 
-						if (IsNodeValid (obj, astNode)) 
+					refFinder.FindLocalReferences ((IVariable)obj, file, unit, doc.Compilation, (astNode, r) => { 
+						if (IsNodeValid (obj, astNode))
 							result.Add (GetReference (r, astNode, editor.FileName, editor));
 					}, CancellationToken.None);
 				}
@@ -177,20 +183,19 @@ namespace MonoDevelop.CSharp.Refactoring
 			var compilation = entity != null ? entity.Compilation : content.CreateCompilation ();
 			List<MemberReference> refs = new List<MemberReference> ();
 			foreach (var opendoc in openDocuments) {
-				foreach (var newRef in FindInDocument (opendoc.Item2, compilation)) {
-					if (refs.Any (r => r.FileName == newRef.FileName && r.Region == newRef.Region))
+				foreach (var newRef in FindInDocument (opendoc.Item2)) {
+					if (newRef == null || refs.Any (r => r.FileName == newRef.FileName && r.Region == newRef.Region))
 						continue;
 					refs.Add (newRef);
 				}
 			}
 			
 			foreach (var file in files) {
-				string text = File.ReadAllText (file);
+				string text = Mono.TextEditor.Utils.TextFileReader.ReadAllText (file);
 				if (memberName != null && text.IndexOf (memberName, StringComparison.Ordinal) < 0)
 					continue;
-				using (var editor = new TextEditorData ()) {
+				using (var editor = TextEditorData.CreateImmutable (text)) {
 					editor.Document.FileName = file;
-					editor.Text = text;
 					var unit = new CSharpParser ().Parse (editor);
 					if (unit == null)
 						continue;
@@ -216,7 +221,7 @@ namespace MonoDevelop.CSharp.Refactoring
 							compilation,
 							(astNode, result) => {
 								var newRef = GetReference (result, astNode, file, editor);
-								if (refs.Any (r => r.FileName == newRef.FileName && r.Region == newRef.Region))
+								if (newRef == null || refs.Any (r => r.FileName == newRef.FileName && r.Region == newRef.Region))
 									return;
 								refs.Add (newRef);
 							},

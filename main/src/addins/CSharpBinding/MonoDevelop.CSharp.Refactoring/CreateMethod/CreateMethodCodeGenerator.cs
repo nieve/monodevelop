@@ -80,7 +80,7 @@ namespace MonoDevelop.CSharp.Refactoring.CreateMethod
 			if (target == null)
 				return false;
 			
-			if (target.Parent is MemberReferenceExpression && ((MemberReferenceExpression)target.Parent).GetChildByRole (MemberReferenceExpression.Roles.Identifier) == target) {
+			if (target.Parent is MemberReferenceExpression && ((MemberReferenceExpression)target.Parent).GetChildByRole (Roles.Identifier) == target) {
 				var memberReference = (MemberReferenceExpression)target.Parent;
 				target = memberReference.Target;
 				var targetResult = options.Resolve (target);
@@ -185,7 +185,7 @@ namespace MonoDevelop.CSharp.Refactoring.CreateMethod
 			var data = options.GetTextEditorData ();
 			if (data.Document.MimeType != CSharpFormatter.MimeType)
 				return false;
-			var unit = options.Document.ParsedDocument.GetAst<CompilationUnit> ();
+			var unit = options.Unit;
 			
 			if (!AnalyzeTargetExpression (options, unit))
 				return false;
@@ -264,6 +264,7 @@ namespace MonoDevelop.CSharp.Refactoring.CreateMethod
 			if (data == null)
 				return;
 			openDocument.RunWhenLoaded (delegate {
+				Analyze (options);
 				try {
 					indent = data.Document.GetLine (declaringType.Region.BeginLine).GetIndentation (data.Document) ?? "";
 				} catch (Exception) {

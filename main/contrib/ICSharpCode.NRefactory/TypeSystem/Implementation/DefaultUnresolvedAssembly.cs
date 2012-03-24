@@ -61,7 +61,7 @@ namespace ICSharpCode.NRefactory.TypeSystem.Implementation
 			get { return assemblyName; }
 			set {
 				if (value == null)
-					throw new ArgumentNullException();
+					throw new ArgumentNullException("value");
 				FreezableHelper.ThrowIfFrozen(this);
 				assemblyName = value;
 			}
@@ -345,9 +345,8 @@ namespace ICSharpCode.NRefactory.TypeSystem.Implementation
 				
 				IEnumerable<ITypeDefinition> INamespace.Types {
 					get {
-						var result = this.types;
+						var result = LazyInit.VolatileRead(ref this.types);
 						if (result != null) {
-							LazyInit.ReadBarrier();
 							return result;
 						} else {
 							var hashSet = new HashSet<ITypeDefinition>();

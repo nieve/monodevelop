@@ -24,6 +24,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Linq;
 using NUnit.Framework;
 
 using MonoDevelop.CSharp.Parser;
@@ -35,7 +36,7 @@ using ICSharpCode.NRefactory;
 using ICSharpCode.NRefactory.TypeSystem;
 using MonoDevelop.TypeSystem;
 
-namespace MonoDevelop.CSharpBinding.Tests
+namespace MonoDevelop.CSharpBinding
 {
 	[TestFixture]
 	public class FoldingParserTests
@@ -160,6 +161,29 @@ using System;");
 			Assert.AreEqual ("TestRegion", doc.Foldings.First ().Name);
 		}
 		
+		[Test]
+		public void TestTwoRegions ()
+		{
+			var doc = Test (@"class Test
+{
+	[#region TestRegion
+	void FooBar ()
+	{
+	}
+	#endregion]
+	
+	[#region TestRegion2
+	void FooBar2 ()
+	{
+	}
+	#endregion]
+}");
+			Assert.AreEqual (2, doc.Foldings.Count ());
+			Assert.AreEqual ("TestRegion", doc.Foldings.First ().Name);
+			Assert.AreEqual ("TestRegion2", doc.Foldings.Skip (1).First ().Name);
+		}
+		
+
 		[Test]
 		public void TestDocComment ()
 		{

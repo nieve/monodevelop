@@ -34,16 +34,45 @@ using System.Linq;
 
 namespace MonoDevelop.AssemblyBrowser
 {
-	public class ReferenceSegment : Segment
+	public class ReferenceSegment
 	{
+		public TextSegment Segment {
+			get;
+			set;
+		}
+
 		public object Reference {
 			get;
 			set;
 		}
 		
-		public ReferenceSegment (int offset, int length, object reference) : base (offset, length)
+		public ReferenceSegment (int offset, int length, object reference)
 		{
 			this.Reference = reference;
+			this.Segment = new TextSegment (offset, length);
+		}
+
+		public int Offset {
+			get {
+				return Segment.Offset;
+			}
+		}
+
+		public int Length {
+			get {
+				return Segment.Length;
+			}
+		}
+
+		public int EndOffset {
+			get {
+				return Segment.EndOffset;
+			}
+		}
+
+		public static implicit operator TextSegment (ReferenceSegment referenceSegment)
+		{
+			return referenceSegment.Segment;
 		}
 	}
 	
@@ -51,13 +80,13 @@ namespace MonoDevelop.AssemblyBrowser
 	public class ColoredCSharpFormatter : ICSharpCode.Decompiler.ITextOutput
 	{
 		public StringBuilder sb = new StringBuilder();
-		Document doc;
+		TextDocument doc;
 		bool write_indent;
 		int indent;
 		public List<FoldSegment>      FoldSegments       = new List<FoldSegment>();
 		public List<ReferenceSegment> ReferencedSegments = new List<ReferenceSegment>();
 		
-		public ColoredCSharpFormatter (Document doc)
+		public ColoredCSharpFormatter (TextDocument doc)
 		{
 			this.doc = doc;
 		}

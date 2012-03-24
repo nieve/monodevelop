@@ -113,7 +113,7 @@ namespace MonoDevelop.CodeGeneration
 		
 		static string AddIndent (string text, string indent)
 		{
-			Mono.TextEditor.Document doc = new Mono.TextEditor.Document ();
+			Mono.TextEditor.TextDocument doc = new Mono.TextEditor.TextDocument ();
 			doc.Text = text;
 			StringBuilder result = new StringBuilder ();
 			foreach (var line in doc.Lines) {
@@ -144,12 +144,10 @@ namespace MonoDevelop.CodeGeneration
 				}
 				output.Append (AddIndent (nodeText, indent));
 			}
-			
+
 			if (output.Length > 0) {
 				var data = options.Document.Editor;
-				int offset = data.Caret.Offset - indent.Length;
-				data.Replace (offset, indent.Length, output.ToString ());
-				data.Caret.Offset = offset + output.Length;
+				data.InsertAtCaret (output.ToString ().TrimStart ());
 			}
 		}
 	}
