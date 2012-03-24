@@ -8,6 +8,7 @@ using ICSharpCode.NRefactory.Semantics;
 using ICSharpCode.NRefactory.TypeSystem;
 using ICSharpCode.NRefactory.TypeSystem.Implementation;
 using MonoDevelop.Stereo.Gui;
+using MonoDevelop.Ide.Gui;
 
 namespace MonoDevelop.Stereo.RenameNamespaceRefactoringTest
 {
@@ -20,7 +21,8 @@ namespace MonoDevelop.Stereo.RenameNamespaceRefactoringTest
 		public void Validates_options_with_namespace_resolve_result ()
 		{
 			var nspace = MockRepository.GenerateStub<INamespace>();
-			var options = new RefactoringOptions{ResolveResult = new NamespaceResolveResult(nspace)};
+			IWorkbenchWindow window = MockRepository.GenerateStub<IWorkbenchWindow>();
+			var options = new RefactoringOptions(new Document(window)){ResolveResult = new NamespaceResolveResult(nspace)};
 			Assert.IsTrue(renameNamespaceRefactoring.IsValid(options));
 		}
 	}
@@ -31,7 +33,8 @@ namespace MonoDevelop.Stereo.RenameNamespaceRefactoringTest
 		RenameNamespaceRefactoring renameNamespaceRefactoring;
 		INamespaceReferenceController refFinder = MockRepository.GenerateStub<INamespaceReferenceController>();
 		IFindNamespaceReferenceInline lineExtractor = MockRepository.GenerateStub<IFindNamespaceReferenceInline>();
-		RefactoringOptions options = new RefactoringOptions();
+		static IWorkbenchWindow window = MockRepository.GenerateStub<IWorkbenchWindow>();
+		RefactoringOptions options = new RefactoringOptions(new Document(window));
 		INameValidator validator = MockRepository.GenerateStub<INameValidator>();
 		MonoDevelop.Stereo.Refactoring.Rename.IProgressMonitorFactory factory = MockRepository.GenerateStub<MonoDevelop.Stereo.Refactoring.Rename.IProgressMonitorFactory>();
 		

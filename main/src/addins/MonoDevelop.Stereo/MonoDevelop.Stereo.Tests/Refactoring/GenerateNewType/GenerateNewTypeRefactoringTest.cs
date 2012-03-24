@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Mono.TextEditor;
 using MonoDevelop.Core;
+using MonoDevelop.Ide.Gui;
 using MonoDevelop.Refactoring;
 using MonoDevelop.Stereo;
 using MonoDevelop.Stereo.Refactoring.GenerateNewType;
@@ -25,7 +26,8 @@ namespace MonoDevelop.Stereo.GenerateNewTypeRefactoringTest {
 		[TestFixtureSetUp]
 		public void SetUp(){
 			generateClassRefactoring = new GenerateNewTypeRefactoring(ctx, resolver);
-			generateClassRefactoring.Data = new Mono.TextEditor.TextEditorData{Document = new Document()};
+			IWorkbenchWindow window = MockRepository.GenerateStub<IWorkbenchWindow>();
+			generateClassRefactoring.Data = new Mono.TextEditor.TextEditorData{Document = new TextDocument()};
 			generateClassRefactoring.InsertionPoint = new InsertionPoint(new DocumentLocation(0,0),NewLineInsertion.None,NewLineInsertion.None);
 			generateClassRefactoring.InsertionPoint.LineBefore = NewLineInsertion.Eol;
 			generateClassRefactoring.InsertionPoint.LineAfter = NewLineInsertion.None;
@@ -33,7 +35,8 @@ namespace MonoDevelop.Stereo.GenerateNewTypeRefactoringTest {
 		
 		[SetUp]
 		public void SetTest(){
-			RefactoringOptions options = new RefactoringOptions();
+			IWorkbenchWindow window = MockRepository.GenerateStub<IWorkbenchWindow>();
+			RefactoringOptions options = new RefactoringOptions(new Document(window));
 			UnknownIdentifierResolveResult result = new UnknownIdentifierResolveResult("NonExistant", 0);
 			options.ResolveResult = result;
 			ctx.Stub(c=>c.GetCurrentFilePath()).Return(new FilePath(dir + fileName));

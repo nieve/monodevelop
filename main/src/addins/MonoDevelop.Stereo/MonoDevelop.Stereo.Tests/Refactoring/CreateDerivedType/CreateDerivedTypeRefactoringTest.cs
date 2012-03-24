@@ -40,7 +40,7 @@ namespace MonoDevelop.Stereo.Tests.CreateDerivedTypeRefactoringTest
 		INonConcreteTypeContext ctx = MockRepository.GenerateStub<INonConcreteTypeContext>();
 		IBuildDerivedTypeContent builder = MockRepository.GenerateStub<IBuildDerivedTypeContent>();
 		INameValidator validator = MockRepository.GenerateStub<INameValidator>();
-		Mono.TextEditor.TextEditorData data = new Mono.TextEditor.TextEditorData(new Document("1\r\n2"));
+		Mono.TextEditor.TextEditorData data = new Mono.TextEditor.TextEditorData(new TextDocument("1\r\n2"));
 		IType type = MockRepository.GenerateMock<IType>();
 		List<IMethod> methods = new List<IMethod> ();
 		InsertionPoint point = new InsertionPoint(new DocumentLocation(42,42), NewLineInsertion.Eol,NewLineInsertion.Eol);

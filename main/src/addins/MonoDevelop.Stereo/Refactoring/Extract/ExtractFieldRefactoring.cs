@@ -33,6 +33,7 @@ namespace MonoDevelop.Stereo.Refactoring.Extract
 	public class ExtractFieldRefactoring : RefactoringOperation
 	{
 		IVariableContext context;
+		ExtractMethodRefactoring refactoring = new ExtractMethodRefactoring();
 		public ExtractFieldRefactoring () : this(new VariableContext()) {}
 		public ExtractFieldRefactoring (IVariableContext context)
 		{
@@ -53,7 +54,8 @@ namespace MonoDevelop.Stereo.Refactoring.Extract
 		}
 		public override void Run (RefactoringOptions options)
 		{
-			
+			var param = refactoring.CreateParameters(options);
+			MessageService.ShowCustomDialog (new ExtractMethodDialog (options, this, param));
 		}
 		public override List<Change> PerformChanges (RefactoringOptions options, object prop){
 			return new List<Change>();
