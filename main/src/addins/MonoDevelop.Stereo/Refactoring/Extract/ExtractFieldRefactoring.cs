@@ -27,13 +27,15 @@ using System;
 using System.Collections.Generic;
 using MonoDevelop.Refactoring;
 using ICSharpCode.NRefactory.Semantics;
+using MonoDevelop.CSharp.Refactoring.ExtractMethod;
+using MonoDevelop.Ide;
+using MonoDevelop.TypeSystem;
 
 namespace MonoDevelop.Stereo.Refactoring.Extract
 {
-	public class ExtractFieldRefactoring : RefactoringOperation
+	public class ExtractFieldRefactoring : ExtractMethodRefactoring
 	{
 		IVariableContext context;
-		ExtractMethodRefactoring refactoring = new ExtractMethodRefactoring();
 		public ExtractFieldRefactoring () : this(new VariableContext()) {}
 		public ExtractFieldRefactoring (IVariableContext context)
 		{
@@ -54,7 +56,14 @@ namespace MonoDevelop.Stereo.Refactoring.Extract
 		}
 		public override void Run (RefactoringOptions options)
 		{
-			var param = refactoring.CreateParameters(options);
+			var buffer = options.Document.Editor;
+			ParsedDocument doc = options.Document.ParsedDocument;
+			var member = doc.GetMember (buffer.Caret.Location);
+			var param = new ExtractMethodParameters () {
+				DeclaringMember = member.CreateResolved (doc.GetTypeResolveContext (options.Document.Compilation, buffer.Caret.Location)),
+				Location = buffer.Caret.Location
+			};
+			//TODO: look at ExtractMethodDialog to find the dialog for user to set insertion point.
 			MessageService.ShowCustomDialog (new ExtractMethodDialog (options, this, param));
 		}
 		public override List<Change> PerformChanges (RefactoringOptions options, object prop){

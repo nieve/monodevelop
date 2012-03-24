@@ -25,24 +25,23 @@
 // THE SOFTWARE.
 using System;
 using MonoDevelop.Refactoring;
+using MonoDevelop.Stereo.Refactoring.Extract;
 
 namespace MonoDevelop.Stereo.Refactoring
 {
 	public class ExtractFieldHandler : AbstractRefactoringCommandHandler
 	{
 		IVariableContext context;
+		ExtractFieldRefactoring refactoring = new ExtractFieldRefactoring();
 		public ExtractFieldHandler () : this(new VariableContext()) {}
 		public ExtractFieldHandler (IVariableContext context)
 		{
 			this.context = context;
 		}
-
-		
 		protected override void Run (RefactoringOptions options)
 		{
-			//refactoring.Run(options);
+			refactoring.Run(options);
 		}
-		
 		protected override void Update (MonoDevelop.Components.Commands.CommandInfo info)
 		{
 			info.Enabled = context.IsCurrentLocationVariable ();
