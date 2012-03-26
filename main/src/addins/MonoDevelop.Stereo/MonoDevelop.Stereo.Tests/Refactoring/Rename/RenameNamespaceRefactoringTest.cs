@@ -36,7 +36,7 @@ namespace MonoDevelop.Stereo.RenameNamespaceRefactoringTest
 		static IWorkbenchWindow window = MockRepository.GenerateStub<IWorkbenchWindow>();
 		RefactoringOptions options = new RefactoringOptions(new Document(window));
 		INameValidator validator = MockRepository.GenerateStub<INameValidator>();
-		MonoDevelop.Stereo.Refactoring.Rename.IProgressMonitorFactory factory = MockRepository.GenerateStub<MonoDevelop.Stereo.Refactoring.Rename.IProgressMonitorFactory>();
+		MonoDevelop.Stereo.Refactoring.IProgressMonitorFactory factory = MockRepository.GenerateStub<MonoDevelop.Stereo.Refactoring.IProgressMonitorFactory>();
 		
 		[SetUp]
 		public void SetUp(){

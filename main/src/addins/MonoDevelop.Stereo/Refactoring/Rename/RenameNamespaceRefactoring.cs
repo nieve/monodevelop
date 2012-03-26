@@ -1,14 +1,12 @@
 using System.Collections.Generic;
 using Gtk;
+using ICSharpCode.NRefactory.Semantics;
 using MonoDevelop.Core;
 using MonoDevelop.Ide;
-using MonoDevelop.Ide.ProgressMonitoring;
+using MonoDevelop.Ide.FindInFiles;
 using MonoDevelop.Refactoring;
 using MonoDevelop.Refactoring.Rename;
 using MonoDevelop.Stereo.Gui;
-using System;
-using ICSharpCode.NRefactory.Semantics;
-using MonoDevelop.Ide.FindInFiles;
 
 namespace MonoDevelop.Stereo.Refactoring.Rename
 {
@@ -79,18 +77,6 @@ namespace MonoDevelop.Stereo.Refactoring.Rename
 		        }
 			}
 			return changes;
-		}
-	}
-	
-	public interface IProgressMonitorFactory
-	{
-		IProgressMonitor Create();
-	}
-	
-	public class ProgressMonitorFactory : IProgressMonitorFactory
-	{
-		public IProgressMonitor Create(){
-			return new MessageDialogProgressMonitor(true, false, false, true);
 		}
 	}
 }

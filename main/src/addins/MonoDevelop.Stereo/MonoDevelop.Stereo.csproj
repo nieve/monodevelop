@@ -84,6 +84,7 @@
     <Compile Include="Refactoring\Extract\ExtractFieldHandler.cs" />
     <Compile Include="Infrastructure\Contexts\VariableContext.cs" />
     <Compile Include="Refactoring\Extract\ExtractFieldRefactoring.cs" />
+    <Compile Include="Refactoring\ProgressMonitorFactory.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

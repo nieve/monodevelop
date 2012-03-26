@@ -45,6 +45,10 @@
 				_label = "_Rename namespace"/>
 	</Extension>
 	
+	<Extension path = "/MonoDevelop/Refactoring/Refactorings">
+		<Class id="ExtractField" class = "MonoDevelop.Stereo.Refactoring.Extract.ExtractFieldRefactoring" />
+	</Extension>
+	
 	<Extension path = "/MonoDevelop/Ide/Commands/Refactoring">
 		<Command id = "MonoDevelop.Refactoring.RefactoryCommands.ExtractField"
 				defaultHandler = "MonoDevelop.Stereo.Refactoring.ExtractFieldHandler"

@@ -23,19 +23,23 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
 using System.Collections.Generic;
-using MonoDevelop.Refactoring;
+using System.Linq;
 using ICSharpCode.NRefactory.Semantics;
+using Mono.TextEditor;
+using Mono.TextEditor.PopupWindow;
 using MonoDevelop.CSharp.Refactoring.ExtractMethod;
 using MonoDevelop.Ide;
+using MonoDevelop.Refactoring;
 using MonoDevelop.TypeSystem;
 
 namespace MonoDevelop.Stereo.Refactoring.Extract
 {
-	public class ExtractFieldRefactoring : ExtractMethodRefactoring
+	public class ExtractFieldRefactoring : RefactoringOperation
 	{
 		IVariableContext context;
+		InsertionPoint insertionPoint;
+		TextEditorData data;
 		public ExtractFieldRefactoring () : this(new VariableContext()) {}
 		public ExtractFieldRefactoring (IVariableContext context)
 		{
@@ -56,18 +60,59 @@ namespace MonoDevelop.Stereo.Refactoring.Extract
 		}
 		public override void Run (RefactoringOptions options)
 		{
-			var buffer = options.Document.Editor;
+			data = options.GetTextEditorData();
 			ParsedDocument doc = options.Document.ParsedDocument;
-			var member = doc.GetMember (buffer.Caret.Location);
-			var param = new ExtractMethodParameters () {
-				DeclaringMember = member.CreateResolved (doc.GetTypeResolveContext (options.Document.Compilation, buffer.Caret.Location)),
-				Location = buffer.Caret.Location
-			};
-			//TODO: look at ExtractMethodDialog to find the dialog for user to set insertion point.
-			MessageService.ShowCustomDialog (new ExtractMethodDialog (options, this, param));
+			var member = doc.GetMember (data.Caret.Location);
+			EnterInsertionCursorEditMode(options, doc);
 		}
+		private void EnterInsertionCursorEditMode(RefactoringOptions options, ParsedDocument doc){
+			Mono.TextEditor.TextEditor editor = data.Parent;
+			if (editor != null) {
+				var member = doc.GetMember (data.Caret.Location);
+				if (member == null) return;
+				MonoDevelop.Ide.Gui.Document document = options.Document;
+				var declaringMember = member.CreateResolved (doc.GetTypeResolveContext (document.Compilation, data.Caret.Location));
+				var type = declaringMember.DeclaringTypeDefinition.Parts.First ();
+				
+				List<InsertionPoint> list = CodeGenerationService.GetInsertionPoints (document, type);
+				var mode = new InsertionCursorEditMode (editor, list);
+				for (int i = 0; i < mode.InsertionPoints.Count; i++) {
+					var point = mode.InsertionPoints[i];
+					if (point.Location < editor.Caret.Location) {
+						mode.CurIndex = i;
+					} else {
+						break;
+					}
+				}
+				ModeHelpWindow helpWindow = new ModeHelpWindow ();
+				helpWindow.TransientFor = IdeApp.Workbench.RootWindow;
+				helpWindow.TitleText = "<b>Extract Field -- Targeting</b>";
+				helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Key</b>", "<b>Behavior</b>"));
+				helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Up</b>", "Move to <b>previous</b> target point."));
+				helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Down</b>", "Move to <b>next</b> target point."));
+				helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Enter</b>", "<b>Declare new method</b> at target point."));
+				helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Esc</b>", "<b>Cancel</b> this refactoring."));
+				mode.HelpWindow = helpWindow;
+				mode.StartMode ();
+				
+				mode.Exited += delegate(object s, InsertionCursorEventArgs args) {
+					if (args.Success) {
+						insertionPoint = args.InsertionPoint;
+						BaseRun (options);
+					}
+				};
+			}
+		}
+		private void BaseRun(RefactoringOptions options){base.Run (options);}
 		public override List<Change> PerformChanges (RefactoringOptions options, object prop){
-			return new List<Change>();
+			TextReplaceChange change = new TextReplaceChange();
+			change.FileName = options.Document.FileName;
+			//TODO: replace Type localVarName with extracted field.
+			change.InsertedText = data.GetLineIndent(insertionPoint.Location.Line) + "Type localVarName;" + data.EolMarker;
+			change.MoveCaretToReplace = false;
+			change.Offset = data.LocationToOffset(insertionPoint.Location);
+			change.RemovedChars = 0;
+			return new List<Change>(){change};
 		}
 		public override bool IsValid (RefactoringOptions options){
 			return options.ResolveResult is LocalResolveResult;
