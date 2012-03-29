@@ -38,7 +38,7 @@ namespace MonoDevelop.Stereo.Refactoring.Extract
 	public class ExtractFieldRefactoring : RefactoringOperation
 	{
 		IVariableContext context;
-		InsertionPoint insertionPoint;
+		public InsertionPoint InsertionPoint{private get; set;}
 		TextEditorData data;
 		public ExtractFieldRefactoring () : this(new VariableContext()) {}
 		public ExtractFieldRefactoring (IVariableContext context)
@@ -97,7 +97,7 @@ namespace MonoDevelop.Stereo.Refactoring.Extract
 				
 				mode.Exited += delegate(object s, InsertionCursorEventArgs args) {
 					if (args.Success) {
-						insertionPoint = args.InsertionPoint;
+						InsertionPoint = args.InsertionPoint;
 						BaseRun (options);
 					}
 				};
@@ -105,13 +105,17 @@ namespace MonoDevelop.Stereo.Refactoring.Extract
 		}
 		private void BaseRun(RefactoringOptions options){base.Run (options);}
 		public override List<Change> PerformChanges (RefactoringOptions options, object prop){
+			var variable = ((LocalResolveResult)options.ResolveResult).Variable;
 			TextReplaceChange change = new TextReplaceChange();
 			change.FileName = options.Document.FileName;
-			//TODO: replace Type localVarName with extracted field.
-			change.InsertedText = data.GetLineIndent(insertionPoint.Location.Line) + "Type localVarName;" + data.EolMarker;
+			var indentation = context.GetIndentation(InsertionPoint);
+			string text = indentation + variable.Type.Name + " " + variable.Name + ";";
+			change.InsertedText = text + context.GetEol();
 			change.MoveCaretToReplace = false;
-			change.Offset = data.LocationToOffset(insertionPoint.Location);
+			change.Offset = context.GetOffset(InsertionPoint.Location);
 			change.RemovedChars = 0;
+			
+			//TODO: Add TextReplaceChange to modify local variable declaration to usage (remove type)
 			return new List<Change>(){change};
 		}
 		public override bool IsValid (RefactoringOptions options){

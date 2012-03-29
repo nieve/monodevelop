@@ -25,12 +25,16 @@
 // THE SOFTWARE.
 using System;
 using ICSharpCode.NRefactory.Semantics;
+using Mono.TextEditor;
 
 namespace MonoDevelop.Stereo
 {
 	public interface IVariableContext
 	{
+		string GetIndentation (InsertionPoint insertionPoint);
 		bool IsCurrentLocationVariable();
+		int GetOffset (DocumentLocation location);
+		string GetEol ();
 	}
 	
 	public class VariableContext : IVariableContext
@@ -45,6 +49,21 @@ namespace MonoDevelop.Stereo
 		{
 			var resolved = docContext.GetResolvedResult();
 			return resolved is LocalResolveResult;
+		}
+		public string GetIndentation (InsertionPoint insertionPoint)
+		{
+			bool isAfterMethod = insertionPoint.LineBefore == NewLineInsertion.Eol;
+			var data = docContext.GetActiveDocument().Editor;
+			return isAfterMethod ? data.GetLineIndent(insertionPoint.Location.Line - 1) : data.GetLineIndent(insertionPoint.Location.Line);
+		}
+		public int GetOffset (Mono.TextEditor.DocumentLocation location)
+		{
+			return docContext.GetOffset (location);
+		}
+		public string GetEol ()
+		{
+			var editor = docContext.GetActiveDocument().Editor;
+			return editor.EolMarker;
 		}
 	}
 }

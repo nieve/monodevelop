@@ -54,6 +54,7 @@
     <Compile Include="Refactoring\QuickFixes\QuickFixesHandlerTest.cs" />
     <Compile Include="Refactoring\NewTypeContentBuilders\TypeContentResolverTest.cs" />
     <Compile Include="Refactoring\NewTypeContentBuilders\DerivedTypeContentBuilderTest.cs" />
+    <Compile Include="Refactoring\Extract\ExtractFieldRefactoringTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -64,6 +65,7 @@
     <Folder Include="Refactoring\QuickFixes\" />
     <Folder Include="Refactoring\CreateDerivedType\" />
     <Folder Include="Refactoring\NewTypeContentBuilders\" />
+    <Folder Include="Refactoring\Extract\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoDevelop.Stereo.Gui\MonoDevelop.Stereo.Gui.csproj">

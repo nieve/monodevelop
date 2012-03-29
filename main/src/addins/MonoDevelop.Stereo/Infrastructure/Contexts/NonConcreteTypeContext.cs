@@ -29,9 +29,9 @@ namespace MonoDevelop.Stereo
 			return result.Type;
 		}
 		
-		public int GetOffset (TextEditorData data, Mono.TextEditor.DocumentLocation location)
+		public int GetOffset (DocumentLocation location)
 		{
-			return data.Document.LocationToOffset(location);
+			return docContext.GetOffset(location);
 		}
 	}
 	
@@ -39,7 +39,7 @@ namespace MonoDevelop.Stereo
 	{
 		bool IsCurrentLocationNonConcreteType();
 		IType GetNonConcreteType();
-		int GetOffset (TextEditorData data, DocumentLocation location);
+		int GetOffset (DocumentLocation location);
 	}
 }
 

@@ -59,7 +59,7 @@ namespace MonoDevelop.Stereo.Refactoring.CreateDerivedType
 			var textReplaceChange = new TextReplaceChange();
 			textReplaceChange.FileName = fileName;
 			textReplaceChange.RemovedChars = 0;			
-			textReplaceChange.Offset = context.GetOffset(data, insertionPoint.Location);
+			textReplaceChange.Offset = context.GetOffset(insertionPoint.Location);
 			
 			StringBuilder contentBuilder = new StringBuilder();
 			string eol = data.EolMarker;

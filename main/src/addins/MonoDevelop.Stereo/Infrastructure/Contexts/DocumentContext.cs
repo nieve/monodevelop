@@ -14,6 +14,7 @@ namespace MonoDevelop.Stereo
 		ITextBuffer GetData (Document doc);
 		ITextBuffer GetData ();
 		ResolveResult GetResolvedResult ();
+		int GetOffset (Mono.TextEditor.DocumentLocation location);
 	}
 	
 	public class DocumentContext : IDocumentContext
@@ -55,7 +56,12 @@ namespace MonoDevelop.Stereo
 			ResolveResult resolveResult;
 			CurrentRefactoryOperationsHandler.GetItem (doc, out resolveResult);
 			return resolveResult;
-		}		
+		}
+		public int GetOffset (Mono.TextEditor.DocumentLocation location)
+		{
+			var editor = GetActiveDocument().Editor;
+			return editor.LocationToOffset(location);
+		}
 	}
 }
 
