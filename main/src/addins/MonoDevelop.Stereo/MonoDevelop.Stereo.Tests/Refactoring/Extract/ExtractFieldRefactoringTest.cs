@@ -54,10 +54,12 @@ namespace MonoDevelop.Stereo.Tests.ExtractFieldRefactoringTest
 			type.Expect (t=>t.Name).Return("WhiteVanMan");
 			variable.Expect (v=>v.Type).Return (type);
 			variable.Expect (v=>v.Name).Return ("ollie");
+			variable.Expect (v=>v.Region).Return (new DomRegion(5,5,5,8));
 			viewContent.Expect(vc=>vc.IsFile).Return(false);
 			window.Expect(w=>w.ViewContent).Return (viewContent);
 			
 			context.Stub (c=>c.GetIndentation(point)).Return("<indent>");
+			context.Stub (c=>c.GetIndentation(5)).Return("<indentation>");
 			context.Stub (c=>c.GetEol()).Return("<eol>");
 			context.Stub (c=>c.GetOffset(location)).Return(42);
 			
@@ -72,8 +74,9 @@ namespace MonoDevelop.Stereo.Tests.ExtractFieldRefactoringTest
 			var changes = subject.PerformChanges(options, null);
 			
 			Assert.IsNotNull(changes);
-			Assert.That(changes.Count == 1, "expected 1 changes but was " + changes.Count);
+			Assert.That(changes.Count == 2, "expected 1 changes but was " + changes.Count);
 			Assert.IsInstanceOfType (typeof(TextReplaceChange),changes[0]);
+			Assert.IsInstanceOfType (typeof(TextReplaceChange),changes[1]);
 		}
 		[Test]
 		public void Returns_a_change_with_field_declaration ()
@@ -84,6 +87,18 @@ namespace MonoDevelop.Stereo.Tests.ExtractFieldRefactoringTest
 			var changes = subject.PerformChanges(options, null);
 			var change = (TextReplaceChange)changes[0];
 			Assert.AreEqual("<indent>WhiteVanMan ollie;<eol>",change.InsertedText);
+		}
+		[Test]
+		public void Returns_a_change_with_variable_declaration_removed ()
+		{
+			var doc = new Document (window);
+			RefactoringOptions options = new RefactoringOptions (doc){ResolveResult=new LocalResolveResult(variable)};
+			
+			var changes = subject.PerformChanges(options, null);
+			var change = (TextReplaceChange)changes[1];
+			Assert.AreEqual("<indentation>",change.InsertedText);
+			Assert.AreEqual(4,change.RemovedChars);
+			Assert.AreEqual(0,change.Offset);
 		}
 	}
 }

@@ -107,7 +107,8 @@ namespace MonoDevelop.Stereo.Refactoring.Extract
 		public override List<Change> PerformChanges (RefactoringOptions options, object prop){
 			var variable = ((LocalResolveResult)options.ResolveResult).Variable;
 			TextReplaceChange change = new TextReplaceChange();
-			change.FileName = options.Document.FileName;
+			var fileName = options.Document.FileName;
+			change.FileName = fileName;
 			var indentation = context.GetIndentation(InsertionPoint);
 			string text = indentation + variable.Type.Name + " " + variable.Name + ";";
 			change.InsertedText = text + context.GetEol();
@@ -115,8 +116,14 @@ namespace MonoDevelop.Stereo.Refactoring.Extract
 			change.Offset = context.GetOffset(InsertionPoint.Location);
 			change.RemovedChars = 0;
 			
-			//TODO: Add TextReplaceChange to modify local variable declaration to usage (remove type)
-			return new List<Change>(){change};
+			TextReplaceChange removeChange = new TextReplaceChange();
+			removeChange.FileName = fileName;
+			removeChange.MoveCaretToReplace = false;
+			var region = options.ResolveResult.GetDefinitionRegion();
+			removeChange.Offset = context.GetOffset(new DocumentLocation(region.EndLine,0));
+			removeChange.RemovedChars = region.BeginColumn - 1;
+			removeChange.InsertedText = context.GetIndentation(region.EndLine);
+			return new List<Change>(){change, removeChange};
 		}
 		public override bool IsValid (RefactoringOptions options){
 			return options.ResolveResult is LocalResolveResult;

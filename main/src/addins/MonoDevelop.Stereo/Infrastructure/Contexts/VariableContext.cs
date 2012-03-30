@@ -32,6 +32,7 @@ namespace MonoDevelop.Stereo
 	public interface IVariableContext
 	{
 		string GetIndentation (InsertionPoint insertionPoint);
+		string GetIndentation (int line);
 		bool IsCurrentLocationVariable();
 		int GetOffset (DocumentLocation location);
 		string GetEol ();
@@ -55,6 +56,11 @@ namespace MonoDevelop.Stereo
 			bool isAfterMethod = insertionPoint.LineBefore == NewLineInsertion.Eol;
 			var data = docContext.GetActiveDocument().Editor;
 			return isAfterMethod ? data.GetLineIndent(insertionPoint.Location.Line - 1) : data.GetLineIndent(insertionPoint.Location.Line);
+		}
+		public string GetIndentation (int line)
+		{
+			var data = docContext.GetActiveDocument().Editor;
+			return data.GetLineIndent(line);
 		}
 		public int GetOffset (Mono.TextEditor.DocumentLocation location)
 		{
