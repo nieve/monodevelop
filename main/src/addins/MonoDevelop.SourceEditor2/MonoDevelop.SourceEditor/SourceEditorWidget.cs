@@ -80,7 +80,7 @@ namespace MonoDevelop.SourceEditor
 		
 		public MonoDevelop.SourceEditor.ExtensibleTextEditor TextEditor {
 			get {
-				return lastActiveEditor;
+				return lastActiveEditor ?? textEditor;
 			}
 		}
 		
@@ -101,10 +101,19 @@ namespace MonoDevelop.SourceEditor
 		public void AddQuickTaskProvider (IQuickTaskProvider provider)
 		{
 			quickTaskProvider.Add (provider);
-			mainsw.AddQuickTaskStrip (provider); 
+			mainsw.AddQuickTaskProvider (provider); 
 			if (secondsw != null)
-				secondsw.AddQuickTaskStrip (provider);
+				secondsw.AddQuickTaskProvider (provider);
 		}
+
+		public void RemoveQuickTaskProvider (IQuickTaskProvider provider)
+		{
+			quickTaskProvider.Remove (provider);
+			mainsw.RemoveQuickTaskProvider (provider); 
+			if (secondsw != null)
+				secondsw.RemoveQuickTaskProvider (provider);
+		}		
+		
 		
 		List<IUsageProvider> usageProvider = new List<IUsageProvider> ();
 		public void AddUsageTaskProvider (IUsageProvider provider)
@@ -226,18 +235,30 @@ namespace MonoDevelop.SourceEditor
 				} else {
 					strip.Visible = false;
 				}
-				parent.quickTaskProvider.ForEach (p => AddQuickTaskStrip (p));
+				parent.quickTaskProvider.ForEach (p => AddQuickTaskProvider (p));
 			}
 			
-			public void AddQuickTaskStrip (IQuickTaskProvider p)
+			public void AddQuickTaskProvider (IQuickTaskProvider p)
 			{
 				if (!strip.Visible) {
 					strip.VAdjustment = scrolledWindow.Vadjustment;
 					scrolledWindow.ReplaceVScrollBar (strip);
 				}
-				p.TasksUpdated += (sender, e) => strip.Update (p);
+				p.TasksUpdated += HandleTasksUpdated; 
 			}
-			
+
+			void HandleTasksUpdated (object sender, EventArgs e)
+			{
+				strip.Update ((IQuickTaskProvider)sender);
+			}
+
+			public void RemoveQuickTaskProvider (IQuickTaskProvider provider)
+			{
+				if (provider != null)
+					provider.TasksUpdated -= HandleTasksUpdated;
+			}	
+
+
 			public void AddUsageProvider (IUsageProvider p)
 			{
 				if (!strip.Visible) {
@@ -550,7 +571,7 @@ namespace MonoDevelop.SourceEditor
 			while (count++ < 5 && parseInformationUpdaterWorkerThread.IsBusy)
 				Thread.Sleep (20);
 		}
-		
+
 		internal void SetLastActiveEditor (ExtensibleTextEditor editor)
 		{
 			this.lastActiveEditor = editor;
@@ -735,6 +756,7 @@ namespace MonoDevelop.SourceEditor
 			this.mainsw.SetTextEditor (removedTextEditor);
 			this.mainsw.Vadjustment.Value = vadjustment; 
 			this.mainsw.Hadjustment.Value = hadjustment;
+			lastActiveEditor = textEditor;
 		}
 
 		
@@ -760,7 +782,7 @@ namespace MonoDevelop.SourceEditor
 			return str.Substring (0, leftOffset) + delimiter + str.Substring (rightOffset);
 		}
 		
-		public void ShowFileChangedWarning ()
+		public void ShowFileChangedWarning (bool multiple)
 		{
 			RemoveMessageBar ();
 			
@@ -771,15 +793,38 @@ namespace MonoDevelop.SourceEditor
 					"Do you want to keep your changes, or reload the file from disk?",
 					EllipsizeMiddle (Document.FileName, 50)));
 				
-				Button b1 = new Button (GettextCatalog.GetString("_Reload from disk"));
+				var b1 = new Button (GettextCatalog.GetString ("_Reload from disk"));
 				b1.Image = ImageService.GetImage (Gtk.Stock.Refresh, IconSize.Button);
-				b1.Clicked += new EventHandler (ClickedReload);
+				b1.Clicked += delegate {
+					Reload ();
+					view.TextEditor.GrabFocus ();
+				};
 				messageBar.ActionArea.Add (b1);
 				
-				Button b2 = new Button (GettextCatalog.GetString("_Keep changes"));
+				var b2 = new Button (GettextCatalog.GetString ("_Keep changes"));
 				b2.Image = ImageService.GetImage (Gtk.Stock.Cancel, IconSize.Button);
-				b2.Clicked += new EventHandler (ClickedIgnore);
+				b2.Clicked += delegate {
+					RemoveMessageBar ();
+					view.LastSaveTime = System.IO.File.GetLastWriteTime (view.ContentName);
+					view.WorkbenchWindow.ShowNotification = false;
+				};
 				messageBar.ActionArea.Add (b2);
+
+				if (multiple) {
+					var b3 = new Button (GettextCatalog.GetString ("_Reload all"));
+					b3.Image = ImageService.GetImage (Gtk.Stock.Cancel, IconSize.Button);
+					b3.Clicked += delegate {
+						FileRegistry.ReloadAllChangedFiles ();
+					};
+					messageBar.ActionArea.Add (b3);
+	
+					var b4 = new Button (GettextCatalog.GetString ("_Ignore all"));
+					b4.Image = ImageService.GetImage (Gtk.Stock.Cancel, IconSize.Button);
+					b4.Clicked += delegate {
+						FileRegistry.IgnoreAllChangedFiles ();
+					};
+					messageBar.ActionArea.Add (b4);
+				}
 			}
 			
 			view.IsDirty = true;
@@ -794,31 +839,39 @@ namespace MonoDevelop.SourceEditor
 		}
 		
 		#region Eol marker check
-		bool useIncorrectMarkers;
-		internal bool EnsureCorrectEolMarker (string fileName, string encoding)
+		internal bool UseIncorrectMarkers { get; set; }
+		internal bool HasIncorrectEolMarker {
+			get {
+				var firstLine = Document.GetLine (1);
+				if (firstLine != null && firstLine.DelimiterLength > 0) {
+					string firstDelimiter = Document.GetTextAt (firstLine.EditableLength, firstLine.DelimiterLength);
+					return firstDelimiter != TextEditor.Options.DefaultEolMarker;
+				}
+				return false;
+			}
+		}
+
+		internal bool EnsureCorrectEolMarker (string fileName)
 		{
-			if (useIncorrectMarkers)
+			if (UseIncorrectMarkers)
 				return true;
-			var firstLine = Document.GetLine (1);
-			if (firstLine != null && firstLine.DelimiterLength > 0) {
-				string firstDelimiter = Document.GetTextAt (firstLine.EditableLength, firstLine.DelimiterLength);
-				if (firstDelimiter != TextEditor.Options.DefaultEolMarker) {
-					switch (DefaultSourceEditorOptions.Instance.LineEndingConversion) {
-					case LineEndingConversion.Ask:
-						ShowIncorretEolMarkers (fileName, encoding);
-						return false;
-					case LineEndingConversion.ConvertAlways:
-						ConvertLineEndings ();
-						return true;
-					default:
-						return true;
-					}
+
+			if (HasIncorrectEolMarker) {
+				switch (DefaultSourceEditorOptions.Instance.LineEndingConversion) {
+				case LineEndingConversion.Ask:
+					ShowIncorretEolMarkers (fileName, FileRegistry.HasMultipleIncorretEolMarkers);
+					return false;
+				case LineEndingConversion.ConvertAlways:
+					ConvertLineEndings ();
+					return true;
+				default:
+					return true;
 				}
 			}
 			return true;
 		}
 
-		void ConvertLineEndings ()
+		internal void ConvertLineEndings ()
 		{
 			string correctEol = TextEditor.Options.DefaultEolMarker;
 			var newText = new System.Text.StringBuilder ();
@@ -830,7 +883,7 @@ namespace MonoDevelop.SourceEditor
 			TextEditor.Text = newText.ToString ();
 		}
 
-		void ShowIncorretEolMarkers (string fileName, string encoding)
+		void ShowIncorretEolMarkers (string fileName, bool multiple)
 		{
 			RemoveMessageBar ();
 			
@@ -841,29 +894,42 @@ namespace MonoDevelop.SourceEditor
 					"Do you want to convert the line endings?",
 					EllipsizeMiddle (Document.FileName, 50)));
 				
-				Button b1 = new Button (GettextCatalog.GetString("_Convert"));
+				Button b1 = new Button (GettextCatalog.GetString ("_Convert"));
 				b1.Image = ImageService.GetImage (Gtk.Stock.Refresh, IconSize.Button);
 				b1.Clicked += delegate(object sender, EventArgs e) {
-					try {
-						ConvertLineEndings ();
-						view.Save (fileName, encoding);
-					} finally {
-						RemoveMessageBar ();
-						view.WorkbenchWindow.ShowNotification = false;
-					}
+					ConvertLineEndings ();
+					view.WorkbenchWindow.ShowNotification = false;
+					RemoveMessageBar ();
+					view.Save (fileName, view.SourceEncoding);
 				};
 				messageBar.ActionArea.Add (b1);
 				
-				Button b2 = new Button (GettextCatalog.GetString("_Keep line endings"));
+				Button b2 = new Button (GettextCatalog.GetString ("_Keep line endings"));
 				b2.Image = ImageService.GetImage (Gtk.Stock.Cancel, IconSize.Button);
 				b2.Clicked += delegate(object sender, EventArgs e) {
-					useIncorrectMarkers = true;
-					RemoveMessageBar ();
+					UseIncorrectMarkers = true;
 					view.WorkbenchWindow.ShowNotification = false;
-					
-					view.Save (fileName, encoding);
+					RemoveMessageBar ();
+					view.Save (fileName, view.SourceEncoding);
 				};
 				messageBar.ActionArea.Add (b2);
+
+				if (multiple) {
+					var b3 = new Button (GettextCatalog.GetString ("_Convert all files"));
+					b3.Image = ImageService.GetImage (Gtk.Stock.Cancel, IconSize.Button);
+					b3.Clicked += delegate {
+						FileRegistry.ConvertLineEndingsInAllFiles ();
+					};
+					messageBar.ActionArea.Add (b3);
+	
+					var b4 = new Button (GettextCatalog.GetString ("_Keep in all files"));
+					b4.Image = ImageService.GetImage (Gtk.Stock.Cancel, IconSize.Button);
+					b4.Clicked += delegate {
+						FileRegistry.IgnoreLineEndingsInAllFiles ();
+					};
+					messageBar.ActionArea.Add (b4);
+				}
+
 			}
 			
 			vbox.PackStart (messageBar, false, false, CHILD_PADDING);
@@ -872,6 +938,11 @@ namespace MonoDevelop.SourceEditor
 
 			messageBar.QueueDraw ();
 			view.WorkbenchWindow.ShowNotification = true;
+			
+			// Ensure that one file with incorret EOL markers is shown.
+			var currentView = IdeApp.Workbench.ActiveDocument.PrimaryView as SourceEditorView;
+			if (currentView == null || !currentView.IsDirty || !currentView.SourceEditorWidget.HasIncorrectEolMarker || currentView.SourceEditorWidget.UseIncorrectMarkers)
+				view.WorkbenchWindow.SelectWindow ();
 		}
 		#endregion
 		public void ShowAutoSaveWarning (string fileName)
@@ -945,13 +1016,7 @@ namespace MonoDevelop.SourceEditor
 			if (!TextEditor.Visible)
 				TextEditor.Visible = true;
 		}
-		
-		void ClickedReload (object sender, EventArgs args)
-		{
-			Reload ();
-			view.TextEditor.GrabFocus ();
-		}
-		
+
 		public void Reload ()
 		{
 			try {
@@ -965,13 +1030,7 @@ namespace MonoDevelop.SourceEditor
 				RemoveMessageBar ();
 			}
 		}
-		
-		void ClickedIgnore (object sender, EventArgs args)
-		{
-			RemoveMessageBar ();
-			view.WorkbenchWindow.ShowNotification = false;
-		}
-		
+
 		#region Status Bar Handling
 		MonoDevelop.SourceEditor.MessageBubbleTextMarker oldExpandedMarker;
 		void CaretPositionChanged (object o, DocumentLocationEventArgs args)
@@ -1005,7 +1064,7 @@ namespace MonoDevelop.SourceEditor
 		internal void UpdateLineCol ()
 		{
 			int offset = TextEditor.Caret.Offset;
-			if (offset < 0 || offset > TextEditor.Document.Length)
+			if (offset < 0 || offset > TextEditor.Document.TextLength)
 				return;
 			DocumentLocation location = TextEditor.LogicalToVisualLocation (TextEditor.Caret.Location);
 			IdeApp.Workbench.StatusBar.ShowCaretState (TextEditor.Caret.Line,
@@ -1022,7 +1081,7 @@ namespace MonoDevelop.SourceEditor
 		Components.RoundedFrame gotoLineNumberWidgetFrame = null;
 		GotoLineNumberWidget   gotoLineNumberWidget   = null;
 		
-		public void SetSearchPattern ()
+		void SetSearchPattern ()
 		{
 			string selectedText = FormatPatternToSelectionOption (this.TextEditor.SelectedText);
 			
@@ -1138,18 +1197,10 @@ namespace MonoDevelop.SourceEditor
 		{
 			SetReplacePatternToSelection ();
 		}
-		
-		
+
 		void ShowSearchReplaceWidget (bool replace)
 		{
 			if (searchAndReplaceWidget == null) {
-				this.textEditor.SearchPattern = SearchAndReplaceWidget.searchPattern = "";
-				// reset pattern, to force an update
-				
-				if (TextEditor.IsSomethingSelected) {
-					SetSearchPattern ();
-				}
-				
 				KillWidgets ();
 				searchAndReplaceWidgetFrame = new MonoDevelop.Components.RoundedFrame ();
 				//searchAndReplaceWidgetFrame.SetFillColor (MonoDevelop.Components.CairoExtensions.GdkColorToCairoColor (widget.TextEditor.ColorStyle.Default.BackgroundColor));
@@ -1161,15 +1212,24 @@ namespace MonoDevelop.SourceEditor
 				this.TextEditorContainer.AddAnimatedWidget (searchAndReplaceWidgetFrame, 300, Mono.TextEditor.Theatrics.Easing.ExponentialInOut, Mono.TextEditor.Theatrics.Blocking.Downstage, this.TextEditor.Allocation.Width - 400, -searchAndReplaceWidget.Allocation.Height);
 //				this.PackEnd (searchAndReplaceWidget);
 //				this.SetChildPacking (searchAndReplaceWidget, false, false, CHILD_PADDING, PackType.End);
-		//		searchAndReplaceWidget.ShowAll ();
+				//		searchAndReplaceWidget.ShowAll ();
 				this.textEditor.HighlightSearchPattern = true;
 				this.textEditor.TextViewMargin.RefreshSearchMarker ();
 				if (this.splittedTextEditor != null) {
 					this.splittedTextEditor.HighlightSearchPattern = true;
 					this.splittedTextEditor.TextViewMargin.RefreshSearchMarker ();
 				}
-				
 				ResetFocusChain ();
+
+				if (TextEditor.IsSomethingSelected) {
+					if (TextEditor.MainSelection.MinLine == TextEditor.MainSelection.MaxLine) {
+						SetSearchPattern ();
+					} else {
+						searchAndReplaceWidget.IsInSelectionSearchMode = true;
+						searchAndReplaceWidget.SelectionSegment = TextEditor.SelectionRange;
+					}
+				}
+				SetSearchPattern (SearchAndReplaceWidget.searchPattern);
 			} else {
 				if (TextEditor.IsSomethingSelected) {
 					SetSearchPattern ();
@@ -1221,7 +1281,7 @@ namespace MonoDevelop.SourceEditor
 			if (searchAndReplaceWidget != null) 
 				this.textEditor.IsCaseSensitive = searchAndReplaceWidget.IsCaseSensitive;
 			this.textEditor.IsWholeWordOnly = SearchAndReplaceWidget.IsWholeWordOnly;
-			
+			this.textEditor.SearchRegion = searchAndReplaceWidget.IsInSelectionSearchMode ? searchAndReplaceWidget.SelectionSegment : TextSegment.Invalid;
 			string error;
 			string pattern = SearchAndReplaceWidget.searchPattern;
 			if (searchAndReplaceWidget != null)
@@ -1324,7 +1384,6 @@ namespace MonoDevelop.SourceEditor
 			SetSearchPatternToSelection ();
 			
 			SetSearchOptions ();
-			SetSearchPattern();
 			TextEditor.GrabFocus ();
 			return FindNext ();
 		}
@@ -1333,7 +1392,6 @@ namespace MonoDevelop.SourceEditor
 		{
 			SetSearchPatternToSelection ();
 			SetSearchOptions ();
-			SetSearchPattern();
 			TextEditor.GrabFocus ();
 			return FindPrevious ();
 		}
@@ -1646,7 +1704,7 @@ namespace MonoDevelop.SourceEditor
 			this.LineSegment = line; // may be null if no line is assigned to the error.
 			this.Wave = true;
 			
-			ColorName = info.ErrorType == ErrorType.Warning ? Mono.TextEditor.Highlighting.ColorSheme.WarningUnderlineString : Mono.TextEditor.Highlighting.ColorSheme.ErrorUnderlineString;
+			ColorName = info.ErrorType == ErrorType.Warning ? Mono.TextEditor.Highlighting.ColorScheme.WarningUnderlineString : Mono.TextEditor.Highlighting.ColorScheme.ErrorUnderlineString;
 			
 			if (Info.Region.BeginLine == info.Region.EndLine) {
 				this.StartCol = Info.Region.BeginColumn;

@@ -50,6 +50,16 @@ namespace MonoDevelop.SourceEditor
 		internal static string searchPattern = String.Empty;
 		internal static string replacePattern = String.Empty;
 
+		public TextSegment SelectionSegment {
+			get;
+			set;
+		}
+
+		public bool IsInSelectionSearchMode {
+			get;
+			set;
+		}
+
 		SourceEditorWidget widget;
 		Mono.TextEditor.TextEditorContainer textEditorContainer;
 		MonoDevelop.SourceEditor.ExtensibleTextEditor textEditor;
@@ -314,6 +324,16 @@ namespace MonoDevelop.SourceEditor
 				UpdateSearchEntry ();
 			};
 			searchEntry.Menu.Add (regexSearch);
+			
+			CheckMenuItem inselectionSearch = new CheckMenuItem (MonoDevelop.Core.GettextCatalog.GetString ("_Search In Selection"));
+			inselectionSearch.Active = IsInSelectionSearchMode;
+			inselectionSearch.DrawAsRadio = false;
+			inselectionSearch.Toggled += delegate {
+				IsInSelectionSearchMode = inselectionSearch.Active;
+				UpdateSearchEntry ();
+			};
+			searchEntry.Menu.Add (inselectionSearch);
+
 			List<string> history = GetHistory (seachHistoryProperty);
 			if (history.Count > 0) {
 				searchEntry.Menu.Add (new SeparatorMenuItem ());
@@ -521,7 +541,7 @@ But I leave it in in the case I've missed something. Mike
 		{
 			base.OnFocusChildSet (widget);
 			var mainResult = this.textEditor.TextViewMargin.MainSearchResult;
-			this.textEditor.TextViewMargin.HideSelection = widget == table && mainResult != null &&
+			this.textEditor.TextViewMargin.HideSelection = widget == table && !mainResult.IsInvalid &&
 				this.textEditor.IsSomethingSelected && this.textEditor.SelectionRange.Offset == mainResult.Offset && this.textEditor.SelectionRange.EndOffset == mainResult.EndOffset;
 			
 			if (this.textEditor.TextViewMargin.HideSelection)

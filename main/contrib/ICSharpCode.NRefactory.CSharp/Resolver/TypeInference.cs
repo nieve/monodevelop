@@ -290,7 +290,7 @@ namespace ICSharpCode.NRefactory.CSharp.Resolver
 		{
 			// C# 4.0 spec: §7.5.2.2 The second phase
 			Log.WriteLine("Phase Two");
-			// All unfixed type variables Xi which do not depend on any Xj are fixed.
+			// All unfixed type variables Xi which do not depend on any Xj are fixed.
 			List<TP> typeParametersToFix = new List<TP>();
 			foreach (TP Xi in typeParameters) {
 				if (Xi.IsFixed == false) {
@@ -299,14 +299,14 @@ namespace ICSharpCode.NRefactory.CSharp.Resolver
 					}
 				}
 			}
-			// If no such type variables exist, all unfixed type variables Xi are fixed for which all of the following hold:
+			// If no such type variables exist, all unfixed type variables Xi are fixed for which all of the following hold:
 			if (typeParametersToFix.Count == 0) {
 				Log.WriteLine("Type parameters cannot be fixed due to dependency cycles");
 				Log.WriteLine("Trying to break the cycle by fixing any TPs that have non-empty bounds...");
 				foreach (TP Xi in typeParameters) {
-					// Xi has a non­empty set of bounds
+					// Xi has a non­empty set of bounds
 					if (!Xi.IsFixed && Xi.HasBounds) {
-						// There is at least one type variable Xj that depends on Xi
+						// There is at least one type variable Xj that depends on Xi
 						if (typeParameters.Any((TP Xj) => DependsOn(Xj, Xi))) {
 							typeParametersToFix.Add(Xi);
 						}
@@ -323,26 +323,26 @@ namespace ICSharpCode.NRefactory.CSharp.Resolver
 				return false;
 			bool unfixedTypeVariablesExist = typeParameters.Any((TP X) => X.IsFixed == false);
 			if (typeParametersToFix.Count == 0 && unfixedTypeVariablesExist) {
-				// If no such type variables exist and there are still unfixed type variables, type inference fails.
+				// If no such type variables exist and there are still unfixed type variables, type inference fails.
 				Log.WriteLine("Type inference fails: there are still unfixed TPs remaining");
 				return false;
 			} else if (!unfixedTypeVariablesExist) {
-				// Otherwise, if no further unfixed type variables exist, type inference succeeds.
+				// Otherwise, if no further unfixed type variables exist, type inference succeeds.
 				return true;
 			} else {
-				// Otherwise, for all arguments ei with corresponding parameter type Ti
+				// Otherwise, for all arguments ei with corresponding parameter type Ti
 				for (int i = 0; i < arguments.Length; i++) {
 					ResolveResult Ei = arguments[i];
 					IType Ti = parameterTypes[i];
-					// where the output types (§7.4.2.4) contain unfixed type variables Xj
-					// but the input types (§7.4.2.3) do not
+					// where the output types (§7.4.2.4) contain unfixed type variables Xj
+					// but the input types (§7.4.2.3) do not
 					if (OutputTypeContainsUnfixed(Ei, Ti) && !InputTypesContainsUnfixed(Ei, Ti)) {
-						// an output type inference (§7.4.2.6) is made for ei with type Ti.
+						// an output type inference (§7.4.2.6) is made for ei with type Ti.
 						Log.WriteLine("MakeOutputTypeInference for argument #" + i);
 						MakeOutputTypeInference(Ei, Ti);
 					}
 				}
-				// Then the second phase is repeated.
+				// Then the second phase is repeated.
 				return PhaseTwo();
 			}
 		}
@@ -488,10 +488,10 @@ namespace ICSharpCode.NRefactory.CSharp.Resolver
 					return;
 				}
 			}
-			// Otherwise, if E is a method group and T is a delegate type or expression tree type
-			// with parameter types T1…Tk and return type Tb, and overload resolution
-			// of E with the types T1…Tk yields a single method with return type U, then a lower­-bound
-			// inference is made from U to Tb.
+			// Otherwise, if E is a method group and T is a delegate type or expression tree type
+			// with parameter types T1…Tk and return type Tb, and overload resolution
+			// of E with the types T1…Tk yields a single method with return type U, then a lower­-bound
+			// inference is made from U to Tb.
 			MethodGroupResolveResult mgrr = e as MethodGroupResolveResult;
 			if (mgrr != null) {
 				IMethod m = GetDelegateOrExpressionTreeSignature(t);
@@ -560,7 +560,7 @@ namespace ICSharpCode.NRefactory.CSharp.Resolver
 		{
 			Log.WriteLine("MakeExactInference from " + U + " to " + V);
 			
-			// If V is one of the unfixed Xi then U is added to the set of bounds for Xi.
+			// If V is one of the unfixed Xi then U is added to the set of bounds for Xi.
 			TP tp = GetTPForType(V);
 			if (tp != null && tp.IsFixed == false) {
 				Log.WriteLine(" Add exact bound '" + U + "' to " + tp);
@@ -614,15 +614,15 @@ namespace ICSharpCode.NRefactory.CSharp.Resolver
 		/// Make lower bound inference from U to V.
 		/// C# 4.0 spec: §7.5.2.9 Lower-bound inferences
 		/// </summary>
-		void MakeLowerBoundInference(IType U, IType V)
+		void MakeLowerBoundInference (IType U, IType V)
 		{
-			Log.WriteLine(" MakeLowerBoundInference from " + U + " to " + V);
+			Log.WriteLine (" MakeLowerBoundInference from " + U + " to " + V);
 			
-			// If V is one of the unfixed Xi then U is added to the set of bounds for Xi.
-			TP tp = GetTPForType(V);
+			// If V is one of the unfixed Xi then U is added to the set of bounds for Xi.
+			TP tp = GetTPForType (V);
 			if (tp != null && tp.IsFixed == false) {
-				Log.WriteLine("  Add lower bound '" + U + "' to " + tp);
-				tp.LowerBounds.Add(U);
+				Log.WriteLine ("  Add lower bound '" + U + "' to " + tp);
+				tp.LowerBounds.Add (U);
 				return;
 			}
 			
@@ -630,7 +630,7 @@ namespace ICSharpCode.NRefactory.CSharp.Resolver
 			ArrayType arrU = U as ArrayType;
 			ArrayType arrV = V as ArrayType;
 			if (arrU != null && arrV != null && arrU.Dimensions == arrV.Dimensions) {
-				MakeLowerBoundInference(arrU.ElementType, arrV.ElementType);
+				MakeLowerBoundInference (arrU.ElementType, arrV.ElementType);
 				return;
 			}
 			// Handle parameterized types:
@@ -639,7 +639,7 @@ namespace ICSharpCode.NRefactory.CSharp.Resolver
 				ParameterizedType uniqueBaseType = null;
 				foreach (IType baseU in U.GetAllBaseTypes()) {
 					ParameterizedType pU = baseU as ParameterizedType;
-					if (pU != null && object.Equals(pU.GetDefinition(), pV.GetDefinition()) && pU.TypeParameterCount == pV.TypeParameterCount) {
+					if (pU != null && object.Equals (pU.GetDefinition (), pV.GetDefinition ()) && pU.TypeParameterCount == pV.TypeParameterCount) {
 						if (uniqueBaseType == null)
 							uniqueBaseType = pU;
 						else
@@ -685,7 +685,7 @@ namespace ICSharpCode.NRefactory.CSharp.Resolver
 		{
 			Log.WriteLine(" MakeUpperBoundInference from " + U + " to " + V);
 			
-			// If V is one of the unfixed Xi then U is added to the set of bounds for Xi.
+			// If V is one of the unfixed Xi then U is added to the set of bounds for Xi.
 			TP tp = GetTPForType(V);
 			if (tp != null && tp.IsFixed == false) {
 				Log.WriteLine("  Add upper bound '" + U + "' to " + tp);

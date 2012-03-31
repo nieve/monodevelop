@@ -109,7 +109,6 @@ namespace MonoDevelop.CSharp
 				string result;
 				if (stringCache.TryGetValue(rx, out result))
 					return result;
-				var pf = Document.ParsedDocument.ParsedFile as CSharpParsedFile;
 				if (tag is IParsedFile) {
 					result = amb.GetString (rx, OutputFlags.IncludeGenerics | OutputFlags.IncludeParameters | OutputFlags.IncludeParameterName | OutputFlags.UseFullInnerTypeName | OutputFlags.ReformatDelegates);
 				} else {
@@ -231,7 +230,7 @@ namespace MonoDevelop.CSharp
 			PathEntry entry;
 			if (!unit.UserRegions.Any ())
 				return null;
-			var reg = unit.UserRegions.Where (r => r.Region.IsInside (loc.Line, loc.Column)).LastOrDefault ();
+			var reg = unit.UserRegions.Where (r => r.Region.IsInside (loc)).LastOrDefault ();
 			if (reg == null) {
 				entry = new PathEntry (GettextCatalog.GetString ("No region"));
 			} else {

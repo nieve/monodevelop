@@ -7,17 +7,17 @@
         url = "http://www.monodevelop.com/"
         description = "Provides refactoring support to MonoDevelop"
         category = "IDE extensions"
-        version = "2.9.2">
+        version = "2.9.4">
 
 	<Runtime>
 		<Import assembly = "MonoDevelop.Refactoring.dll"/>
 	</Runtime>
 
 	<Dependencies>
-		<Addin id="Core" version="2.9.2"/>
-		<Addin id="Ide" version="2.9.2"/>
-		<Addin id="DesignerSupport" version="2.9.2"/>
-		<Addin id="SourceEditor2" version="2.9.2"/>
+		<Addin id="Core" version="2.9.4"/>
+		<Addin id="Ide" version="2.9.4"/>
+		<Addin id="DesignerSupport" version="2.9.4"/>
+		<Addin id="SourceEditor2" version="2.9.4"/>
 	</Dependencies>
 	
 	<!-- Extension Points -->
@@ -51,7 +51,6 @@
 	
 	<!-- Extensions -->
 	<Extension path = "/MonoDevelop/Refactoring/Refactorings">
-		<Class id="IntegrateTemporaryVariable" class = "MonoDevelop.Refactoring.IntegrateTemporaryVariable.IntegrateTemporaryVariableRefactoring" />
 		<Class id="ImplementImplicit" class = "MonoDevelop.Refactoring.ImplementInterface.ImplementImplicit" />
 		<Class id="ImplementExplicit" class = "MonoDevelop.Refactoring.ImplementInterface.ImplementExplicit" />
 		<Class id="ImplementAbstract" class = "MonoDevelop.Refactoring.ImplementInterface.ImplementAbstractMembers" />
@@ -114,6 +113,11 @@
 		</Category>
 		
 		<Category _name = "Refactoring" id = "Refactoring">
+		<Command id = "MonoDevelop.Refactoring.RefactoryCommands.Resolve"
+				defaultHandler = "MonoDevelop.Refactoring.ResolveCommandHandler"
+				type="array"
+				_label = "Resolve"/> 
+		
 		<Command id = "MonoDevelop.Refactoring.RefactoryCommands.CurrentRefactoryOperations"
 				defaultHandler = "MonoDevelop.Refactoring.CurrentRefactoryOperationsHandler"
 				type="array"
@@ -128,11 +132,6 @@
 					shortcut = "Alt|Return"
 					macShortcut = "Alt|Return" />
 		
-		<Command id = "MonoDevelop.Refactoring.RefactoryCommands.IntegrateTemporaryVariable"
-					defaultHandler = "MonoDevelop.Refactoring.IntegrateTemporaryVariable.IntegrateTemporaryVariableHandler"
-					_label = "Integrate Temporary Variable"
-					shortcut = "Control|Alt|I" />
-					
 		<Command id = "MonoDevelop.Refactoring.RefactoryCommands.ImportSymbol"
 					defaultHandler = "MonoDevelop.Refactoring.ImportSymbolHandler"
 					_label = "Import Symbol..."
@@ -143,14 +142,16 @@
 	</Extension>
 	
 	<Extension path = "/MonoDevelop/SourceEditor2/ContextMenu/Editor">
+		<CommandItem id = "MonoDevelop.Refactoring.RefactoryCommands.Resolve" insertbefore="MonoDevelop.SourceEditor.SourceEditorCommands.MarkerOperations"/>
+		
 		<ItemSet id = "Fix" _label = "Fix" autohide="true"
 			insertafter="MonoDevelop.SourceEditor.SourceEditorCommands.MarkerOperations" insertbefore="MonoDevelop.Debugger.DebugCommands.ExpressionEvaluator">
 			<CommandItem id = "MonoDevelop.AnalysisCore.AnalysisCommands.FixOperations" />
 		</ItemSet>
-	
-	
+		
+		
 		<CommandItem id = "MonoDevelop.Refactoring.RefactoryCommands.CurrentRefactoryOperations" insertafter="MonoDevelop.SourceEditor.SourceEditorCommands.MarkerOperations" insertbefore="MonoDevelop.Debugger.DebugCommands.ExpressionEvaluator"/>
--
+-	
 		<CommandItem id = "MonoDevelop.CodeGeneration.CodeGenerationCommands.ShowCodeGenerationWindow"
 		             insertafter="MonoDevelop.Ide.Commands.TextEditorCommands.ShowCodeTemplateWindow" />
 	</Extension>

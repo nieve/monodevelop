@@ -6,13 +6,13 @@
        url         = "http://www.monodevelop.com/"
        description = "CSharp Language Binding"
        category    = "Language bindings"
-       version     = "2.9.2">
+       version     = "2.9.4">
 	
 	<Dependencies>
-		<Addin id="Core" version="2.9.2"/>
-		<Addin id="Ide" version="2.9.2"/>
-		<Addin id="SourceEditor2" version="2.9.2"/>
-		<Addin id="Refactoring" version="2.9.2"/>
+		<Addin id="Core" version="2.9.4"/>
+		<Addin id="Ide" version="2.9.4"/>
+		<Addin id="SourceEditor2" version="2.9.4"/>
+		<Addin id="Refactoring" version="2.9.4"/>
 	</Dependencies>
 	
 	<Extension path = "/MonoDevelop/Ide/Commands">
@@ -132,6 +132,7 @@
 	
 	<Extension path = "/MonoDevelop/ProjectModel/PolicySets/Mono" >
 		<Policies resource="MonoCSharpPolicy.xml" />
+		<Policies resource="MonoNameConventionPolicy.xml" />
 	</Extension>
 	
 	<Extension path = "/MonoDevelop/ProjectModel/PolicySets" >
@@ -180,35 +181,8 @@
 			class = "MonoDevelop.CSharp.Refactoring.CodeActions.MoveTypeToFile" />
 	</Extension>
 	
-	<Extension path = "/MonoDevelop/Refactoring/CodeIssues">
-		<Inspector mimeType="text/x-csharp"
-			severity = "Warning"
-			class = "MonoDevelop.CSharp.Refactoring.CodeIssues.NamingInspector" />
-	</Extension>
-	
 	<Extension path = "/MonoDevelop/Ide/TextEditorResolver">
 		<Resolver class = "MonoDevelop.CSharp.Resolver.TextEditorResolverProvider" mimeType="text/x-csharp" />
-	</Extension>
-	
-	<Extension path = "/MonoDevelop/Ide/Commands/Refactoring">
-		<Command id = "MonoDevelop.CSharp.Resolver.Commands.Resolve"
-				defaultHandler = "MonoDevelop.CSharp.Resolver.ResolveCommandHandler"
-				type="array"
-				_label = "Resolve"/> 
-			
-		<Command id = "MonoDevelop.Refactoring.RefactoryCommands.RemoveUnusedImports"
-					defaultHandler = "MonoDevelop.CSharp.Refactoring.RefactorImports.RemoveUnusedImportsHandler"
-					icon = "md-remove-namespace"
-					_label = "_Remove unused usings"/>
-		
-		<Command id = "MonoDevelop.Refactoring.RefactoryCommands.SortImports"
-					defaultHandler = "MonoDevelop.CSharp.Refactoring.RefactorImports.SortImportsHandler"
-					icon = "md-sort-namespace"
-					_label = "_Sort usings"/>
-					
-		<Command id = "MonoDevelop.Refactoring.RefactoryCommands.RemoveSortImports"
-					defaultHandler = "MonoDevelop.CSharp.Refactoring.RefactorImports.RemoveSortImportsHandler"
-					_label = "R_emove and Sort usings"/>
 	</Extension>
 	
 	<Extension path = "/MonoDevelop/Ide/Commands/TextEditor">
@@ -237,23 +211,14 @@
 	</Extension>
 	
 	<Extension path = "/MonoDevelop/Refactoring/Refactorings">
-		<Class id="CreateMethod" class = "MonoDevelop.CSharp.Refactoring.CreateMethod.CreateMethodCodeGenerator" />
 		<Class id="ExtractMethod" class = "MonoDevelop.CSharp.Refactoring.ExtractMethod.ExtractMethodRefactoring" />
-		<Class id="DeclareLocal" class = "MonoDevelop.CSharp.Refactoring.DeclareLocal.DeclareLocalCodeGenerator" />
 	</Extension>
 	
 	<Extension path = "/MonoDevelop/Ide/Commands/Refactoring">
-		<Command id = "MonoDevelop.Refactoring.RefactoryCommands.CreateMethod"
-				defaultHandler = "MonoDevelop.CSharp.Refactoring.CreateMethod.CreateMethodHandler"
-				_label = "Create Method"/>
 		<Command id = "MonoDevelop.Refactoring.RefactoryCommands.ExtractMethod"
 				defaultHandler = "MonoDevelop.CSharp.Refactoring.ExtractMethod.ExtractMethodHandler"
 				_label = "Extract Method"
 				shortcut = "Control|Alt|M"/>
-		<Command id = "MonoDevelop.Refactoring.RefactoryCommands.DeclareLocal"
-				defaultHandler = "MonoDevelop.CSharp.Refactoring.DeclareLocal.DeclareLocalHandler"
-				_label = "_Declare Local" 
-				shortcut = "Control+dead_circumflex"/> 
 	</Extension>
 	
 	<Extension path = "/MonoDevelop/Refactoring/CodeGenerators">
@@ -267,12 +232,6 @@
 		<Class class = "MonoDevelop.CodeGeneration.WriteLineGenerator" />
 	</Extension>
 	
-	<Extension path = "/MonoDevelop/SourceEditor2/ContextMenu/Editor">	
-		<CommandItem id = "MonoDevelop.CSharp.Resolver.Commands.Resolve"
-			insertafter="MonoDevelop.SourceEditor.SourceEditorCommands.MarkerOperations"
-			insertbefore="MonoDevelop.Refactoring.RefactoryCommands.CurrentRefactoryOperations"/>
-	</Extension>
-	
 	<Extension path = "/MonoDevelop/Refactoring/CodeActionSource">
 		<Source class ="MonoDevelop.CSharp.Refactoring.CodeActions.NRefactoryCodeActionSource"/>
 	</Extension>
@@ -281,12 +240,26 @@
 		<Source class ="MonoDevelop.CSharp.Refactoring.CodeIssues.NRefactoryCodeIssueSource"/>
 	</Extension>
 	
+	<Extension path = "/MonoDevelop/ProjectModel/Gui/DefaultPolicyPanels/SourceCode">
+		<Section id="NameConventions" _label="Name Conventions" fill = "true" class="MonoDevelop.CSharp.Refactoring.CodeIssues.NameConventionPanel" />
+	</Extension>
+	<Extension path = "/MonoDevelop/ProjectModel/Gui/ItemOptionPanels/SourceCode">
+		<Section id="NameConventions" _label="Name Conventions" fill = "true" class="MonoDevelop.CSharp.Refactoring.CodeIssues.NameConventionPanel" />
+	</Extension>
+	<Extension path = "/MonoDevelop/Ide/GlobalOptionsDialog/SourceCode">
+		<Section id="NameConventions" _label="Name Conventions" fill = "true" class="MonoDevelop.CSharp.Refactoring.CodeIssues.NameConventionPanel" />
+	</Extension>
+	
+	<Extension path = "/MonoDevelop/SourceEditor2/TooltipProviders">
+		<Class id="LanguageItem" class="MonoDevelop.SourceEditor.LanguageItemTooltipProvider" />
+	</Extension>
+	
 	<Module>
 	    <Runtime>
 	        <Import assembly="MonoDevelop.CSharpBinding.Autotools.dll"/>
 	    </Runtime>
 		<Dependencies>
-			<Addin id="Autotools" version="2.9.2"/>
+			<Addin id="Autotools" version="2.9.4"/>
 		</Dependencies>
 		<Extension path = "/MonoDevelop/Autotools/SimpleSetups">
 			<Class class="CSharpBinding.Autotools.CSharpAutotoolsSetup" />
@@ -298,7 +271,7 @@
 			<Import assembly="MonoDevelop.CSharpBinding.AspNet.dll"/>
 		</Runtime>
 		<Dependencies>
-			<Addin id="AspNet" version="2.9.2"/>
+			<Addin id="AspNet" version="2.9.4"/>
 		</Dependencies>
 		<Extension path = "/MonoDevelop/Asp/CompletionBuilders">
 			<Class class = "MonoDevelop.CSharp.Completion.AspLanguageBuilder" />

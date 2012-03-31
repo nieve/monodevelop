@@ -44,6 +44,7 @@ using ICSharpCode.NRefactory.CSharp.TypeSystem;
 using System.Threading;
 using MonoDevelop.Ide.Gui;
 using System.Diagnostics;
+using MonoDevelop.CSharp.Refactoring.CodeIssues;
 
 namespace MonoDevelop.CSharp.Refactoring.CodeActions
 {
@@ -57,13 +58,6 @@ namespace MonoDevelop.CSharp.Refactoring.CodeActions
 		public bool IsInvalid {
 			get {
 				return resolver == null;
-			}
-		}
-
-		public CSharpParsedFile ParsedFile {
-			get {
-				Debug.Assert (!IsInvalid);
-				return resolver.ParsedFile;
 			}
 		}
 
@@ -91,9 +85,9 @@ namespace MonoDevelop.CSharp.Refactoring.CodeActions
 			}
 		}
 
-		public override string EolMarker {
+		public override ICSharpCode.NRefactory.CSharp.TextEditorOptions TextEditorOptions {
 			get {
-				return Document.Editor.EolMarker;
+				return Document.Editor.CreateNRefactoryTextEditorOptions ();
 			}
 		}
 		
@@ -109,33 +103,26 @@ namespace MonoDevelop.CSharp.Refactoring.CodeActions
 			}
 		}
 		
-		public override int SelectionStart {
+		public override TextLocation SelectionStart {
 			get {
-				return Document.Editor.SelectionRange.Offset;
+				return Document.Editor.MainSelection.Start;
 			}
 		}
 		
-		public override int SelectionEnd { 
+		public override TextLocation SelectionEnd { 
 			get {
-				return Document.Editor.SelectionRange.EndOffset;
-			}
-		}
-		
-		public override int SelectionLength {
-			get {
-				return Document.Editor.SelectionRange.Length;
+				return Document.Editor.MainSelection.End;
 			}
 		}
 
 		public override int GetOffset (TextLocation location)
 		{
-			return Document.Editor.LocationToOffset (location.Line, location.Column);
+			return Document.Editor.LocationToOffset (location);
 		}
 		
 		public override TextLocation GetLocation (int offset)
 		{
-			var loc = Document.Editor.OffsetToLocation (offset);
-			return new TextLocation (loc.Line, loc.Column);
+			return Document.Editor.OffsetToLocation (offset);
 		}
 
 		public override string GetText (int offset, int length)
@@ -160,11 +147,11 @@ namespace MonoDevelop.CSharp.Refactoring.CodeActions
 			}
 		}
 
-		public override Script StartScript ()
+		public Script StartScript ()
 		{
-			return new MDRefactoringScript (this.Document, this.Document.GetFormattingOptions ());
+			return new MDRefactoringScript (this, this.Document, this.Document.GetFormattingOptions ());
 		}
-		
+
 
 		static CSharpAstResolver CreateResolver (Document document)
 		{
@@ -187,16 +174,10 @@ namespace MonoDevelop.CSharp.Refactoring.CodeActions
 				throw new ArgumentNullException ("document");
 			this.Document = document;
 			this.location = loc;
+			var policy = Document.HasProject ? Document.Project.Policies.Get<NameConventionPolicy> () : MonoDevelop.Projects.Policies.PolicyService.GetDefaultPolicy<NameConventionPolicy> ();
+			Services.AddService (typeof(NamingConventionService), policy.CreateNRefactoryService ());
+
 		}
-		
-		public override AstType CreateShortType (IType fullType)
-		{
-			var parsedFile = Document.ParsedDocument.ParsedFile as CSharpParsedFile;
-			
-			var csResolver = parsedFile.GetResolver (Document.Compilation, Document.Editor.Caret.Location);
-			
-			var builder = new ICSharpCode.NRefactory.CSharp.Refactoring.TypeSystemAstBuilder (csResolver);
-			return builder.ConvertType (fullType);			
-		}
+
 	}
 }

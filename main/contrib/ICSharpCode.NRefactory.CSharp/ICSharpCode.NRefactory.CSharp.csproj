@@ -341,6 +341,21 @@
     <Compile Include="Refactoring\CodeIssues\RedundantUsingIssue.cs" />
     <Compile Include="Refactoring\CodeIssues\StringIsNullOrEmptyIssue.cs" />
     <Compile Include="Refactoring\CodeIssues\UseVarKeywordIssue.cs" />
+    <Compile Include="Refactoring\CodeIssues\InconsistentNamingIssue\AffectedEntity.cs" />
+    <Compile Include="Refactoring\CodeIssues\InconsistentNamingIssue\DefaultRules.cs" />
+    <Compile Include="Refactoring\CodeIssues\InconsistentNamingIssue\InconsistentNamingIssue.cs" />
+    <Compile Include="Refactoring\CodeIssues\InconsistentNamingIssue\NamingRule.cs" />
+    <Compile Include="Refactoring\CodeIssues\InconsistentNamingIssue\NamingStyle.cs" />
+    <Compile Include="Refactoring\CodeActions\CreateMethodDeclarationAction.cs" />
+    <Compile Include="Refactoring\CodeIssues\InconsistentNamingIssue\NamingConventionService.cs" />
+    <Compile Include="Refactoring\CodeActions\CreateIndexerAction.cs" />
+    <Compile Include="Refactoring\CodeActions\InlineLocalVariableAction.cs" />
+    <Compile Include="Refactoring\CodeActions\DeclareLocalVariableAction.cs" />
+    <Compile Include="Refactoring\CodeIssues\InconsistentNamingIssue\WordParser.cs" />
+    <Compile Include="Refactoring\CodeActions\CreateClassDeclarationAction.cs" />
+    <Compile Include="Refactoring\CodeActions\CreateConstructorDeclarationAction.cs" />
+    <Compile Include="Refactoring\CodeActions\CreateDelegateAction.cs" />
+    <Compile Include="Formatter\TextEditorOptions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ICSharpCode.NRefactory\ICSharpCode.NRefactory.csproj">

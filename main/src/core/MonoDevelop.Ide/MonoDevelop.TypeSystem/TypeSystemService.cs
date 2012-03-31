@@ -207,7 +207,7 @@ namespace MonoDevelop.TypeSystem
 			try {
 				if (!File.Exists (fileName))
 					return null;
-				text = Mono.TextEditor.Utils.TextFileReader.ReadAllText (fileName);
+				text = Mono.TextEditor.Utils.TextFileUtility.ReadAllText (fileName);
 			} catch (Exception) {
 				return null;
 			}
@@ -725,7 +725,7 @@ namespace MonoDevelop.TypeSystem
 					} else {
 						projectContents [project] = wrapper = new ProjectContentWrapper (project, context);
 					}
-					
+					wrapper.Content.Location = project.FileName;
 					referenceCounter [project] = 1;
 					OnProjectContentLoaded (new ProjectContentEventArgs (project, context));
 					project.FileChangedInProject += OnFileChanged;
@@ -733,6 +733,7 @@ namespace MonoDevelop.TypeSystem
 					project.FileRemovedFromProject += OnFileRemoved;
 					project.FileRenamedInProject += OnFileRenamed;
 					project.Modified += OnProjectModified;
+					wrapper.ReloadAssemblyReferences (project);
 				} catch (Exception ex) {
 					LoggingService.LogError ("Parser database for project '" + project.Name + " could not be loaded", ex);
 				}

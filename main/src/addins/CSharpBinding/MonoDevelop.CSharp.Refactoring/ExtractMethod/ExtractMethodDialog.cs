@@ -123,7 +123,6 @@ namespace MonoDevelop.CSharp.Refactoring.ExtractMethod
 
 		bool ValidateName ()
 		{
-			string fileName = properties.DeclaringMember.Region.FileName;
 			string methodName = entry.Text;
 			if (HasMember (methodName)) {
 				labelWarning.Text = GettextCatalog.GetString ("A member with the name '{0}' already exists.", methodName);
@@ -149,7 +148,6 @@ namespace MonoDevelop.CSharp.Refactoring.ExtractMethod
 
 		bool HasMember (string name)
 		{
-			var ctx = options.Document.ProjectContent;
 			foreach (var member in properties.DeclaringMember.DeclaringType.GetMembers (m => m.Name == name)) {
 				var method = member as IMethod;
 				if (method == null)
@@ -215,14 +213,9 @@ namespace MonoDevelop.CSharp.Refactoring.ExtractMethod
 						break;
 					}
 				}
-				ModeHelpWindow helpWindow = new ModeHelpWindow ();
+				var helpWindow = new InsertionCursorLayoutModeHelpWindow ();
 				helpWindow.TransientFor = IdeApp.Workbench.RootWindow;
-				helpWindow.TitleText = GettextCatalog.GetString ("<b>Extract Method -- Targeting</b>");
-				helpWindow.Items.Add (new KeyValuePair<string, string> (GettextCatalog.GetString ("<b>Key</b>"), GettextCatalog.GetString ("<b>Behavior</b>")));
-				helpWindow.Items.Add (new KeyValuePair<string, string> (GettextCatalog.GetString ("<b>Up</b>"), GettextCatalog.GetString ("Move to <b>previous</b> target point.")));
-				helpWindow.Items.Add (new KeyValuePair<string, string> (GettextCatalog.GetString ("<b>Down</b>"), GettextCatalog.GetString ("Move to <b>next</b> target point.")));
-				helpWindow.Items.Add (new KeyValuePair<string, string> (GettextCatalog.GetString ("<b>Enter</b>"), GettextCatalog.GetString ("<b>Declare new method</b> at target point.")));
-				helpWindow.Items.Add (new KeyValuePair<string, string> (GettextCatalog.GetString ("<b>Esc</b>"), GettextCatalog.GetString ("<b>Cancel</b> this refactoring.")));
+				helpWindow.TitleText = GettextCatalog.GetString ("Extract Method");
 				mode.HelpWindow = helpWindow;
 				mode.StartMode ();
 				methodName = entry.Text;

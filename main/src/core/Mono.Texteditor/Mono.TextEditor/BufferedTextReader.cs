@@ -55,14 +55,14 @@ namespace Mono.TextEditor
 		
 		public override int Peek ()
 		{
-			if (position < 0 || position >= buffer.Length)
+			if (position < 0 || position >= buffer.TextLength)
 				return -1;
 			return buffer.GetCharAt (position);
 		}
 		
 		public override int Read ()
 		{
-			if (position < 0 || position >= buffer.Length)
+			if (position < 0 || position >= buffer.TextLength)
 				return -1;
 			return buffer.GetCharAt (position++);
 		}
@@ -71,22 +71,22 @@ namespace Mono.TextEditor
 		{
 			if (buffer == null)
 				throw new ArgumentNullException ();
-			int lastOffset = System.Math.Min (this.buffer.Length, position + count);
-			int length     = lastOffset - position;
+			int lastOffset = System.Math.Min (this.buffer.TextLength, position + count);
+			int length = lastOffset - position;
 			if (length <= 0)
 				return 0;
 			string text = this.buffer.GetTextAt (position, length);
-			text.CopyTo (0, buffer, index, count);
+			text.CopyTo (0, buffer, index, length);
 			position += length;
 			return length;
 		}
 		
 		public override string ReadToEnd ()
 		{
-			if (position < 0 || position >= buffer.Length)
+			if (position < 0 || position >= buffer.TextLength)
 				return "";
-			string result = this.buffer.GetTextAt (position, buffer.Length - position);
-			position = buffer.Length;
+			string result = this.buffer.GetTextAt (position, buffer.TextLength - position);
+			position = buffer.TextLength;
 			return result;
 		}
 	}

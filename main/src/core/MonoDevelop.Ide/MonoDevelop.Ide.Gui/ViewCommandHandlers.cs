@@ -454,7 +454,7 @@ namespace MonoDevelop.Ide.Gui
 				return;
 			
 			System.Collections.Generic.List<RemoveInfo> removeList = new System.Collections.Generic.List<RemoveInfo> ();
-			int pos = data.Document.Length - 1;
+			int pos = data.Document.TextLength - 1;
 			RemoveInfo removeInfo = RemoveInfo.GetRemoveInfo (data.Document, ref pos);
 			if (!removeInfo.IsEmpty)
 				removeList.Add (removeInfo);
@@ -473,10 +473,10 @@ namespace MonoDevelop.Ide.Gui
 			}
 			using (var undo = data.OpenUndoGroup ()) {
 				foreach (var info in removeList) {
-					((Mono.TextEditor.IBuffer)data.Document).Remove (info.Position, info.Length);
+					data.Document.Remove (info.Position, info.Length);
 					data.Document.CommitLineUpdate (data.Document.OffsetToLineNumber (info.Position));
 				}
-				data.Caret.Offset = Math.Min (data.Caret.Offset, data.Document.Length - 1);
+				data.Caret.Offset = Math.Min (data.Caret.Offset, data.Document.TextLength - 1);
 			}
 		}
 		

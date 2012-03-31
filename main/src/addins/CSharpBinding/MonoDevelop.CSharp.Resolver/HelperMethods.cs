@@ -90,12 +90,17 @@ namespace MonoDevelop.CSharp
 			}
 		}
 		
-		public static CSharpFormattingOptions GetFormattingOptions (this MonoDevelop.Ide.Gui.Document doc)
+		public static MonoDevelop.CSharp.Formatting.CSharpFormattingPolicy GetFormattingPolicy (this MonoDevelop.Ide.Gui.Document doc)
 		{
 			var policyParent = doc.Project != null ? doc.Project.Policies : null;
 			var types = MonoDevelop.Ide.DesktopService.GetMimeTypeInheritanceChain (MonoDevelop.CSharp.Formatting.CSharpFormatter.MimeType);
 			var codePolicy = policyParent != null ? policyParent.Get<MonoDevelop.CSharp.Formatting.CSharpFormattingPolicy> (types) : MonoDevelop.Projects.Policies.PolicyService.GetDefaultPolicy<MonoDevelop.CSharp.Formatting.CSharpFormattingPolicy> (types);
-			return codePolicy.CreateOptions ();
+			return codePolicy;
+		}
+
+		public static CSharpFormattingOptions GetFormattingOptions (this MonoDevelop.Ide.Gui.Document doc)
+		{
+			return GetFormattingPolicy (doc).CreateOptions ();
 		}
 		
 		public static CSharpFormattingOptions GetFormattingOptions (this MonoDevelop.Projects.Project project)
@@ -105,13 +110,20 @@ namespace MonoDevelop.CSharp
 				MonoDevelop.Projects.Policies.PolicyService.GetDefaultPolicy<MonoDevelop.CSharp.Formatting.CSharpFormattingPolicy> (types);
 			return codePolicy.CreateOptions ();
 		}
-
+		
 		public static bool TryResolveAt (this Document doc, DocumentLocation loc, out ResolveResult result, out AstNode node)
+		{
+			CSharpAstResolver resolver;
+			return TryResolveAt (doc, loc, out result, out node, out resolver);
+		}
+
+		public static bool TryResolveAt (this Document doc, DocumentLocation loc, out ResolveResult result, out AstNode node, out CSharpAstResolver resolver)
 		{
 			if (doc == null)
 				throw new ArgumentNullException ("doc");
 			result = null;
 			node = null;
+			resolver = null;
 			var parsedDocument = doc.ParsedDocument;
 			if (parsedDocument == null)
 				return false;
@@ -121,10 +133,14 @@ namespace MonoDevelop.CSharp
 			
 			if (unit == null || parsedFile == null)
 				return false;
-
-			result = ResolveAtLocation.Resolve (doc.Compilation, parsedFile, unit, loc, out node);
-			if (result == null || result .IsError || node is Statement)
+			try {
+				result = ResolveAtLocation.Resolve (doc.Compilation, parsedFile, unit, loc, out node, out resolver);
+				if (result == null || node is Statement)
+					return false;
+			} catch (Exception e) {
+				Console.WriteLine ("Got resolver exception:" + e);
 				return false;
+			}
 			return true;
 		}
 	}

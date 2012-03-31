@@ -1,4 +1,4 @@
-﻿// 
+// 
 // CreateProperty.cs
 //  
 // Author:
@@ -24,10 +24,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
-using ICSharpCode.NRefactory.PatternMatching;
-using System.Linq;
-using System.Threading;
 using System.Collections.Generic;
+using ICSharpCode.NRefactory.Semantics;
+using ICSharpCode.NRefactory.TypeSystem;
 
 namespace ICSharpCode.NRefactory.CSharp.Refactoring
 {
@@ -36,31 +35,83 @@ namespace ICSharpCode.NRefactory.CSharp.Refactoring
 	{
 		public IEnumerable<CodeAction> GetActions(RefactoringContext context)
 		{
-			var identifier = CreateFieldAction.GetIdentifier(context);
-			if (identifier == null) {
+			var identifier = context.GetNode(n => n is IdentifierExpression || n is MemberReferenceExpression) as Expression;
+			if (identifier == null)
 				yield break;
-			}
-			if (!(context.Resolve(identifier).IsError && CreateFieldAction.GuessType(context, identifier) != null)) {
+			if (CreateFieldAction.IsInvocationTarget(identifier))
 				yield break;
+
+			var propertyName = GetPropertyName(identifier);
+			if (propertyName == null)
+				yield break;
+
+			var statement = context.GetNode<Statement>();
+			if (statement == null)
+				yield break;
+
+			if (!(context.Resolve(identifier).IsError))
+				yield break;
+
+			var guessedType = CreateFieldAction.GuessAstType(context, identifier);
+			if (guessedType == null)
+				yield break;
+			var state = context.GetResolverStateBefore(identifier);
+			
+			bool createInOtherType = false;
+			ResolveResult targetResolveResult = null;
+			if (identifier is MemberReferenceExpression) {
+				targetResolveResult = context.Resolve(((MemberReferenceExpression)identifier).Target);
+				createInOtherType = !state.CurrentTypeDefinition.Equals(targetResolveResult.Type.GetDefinition());
 			}
-			yield return new CodeAction (context.TranslateString("Create property"), script => {
-				script.InsertWithCursor(context.TranslateString("Create property"), GeneratePropertyDeclaration(context, identifier), Script.InsertPosition.Before);
+
+			bool isStatic;
+			if (createInOtherType) {
+				isStatic = targetResolveResult is TypeResolveResult;
+				if (isStatic && targetResolveResult.Type.Kind == TypeKind.Interface)
+					yield break;
+			} else {
+				if (state.CurrentMember == null || state.CurrentTypeDefinition == null)
+					yield break;
+				isStatic = state.CurrentMember.IsStatic || state.CurrentTypeDefinition.IsStatic;
+			}
+
+//			var service = (NamingConventionService)context.GetService(typeof(NamingConventionService));
+//			if (service != null && !service.IsValidName(propertyName, AffectedEntity.Property, Modifiers.Private, isStatic)) { 
+//				yield break;
+//			}
+
+			yield return new CodeAction(context.TranslateString("Create property"), script => {
+				var decl = new PropertyDeclaration() {
+					ReturnType = guessedType,
+					Name = propertyName,
+					Getter = new Accessor(),
+					Setter = new Accessor()
+				};
+				if (isStatic)
+					decl.Modifiers |= Modifiers.Static;
+				
+				if (createInOtherType) {
+					if (targetResolveResult.Type.Kind == TypeKind.Interface) {
+						decl.Modifiers = Modifiers.None;
+					} else {
+						decl.Modifiers |= Modifiers.Public;
+					}
+					script.InsertWithCursor(context.TranslateString("Create property"), decl, targetResolveResult.Type.GetDefinition());
+					return;
+				}
+
+				script.InsertWithCursor(context.TranslateString("Create property"), decl, Script.InsertPosition.Before);
 			});
 		}
-		
-		AstNode GeneratePropertyDeclaration (RefactoringContext context, IdentifierExpression identifier)
+
+		static string GetPropertyName(Expression expr)
 		{
-			return new PropertyDeclaration () {
-				ReturnType = CreateFieldAction.GuessType (context, identifier),
-				Name = identifier.Identifier,
-				Getter = new Accessor (),
-				Setter = new Accessor ()
-			};
-		}
-		
-		IdentifierExpression GetIdentifier (RefactoringContext context)
-		{
-			return context.GetNode<IdentifierExpression> ();
+			if (expr is IdentifierExpression) 
+				return ((IdentifierExpression)expr).Identifier;
+			if (expr is MemberReferenceExpression) 
+				return ((MemberReferenceExpression)expr).MemberName;
+
+			return null;
 		}
 	}
 }

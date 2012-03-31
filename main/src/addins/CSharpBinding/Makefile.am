@@ -10,6 +10,7 @@ DEPS =  \
 	$(top_builddir)/build/AddIns/MonoDevelop.Debugger/MonoDevelop.Debugger.dll \
 	$(top_builddir)/build/AddIns/MonoDevelop.DesignerSupport/MonoDevelop.DesignerSupport.dll \
 	$(top_builddir)/build/AddIns/MonoDevelop.Refactoring/MonoDevelop.Refactoring.dll \
+	$(top_builddir)/build/bin/ICSharpCode.Decompiler.dll \
 	$(top_builddir)/build/bin/ICSharpCode.NRefactory.CSharp.dll \
 	$(top_builddir)/build/bin/ICSharpCode.NRefactory.dll \
 	$(top_builddir)/build/bin/Mono.Debugging.dll \
@@ -23,6 +24,7 @@ REFS =  \
 	$(GLIB_SHARP_LIBS) \
 	$(GTK_SHARP_LIBS) \
 	$(MONO_ADDINS_LIBS) \
+	-r:../../../build/bin/Mono.Cecil.dll \
 	-r:Mono.Cairo \
 	-r:Mono.Posix \
 	-r:System \
@@ -39,6 +41,8 @@ FILES =  \
 	gtk-gui/MonoDevelop.CSharp.Formatting.NewFormattingProfileDialog.cs \
 	gtk-gui/MonoDevelop.CSharp.Project.CodeGenerationPanelWidget.cs \
 	gtk-gui/MonoDevelop.CSharp.Project.CompilerOptionsPanelWidget.cs \
+	gtk-gui/MonoDevelop.CSharp.Refactoring.CodeIssues.NameConventionEditRuleDialog.cs \
+	gtk-gui/MonoDevelop.CSharp.Refactoring.CodeIssues.NameConventionPanelWidget.cs \
 	gtk-gui/MonoDevelop.CSharp.Refactoring.ExtractMethod.ExtractMethodDialog.cs \
 	MonoDevelop.CSharp.CodeGeneration/AbstractGenerateAction.cs \
 	MonoDevelop.CSharp.CodeGeneration/CodeGenerationCommands.cs \
@@ -91,31 +95,27 @@ FILES =  \
 	MonoDevelop.CSharp.Refactoring.CodeActions/Actions/MoveTypeToFile.cs \
 	MonoDevelop.CSharp.Refactoring.CodeActions/ContextActionExtensions.cs \
 	MonoDevelop.CSharp.Refactoring.CodeActions/MDRefactoringContext.cs \
-	MonoDevelop.CSharp.Refactoring.CodeActions/MDRefactoringContextActionProvider.cs \
 	MonoDevelop.CSharp.Refactoring.CodeActions/MDRefactoringScript.cs \
+	MonoDevelop.CSharp.Refactoring.CodeActions/NRefactoryCodeAction.cs \
+	MonoDevelop.CSharp.Refactoring.CodeActions/NRefactoryCodeActionProvider.cs \
 	MonoDevelop.CSharp.Refactoring.CodeActions/NRefactoryCodeActionSource.cs \
-	MonoDevelop.CSharp.Refactoring.CodeActions/NRefactoryCodeActionWrapper.cs \
-	MonoDevelop.CSharp.Refactoring.CodeIssues/CSharpInspector.cs \
+	MonoDevelop.CSharp.Refactoring.CodeIssues/NamingInspection/NameConventionEditRuleDialog.cs \
+	MonoDevelop.CSharp.Refactoring.CodeIssues/NamingInspection/NameConventionPanel.cs \
+	MonoDevelop.CSharp.Refactoring.CodeIssues/NamingInspection/NameConventionPanelWidget.cs \
+	MonoDevelop.CSharp.Refactoring.CodeIssues/NamingInspection/NameConventionPolicy.cs \
+	MonoDevelop.CSharp.Refactoring.CodeIssues/NamingInspection/NameConventionRule.cs \
 	MonoDevelop.CSharp.Refactoring.CodeIssues/NRefactoryCodeIssueSource.cs \
-	MonoDevelop.CSharp.Refactoring.CodeIssues/NRefactoryIssueWrapper.cs \
-	MonoDevelop.CSharp.Refactoring/CreateMethod/CreateMethodCodeGenerator.cs \
-	MonoDevelop.CSharp.Refactoring/CreateMethod/CreateMethodHandler.cs \
+	MonoDevelop.CSharp.Refactoring.CodeIssues/NRefactoryIssueProvider.cs \
 	MonoDevelop.CSharp.Refactoring/CSharpCodeGenerator.cs \
 	MonoDevelop.CSharp.Refactoring/CSharpReferenceFinder.cs \
-	MonoDevelop.CSharp.Refactoring/DeclareLocal/DeclareLocalCodeGenerator.cs \
-	MonoDevelop.CSharp.Refactoring/DeclareLocal/DeclareLocalHandler.cs \
 	MonoDevelop.CSharp.Refactoring/ExtractMethod/ExtractMethodDialog.cs \
 	MonoDevelop.CSharp.Refactoring/ExtractMethod/ExtractMethodHandler.cs \
 	MonoDevelop.CSharp.Refactoring/ExtractMethod/ExtractMethodRefactoring.cs \
 	MonoDevelop.CSharp.Refactoring/ExtractMethod/VariableLookupVisitor.cs \
 	MonoDevelop.CSharp.Refactoring/HelperMethods.cs \
-	MonoDevelop.CSharp.Refactoring/RefactorImports/RefactorImportsHandler.cs \
-	MonoDevelop.CSharp.Refactoring/RefactorImports/RemoveUnusedImportsRefactoring.cs \
-	MonoDevelop.CSharp.Refactoring/RefactorImports/SortImportsRefactoring.cs \
-	MonoDevelop.CSharp.Refactoring/VisitNamespaceNodesNavigator.cs \
 	MonoDevelop.CSharp.Resolver/HelperMethods.cs \
-	MonoDevelop.CSharp.Resolver/ResolveCommandHandler.cs \
 	MonoDevelop.CSharp.Resolver/TextEditorResolverProvider.cs \
+	MonoDevelop.CSharp.Tooltips/LanguageItemTooltipProvider.cs \
 	MonoDevelop.CSharp/CSharpAmbience.cs \
 	MonoDevelop.CSharp/CSharpBindingCompilerManager.cs \
 	MonoDevelop.CSharp/CSharpEnhancedCodeProvider.cs \
@@ -140,6 +140,7 @@ RES =  \
 	MonoDevelop.CSharp.Formatting/policies/MonoCSharpPolicy.xml \
 	MonoDevelop.CSharp.Formatting/policies/SharpDevelopCSharpPolicy.xml \
 	MonoDevelop.CSharp.Formatting/policies/WhitesmithsCSharpPolicy.xml \
+	MonoDevelop.CSharp.Refactoring.CodeIssues/NamingInspection/MonoNameConventionPolicy.xml \
 	templates/AssemblyInfo.xft.xml \
 	templates/ConsoleProject.xpt.xml \
 	templates/EmptyCSharpFile.xft.xml \

@@ -160,8 +160,8 @@ namespace Mono.TextEditor
 				this.document.Folded += HandleTextEditorDataDocumentFolded;
 				this.document.FoldTreeUpdated += HandleTextEditorDataDocumentFoldTreeUpdated;
 
-				this.document.splitter.LineInserted += HandleDocumentsplitterhandleLineInserted;
-				this.document.splitter.LineRemoved += HandleDocumentsplitterhandleLineRemoved;
+				this.document.Splitter.LineInserted += HandleDocumentsplitterhandleLineInserted;
+				this.document.Splitter.LineRemoved += HandleDocumentsplitterhandleLineRemoved;
 			}
 		}
 
@@ -210,10 +210,10 @@ namespace Mono.TextEditor
 			}
 		}
 		
-		ColorSheme colorStyle;
-		public ColorSheme ColorStyle {
+		ColorScheme colorStyle;
+		public ColorScheme ColorStyle {
 			get {
-				return colorStyle ?? ColorSheme.Empty;
+				return colorStyle ?? ColorScheme.Empty;
 			}
 			set {
 				colorStyle = value;
@@ -228,7 +228,7 @@ namespace Mono.TextEditor
 			int curOffset = offset;
 
 			StringBuilder result = new StringBuilder ();
-			while (curOffset < offset + length && curOffset < Document.Length) {
+			while (curOffset < offset + length && curOffset < Document.TextLength) {
 				LineSegment line = Document.GetLineByOffset (curOffset);
 				int toOffset = System.Math.Min (line.Offset + line.EditableLength, offset + length);
 				Stack<ChunkStyle> styleStack = new Stack<ChunkStyle> ();
@@ -263,7 +263,7 @@ namespace Mono.TextEditor
 						styleStack.Push (chunkStyle);
 					}
 
-					for (int i = 0; i < chunk.Length && chunk.Offset + i < Document.Length; i++) {
+					for (int i = 0; i < chunk.Length && chunk.Offset + i < Document.TextLength; i++) {
 						char ch = Document.GetCharAt (chunk.Offset + i);
 						switch (ch) {
 						case '&':
@@ -322,6 +322,11 @@ namespace Mono.TextEditor
 			Remove (removeSegment.Offset, removeSegment.Length);
 		}
 		
+		public void Remove (DocumentRegion region)
+		{
+			Remove (region.GetSegment (document));
+		}
+
 		public string FormatString (DocumentLocation loc, string str)
 		{
 			if (string.IsNullOrEmpty (str))
@@ -339,7 +344,7 @@ namespace Mono.TextEditor
 					if (convertTabs) {
 						int tabWidth = TextViewMargin.GetNextTabstop (this, loc.Column) - loc.Column;
 						sb.Append (new string (' ', tabWidth));
-						loc.Column += tabWidth;
+						loc = new DocumentLocation (loc.Line, loc.Column + tabWidth);
 					} else 
 						goto default;
 					break;
@@ -349,12 +354,11 @@ namespace Mono.TextEditor
 					goto case '\n';
 				case '\n':
 					sb.Append (EolMarker);
-					loc.Line++;
-					loc.Column = 0;
+					loc = new DocumentLocation (loc.Line + 1, 1);
 					break;
 				default:
 					sb.Append (ch);
-					loc.Column++;
+					loc = new DocumentLocation (loc.Line, loc.Column + 1);
 					break;
 				}
 			}
@@ -369,7 +373,7 @@ namespace Mono.TextEditor
 		public int Replace (int offset, int count, string value)
 		{
 			string formattedString = FormatString (offset, value);
-			((IBuffer)document).Replace (offset, count, formattedString);
+			document.Replace (offset, count, formattedString);
 			return formattedString.Length;
 		}
 			
@@ -425,8 +429,8 @@ namespace Mono.TextEditor
 			document.Folded -= HandleTextEditorDataDocumentFolded;
 			document.FoldTreeUpdated -= HandleTextEditorDataDocumentFoldTreeUpdated;
 			
-			document.splitter.LineInserted -= HandleDocumentsplitterhandleLineInserted;
-			document.splitter.LineRemoved -= HandleDocumentsplitterhandleLineRemoved;
+			document.Splitter.LineInserted -= HandleDocumentsplitterhandleLineInserted;
+			document.Splitter.LineRemoved -= HandleDocumentsplitterhandleLineRemoved;
 			
 			document = null;
 		}
@@ -803,7 +807,7 @@ namespace Mono.TextEditor
 				var segment = selection.GetSelectionRange (this);
 				if (Caret.Offset > segment.Offset)
 					Caret.Offset -= System.Math.Min (segment.Length, Caret.Offset - segment.Offset);
-				int len = System.Math.Min (segment.Length, Document.Length - segment.Offset);
+				int len = System.Math.Min (segment.Length, Document.TextLength - segment.Offset);
 				if (len > 0)
 					Remove (segment.Offset, len);
 				break;
@@ -953,9 +957,9 @@ namespace Mono.TextEditor
 			
 			int searchOffset;
 			if (startOffset < 0) {
-				searchOffset = Document.Length - 1;
+				searchOffset = Document.TextLength - 1;
 			} else {
-				searchOffset = (startOffset + Document.Length - 1) % Document.Length;
+				searchOffset = (startOffset + Document.TextLength - 1) % Document.TextLength;
 			}
 			SearchResult result = SearchBackward (searchOffset);
 			if (result != null) {
@@ -988,6 +992,8 @@ namespace Mono.TextEditor
 			int result = 0;
 			using (var undo = OpenUndoGroup ()) {
 				int offset = 0;
+				if (!SearchRequest.SearchRegion.IsInvalid)
+					offset = SearchRequest.SearchRegion.Offset;
 				SearchResult searchResult; 
 				while (true) {
 					searchResult = SearchForward (offset);
@@ -1111,7 +1117,7 @@ namespace Mono.TextEditor
 		#region Document delegation
 		public int Length {
 			get {
-				return document.Length;
+				return document.TextLength;
 			}
 		}
 
@@ -1142,6 +1148,11 @@ namespace Mono.TextEditor
 		public string GetTextAt (int offset, int count)
 		{
 			return document.GetTextAt (offset, count);
+		}
+		
+		public string GetTextAt (DocumentRegion region)
+		{
+			return document.GetTextAt (region);
 		}
 
 		public string GetTextAt (TextSegment segment)
@@ -1363,8 +1374,7 @@ namespace Mono.TextEditor
 		}
 		
 		#endregion
-	
-	
+
 		#region SkipChars
 		public class SkipChar
 		{

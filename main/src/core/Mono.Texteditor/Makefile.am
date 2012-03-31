@@ -22,7 +22,7 @@ FILES =  \
 	Mono.TextEditor.Highlighting/Chunk.cs \
 	Mono.TextEditor.Highlighting/ChunkStyle.cs \
 	Mono.TextEditor.Highlighting/CloneableStack.cs \
-	Mono.TextEditor.Highlighting/ColorSheme.cs \
+	Mono.TextEditor.Highlighting/ColorScheme.cs \
 	Mono.TextEditor.Highlighting/DefaultStyle.cs \
 	Mono.TextEditor.Highlighting/HighlightingPartitioner.cs \
 	Mono.TextEditor.Highlighting/ISyntaxMode.cs \
@@ -57,7 +57,7 @@ FILES =  \
 	Mono.TextEditor.Utils/Diff.cs \
 	Mono.TextEditor.Utils/RedBlackTree.cs \
 	Mono.TextEditor.Utils/TextBreaker.cs \
-	Mono.TextEditor.Utils/TextFileReader.cs \
+	Mono.TextEditor.Utils/TextFileUtility.cs \
 	Mono.TextEditor.Vi/ViActionMaps.cs \
 	Mono.TextEditor.Vi/ViActions.cs \
 	Mono.TextEditor.Vi/ViBuilderContext.cs \
@@ -70,7 +70,6 @@ FILES =  \
 	Mono.TextEditor.Vi/ViMark.cs \
 	Mono.TextEditor.Vi/ViMode.cs \
 	Mono.TextEditor.Vi/ViWordFindStrategy.cs \
-	Mono.TextEditor/AbstractPartitioner.cs \
 	Mono.TextEditor/Annotatable.cs \
 	Mono.TextEditor/BookmarkActions.cs \
 	Mono.TextEditor/BookmarkMarker.cs \
@@ -85,6 +84,7 @@ FILES =  \
 	Mono.TextEditor/DeleteActions.cs \
 	Mono.TextEditor/DocumentChangeEventArgs.cs \
 	Mono.TextEditor/DocumentLocation.cs \
+	Mono.TextEditor/DocumentRegion.cs \
 	Mono.TextEditor/DocumentUpdateRequest.cs \
 	Mono.TextEditor/EditMode.cs \
 	Mono.TextEditor/EmacsWordFindStrategy.cs \
@@ -129,6 +129,7 @@ FILES =  \
 	Mono.TextEditor/SharpDevelopWordFindStrategy.cs \
 	Mono.TextEditor/SimpleEditMode.cs \
 	Mono.TextEditor/StringBuffer.cs \
+	Mono.TextEditor/SyntaxModeChangeEventArgs.cs \
 	Mono.TextEditor/TextDocument.cs \
 	Mono.TextEditor/TextEditor.cs \
 	Mono.TextEditor/TextEditorAccessibility.cs \

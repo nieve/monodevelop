@@ -123,16 +123,16 @@ namespace Mono.TextEditor
 	
 			public TextDocument copiedDocument;
 			public TextDocument monoDocument; // has a slightly different format !!!
-			public Mono.TextEditor.Highlighting.ColorSheme docStyle;
+			public Mono.TextEditor.Highlighting.ColorScheme docStyle;
 			ITextEditorOptions options;
 			Mono.TextEditor.Highlighting.ISyntaxMode mode;
 			
-			static string GenerateRtf (TextDocument doc, Mono.TextEditor.Highlighting.ISyntaxMode mode, Mono.TextEditor.Highlighting.ColorSheme style, ITextEditorOptions options)
+			static string GenerateRtf (TextDocument doc, Mono.TextEditor.Highlighting.ISyntaxMode mode, Mono.TextEditor.Highlighting.ColorScheme style, ITextEditorOptions options)
 			{
 				StringBuilder rtfText = new StringBuilder ();
 				List<Gdk.Color> colorList = new List<Gdk.Color> ();
 	
-				var selection = new TextSegment (0, doc.Length);
+				var selection = new TextSegment (0, doc.TextLength);
 				int startLineNumber = doc.OffsetToLineNumber (selection.Offset);
 				int endLineNumber = doc.OffsetToLineNumber (selection.EndOffset);
 				
@@ -298,14 +298,14 @@ namespace Mono.TextEditor
 							int col1 = curLine.GetLogicalColumn (data, startCol) - 1;
 							int col2 = System.Math.Min (curLine.GetLogicalColumn (data, endCol) - 1, curLine.EditableLength);
 							if (col1 < col2) {
-								((IBuffer)copiedDocument).Insert (copiedDocument.Length, data.Document.GetTextAt (curLine.Offset + col1, col2 - col1));
-								((IBuffer)monoDocument).Insert (monoDocument.Length, data.Document.GetTextAt (curLine.Offset + col1, col2 - col1));
+								copiedDocument.Insert (copiedDocument.TextLength, data.Document.GetTextAt (curLine.Offset + col1, col2 - col1));
+								monoDocument.Insert (monoDocument.TextLength, data.Document.GetTextAt (curLine.Offset + col1, col2 - col1));
 							}
 							if (lineNr < selection.MaxLine) {
 								// Clipboard line end needs to be system dependend and not the document one.
-								((IBuffer)copiedDocument).Insert (copiedDocument.Length, Environment.NewLine);
+								copiedDocument.Insert (copiedDocument.TextLength, Environment.NewLine);
 								// \r in mono document stands for block selection line end.
-								((IBuffer)monoDocument).Insert (monoDocument.Length, "\r");
+								monoDocument.Insert (monoDocument.TextLength, "\r");
 							}
 						}
 						line = data.Document.GetLine (selection.MinLine);
@@ -387,7 +387,7 @@ namespace Mono.TextEditor
 								result = 0;
 								for (int i = 0; i < lines.Length; i++) {
 									while (data.Document.LineCount <= lineNr + i) {
-										data.Insert (data.Document.Length, Environment.NewLine);
+										data.Insert (data.Document.TextLength, Environment.NewLine);
 										result += Environment.NewLine.Length;
 									}
 									curLine = data.Document.GetLine (lineNr + i);

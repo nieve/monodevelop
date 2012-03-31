@@ -61,7 +61,7 @@ namespace MonoDevelop.CSharp.Resolver
 			if (unit == null || parsedFile == null || node == null)
 				return "";
 			
-			return data.GetTextBetween (node.StartLocation.Line, node.StartLocation.Column, node.EndLocation.Line, node.EndLocation.Column);
+			return data.GetTextBetween (node.StartLocation, node.EndLocation);
 		}
 		
 		
@@ -79,7 +79,6 @@ namespace MonoDevelop.CSharp.Resolver
 				expressionRegion = DomRegion.Empty;
 				return null;
 			}
-
 			expressionRegion = new DomRegion (node.StartLocation, node.EndLocation);
 			return result;
 		}
@@ -177,40 +176,44 @@ namespace MonoDevelop.CSharp.Resolver
 		public string CreateTooltip (IParsedFile unit, ResolveResult result, string errorInformations, Ambience ambience, Gdk.ModifierType modifierState)
 		{
 			OutputSettings settings = new OutputSettings (OutputFlags.ClassBrowserEntries | OutputFlags.IncludeParameterName | OutputFlags.IncludeKeywords | OutputFlags.IncludeMarkup | OutputFlags.UseFullName);
-//			if ((Gdk.ModifierType.ShiftMask & modifierState) == Gdk.ModifierType.ShiftMask) {
-//				settings.EmitNameCallback = delegate(object domVisitable, ref string outString) {
-//					// crop used namespaces.
-//					if (unit != null) {
-//						int len = 0;
-//						foreach (var u in unit.Usings) {
-//							foreach (string ns in u.Namespaces) {
-//								if (outString.StartsWith (ns + ".")) {
-//									len = Math.Max (len, ns.Length + 1);
-//								}
-//							}
-//						}
-//						string newName = outString.Substring (len);
-//						int count = 0;
-//						// check if there is a name clash.
-//						if (dom.GetType (newName) != null)
-//							count++;
-//						foreach (IUsing u in unit.Usings) {
-//							foreach (string ns in u.Namespaces) {
-//								if (dom.GetType (ns + "." + newName) != null)
-//									count++;
-//							}
-//						}
-//						if (len > 0 && count == 1)
-//							outString = newName;
-//					}
-//				};
-//			}
+			//			if ((Gdk.ModifierType.ShiftMask & modifierState) == Gdk.ModifierType.ShiftMask) {
+			//				settings.EmitNameCallback = delegate(object domVisitable, ref string outString) {
+			//					// crop used namespaces.
+			//					if (unit != null) {
+			//						int len = 0;
+			//						foreach (var u in unit.Usings) {
+			//							foreach (string ns in u.Namespaces) {
+			//								if (outString.StartsWith (ns + ".")) {
+			//									len = Math.Max (len, ns.Length + 1);
+			//								}
+			//							}
+			//						}
+			//						string newName = outString.Substring (len);
+			//						int count = 0;
+			//						// check if there is a name clash.
+			//						if (dom.GetType (newName) != null)
+			//							count++;
+			//						foreach (IUsing u in unit.Usings) {
+			//							foreach (string ns in u.Namespaces) {
+			//								if (dom.GetType (ns + "." + newName) != null)
+			//									count++;
+			//							}
+			//						}
+			//						if (len > 0 && count == 1)
+			//							outString = newName;
+			//					}
+			//				};
+			//			}
 			
 			// Approximate value for usual case
 			StringBuilder s = new StringBuilder (150);
 			string doc = null;
 			if (result != null) {
-				if (result is LocalResolveResult) {
+				if (result is UnknownIdentifierResolveResult) {
+					s.Append (String.Format (GettextCatalog.GetString ("Unresolved identifier '{0}'"), ((UnknownIdentifierResolveResult)result).Identifier));
+				} else if (result.IsError) {
+					s.Append (GettextCatalog.GetString ("Resolve error."));
+				} else if (result is LocalResolveResult) {
 					var lr = (LocalResolveResult)result;
 					s.Append ("<small><i>");
 					s.Append (lr.IsParameter ? paramStr : localStr);
@@ -218,8 +221,6 @@ namespace MonoDevelop.CSharp.Resolver
 					s.Append (ambience.GetString (lr.Variable.Type, settings));
 					s.Append (" ");
 					s.Append (lr.Variable.Name);
-				} else if (result is UnknownIdentifierResolveResult) {
-					s.Append (String.Format (GettextCatalog.GetString ("Unresolved identifier '{0}'"), ((UnknownIdentifierResolveResult)result).Identifier));
 				} else if (result is MethodGroupResolveResult) {
 					var mrr = (MethodGroupResolveResult)result;
 					s.Append ("<small><i>");

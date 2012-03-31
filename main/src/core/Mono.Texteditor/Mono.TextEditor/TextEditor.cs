@@ -340,7 +340,7 @@ namespace Mono.TextEditor
 			imContext.SurroundingDeleted += delegate (object o, SurroundingDeletedArgs args) {
 				//FIXME: UTF16 surrogates handling for offset and NChars? only matters for astral plane
 				var line = Document.GetLine (Caret.Line);
-				((IBuffer)Document).Remove (line.Offset + args.Offset, args.NChars);
+				Document.Remove (line.Offset + args.Offset, args.NChars);
 				args.RetVal = true;
 			};
 			
@@ -452,7 +452,7 @@ namespace Mono.TextEditor
 		{
 			if (IsSomethingSelected) {
 				var selectionRange = MainSelection.GetSelectionRange (textEditorData);
-				if (selectionRange.Offset >= 0 && selectionRange.EndOffset < Document.Length) {
+				if (selectionRange.Offset >= 0 && selectionRange.EndOffset < Document.TextLength) {
 					ClipboardActions.CopyToPrimary (this.textEditorData);
 				} else {
 					ClipboardActions.ClearPrimary ();
@@ -1686,7 +1686,7 @@ namespace Mono.TextEditor
 			}
 		}
 		
-		public Mono.TextEditor.Highlighting.ColorSheme ColorStyle {
+		public Mono.TextEditor.Highlighting.ColorScheme ColorStyle {
 			get {
 				return this.textEditorData.ColorStyle;
 			}
@@ -1775,11 +1775,16 @@ namespace Mono.TextEditor
 			return textEditorData.Insert (offset, value);
 		}
 		
+		public void Remove (DocumentRegion region)
+		{
+			textEditorData.Remove (region);
+		}
+		
 		public void Remove (TextSegment removeSegment)
 		{
 			textEditorData.Remove (removeSegment);
 		}
-		
+
 		public void Remove (int offset, int count)
 		{
 			textEditorData.Remove (offset, count);
@@ -1881,7 +1886,7 @@ namespace Mono.TextEditor
 		#region Document delegation
 		public int Length {
 			get {
-				return Document.Length;
+				return Document.TextLength;
 			}
 		}
 
@@ -1919,6 +1924,11 @@ namespace Mono.TextEditor
 			return Document.GetTextAt (segment);
 		}
 		
+		public string GetTextAt (DocumentRegion region)
+		{
+			return Document.GetTextAt (region);
+		}
+
 		public char GetCharAt (int offset)
 		{
 			return Document.GetCharAt (offset);
@@ -2039,6 +2049,16 @@ namespace Mono.TextEditor
 			
 			set {
 				this.textEditorData.SearchRequest.WholeWordOnly = value;
+			}
+		}
+		
+		public TextSegment SearchRegion {
+			get {
+				return this.textEditorData.SearchRequest.SearchRegion;
+			}
+			
+			set {
+				this.textEditorData.SearchRequest.SearchRegion = value;
 			}
 		}
 		
@@ -2226,6 +2246,11 @@ namespace Mono.TextEditor
 		{
 			if (!IsComposited || !Options.EnableAnimations || result == null)
 				return;
+			
+			// Don't animate multi line search results
+			if (OffsetToLineNumber (result.Segment.Offset) != OffsetToLineNumber (result.Segment.EndOffset))
+				return;
+			
 			TextViewMargin.MainSearchResult = result.Segment;
 			if (!TextViewMargin.MainSearchResult.IsInvalid) {
 				if (popupWindow != null) {
@@ -2315,7 +2340,7 @@ namespace Mono.TextEditor
 				if (layout != null)
 					layout.Dispose ();
 				
-				return new Gdk.Rectangle ((int)(x1 / Pango.Scale.PangoScale + Editor.TextViewMargin.XOffset + Editor.TextViewMargin.TextStartPosition - Editor.HAdjustment.Value - spaceX), 
+				return new Gdk.Rectangle ((int)(x1 / Pango.Scale.PangoScale + Editor.TextViewMargin.XOffset + Editor.TextViewMargin.TextStartPosition - Editor.HAdjustment.Value - spaceX),
 					(int)(y - spaceY), 
 					(int)(w + spaceX * 2), 
 					(int)(Editor.LineHeight + spaceY * 2));
@@ -2333,8 +2358,12 @@ namespace Mono.TextEditor
 						cr.Paint ();
 					}
 					using (var cr = Gdk.CairoHelper.Create (evnt.Window)) {
+						if (!Editor.Options.UseAntiAliasing) 
+							cr.Antialias = Cairo.Antialias.None;
+						cr.LineWidth = Editor.Options.Zoom;
+
 						cr.Translate (width / 2, height / 2);
-						cr.Scale (1 + scale / 4, 1 + scale / 4);
+						cr.Scale (1 + scale / 2, 1 + scale / 2);
 						if (layout == null) {
 							layout = cr.CreateLayout ();
 							layout.FontDescription = Editor.Options.Font;
@@ -2352,10 +2381,10 @@ namespace Mono.TextEditor
 						FoldingScreenbackgroundRenderer.DrawRoundRectangle (cr, true, true, -layoutWidth / 2 -2, -Editor.LineHeight / 2, System.Math.Min (10, layoutWidth), layoutWidth + 4, Editor.LineHeight);
 						using (var gradient = new Cairo.LinearGradient (0, -Editor.LineHeight / 2, 0, Editor.LineHeight / 2)) {
 							color = TextViewMargin.DimColor (Editor.ColorStyle.SearchTextMainBg, 1.1);
-							color.A = opacity;
+//							color.A = opacity;
 							gradient.AddColorStop (0, color);
 							color = TextViewMargin.DimColor (Editor.ColorStyle.SearchTextMainBg, 0.9);
-							color.A = opacity;
+//							color.A = opacity;
 							gradient.AddColorStop (1, color);
 							cr.Pattern = gradient;
 							cr.Fill (); 
@@ -2445,7 +2474,7 @@ namespace Mono.TextEditor
 				if (xloc >= wx && xloc < wx + ww && yloc >= tipY && yloc < tipY + 20 + wh)
 					return;
 			}
-			if (tipItem != null && tipItem.ItemSegment != null && !tipItem.ItemSegment.Contains (offset)) 
+			if (tipItem != null && !tipItem.ItemSegment.IsInvalid && !tipItem.ItemSegment.Contains (offset)) 
 				HideTooltip ();
 			
 			nextTipX = xloc;

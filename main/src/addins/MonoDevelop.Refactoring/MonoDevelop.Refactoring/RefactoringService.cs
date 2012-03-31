@@ -197,7 +197,11 @@ namespace MonoDevelop.Refactoring
 					if (editor != null) {
 						string disabledNodes = PropertyService.Get ("ContextActions." + editor.Document.MimeType, "") ?? "";
 						foreach (var provider in contextActions.Where (fix => disabledNodes.IndexOf (fix.IdString) < 0)) {
-							result.AddRange (provider.GetActions (doc, loc, cancellationToken));
+							try {
+								result.AddRange (provider.GetActions (doc, loc, cancellationToken));
+							} catch (Exception ex) {
+								LoggingService.LogError ("Error in context action provider " + provider.Title, ex);
+							}
 						}
 					}
 				} catch (Exception ex) {
@@ -206,25 +210,25 @@ namespace MonoDevelop.Refactoring
 				return (IEnumerable<MonoDevelop.CodeActions.CodeAction>)result;
 			}, cancellationToken);
 		}
+		
 		public static void QueueQuickFixAnalysis (MonoDevelop.Ide.Gui.Document doc, TextLocation loc, Action<List<MonoDevelop.CodeActions.CodeAction>> callback)
 		{
 			System.Threading.ThreadPool.QueueUserWorkItem (delegate {
 				try {
-					var result = new List<MonoDevelop.CodeActions.CodeAction> (GetValidActions (doc, loc).Result);
+					var result = new List<MonoDevelop.CodeActions.CodeAction> ();
 
 					var ext = doc.GetContent<MonoDevelop.AnalysisCore.Gui.ResultsEditorExtension> ();
 					if (ext != null) {
-						foreach (var r in ext.GetResultsAtOffset (doc.Editor.LocationToOffset (loc.Line, loc.Column))) {
+						foreach (var r in ext.GetResultsAtOffset (doc.Editor.LocationToOffset (loc)).OrderBy (r => r.Level)) {
 							var fresult = r as FixableResult;
 							if (fresult == null)
 								continue;
-							foreach (var action_ in FixOperationsHandler.GetActions (doc, fresult)) {
-								var action = action_;
-								result.Add (new AnalysisContextActionProvider.AnalysisCodeAction (r.Message, r, (d, t) => action.Fix ()));
+							foreach (var action in FixOperationsHandler.GetActions (doc, fresult)) {
+								result.Add (new AnalysisContextActionProvider.AnalysisCodeAction (action, r));
 							}
 						}
 					}
-					
+					result.AddRange (GetValidActions (doc, loc).Result);
 					callback (result);
 				} catch (Exception ex) {
 					LoggingService.LogError ("Error in analysis service", ex);

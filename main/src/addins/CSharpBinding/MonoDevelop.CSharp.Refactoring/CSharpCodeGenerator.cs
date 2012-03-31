@@ -37,6 +37,11 @@ using ICSharpCode.NRefactory;
 using Mono.TextEditor;
 using ICSharpCode.NRefactory.CSharp.TypeSystem;
 using MonoDevelop.Projects.Policies;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using ICSharpCode.Decompiler;
+using ICSharpCode.Decompiler.Ast;
+using ICSharpCode.NRefactory.PatternMatching;
 
 
 namespace MonoDevelop.CSharp.Refactoring
@@ -350,7 +355,7 @@ namespace MonoDevelop.CSharp.Refactoring
 				for (int i = 0; i < method.TypeParameters.Count; i++) {
 					if (i > 0)
 						result.Append (", ");
-					var p = method.TypeParameters[i];
+					var p = method.TypeParameters [i];
 					result.Append (p.Name);
 				}
 				result.Append (">");
@@ -395,14 +400,14 @@ namespace MonoDevelop.CSharp.Refactoring
 						result.Append ("class");
 						constraintCount++;
 					}
-//					bool hadInterfaces = false;
+					//					bool hadInterfaces = false;
 					foreach (var c in p.DirectBaseTypes.Where (validBaseType)) {
 						if (constraintCount != 0)
 							result.Append (", ");
 						constraintCount++;
 						AppendReturnType (result, options, c);
-//						if (c.Kind == TypeKind.Interface)
-//							hadInterfaces = true;
+						//						if (c.Kind == TypeKind.Interface)
+						//							hadInterfaces = true;
 					}
 				}
 			}
@@ -447,33 +452,90 @@ namespace MonoDevelop.CSharp.Refactoring
 				} else if (method.IsAbstract || !(method.IsVirtual || method.IsOverride) || method.DeclaringTypeDefinition.Kind == TypeKind.Interface) {
 					AppendNotImplementedException (result, options, out bodyStartOffset, out bodyEndOffset);
 				} else {
+					bool skipBody = false;
+					// Analyze if the body consists just of a single throw instruction
+					// See: Bug 1373 - overriding [Model] class methods shouldn't insert base.Methods
+					// TODO: Extend this to user defined code.
+					try {
+						if (method.Region.FileName == null) {
+							var asm = AssemblyDefinition.ReadAssembly (method.ParentAssembly.UnresolvedAssembly.Location);
+							foreach (var type in asm.MainModule.Types) {
+								if (type.FullName != method.DeclaringType.FullName)
+									continue;
+								foreach (var m  in type.Resolve ().Methods) {
+									if (m.HasBody && m.Name == method.Name) {
+										var context = new DecompilerContext (asm.MainModule);
+										
+										context.CurrentType = type;
+				
+										context.Settings = new DecompilerSettings () {
+											AnonymousMethods = true,
+											AutomaticEvents  = true,
+											AutomaticProperties = true,
+											ForEachStatement = true,
+											LockStatement = true
+										};
+				
+										var astBuilder = new AstBuilder (context);
+										astBuilder.AddMethod (m);
+										
+										astBuilder.RunTransformations (o => false);
+										
+										var visitor = new ThrowsExceptionVisitor ();
+										astBuilder.CompilationUnit.AcceptVisitor (visitor);
+										skipBody = visitor.Throws;
+										if (skipBody)
+											break;
+									}
+								}
+								if (skipBody)
+									break;
+							}
+						}
+					} catch (Exception) {
+					}
 					AppendIndent (result);
 					bodyStartOffset = result.Length;
-					if (method.ReturnType.ReflectionName != typeof(void).FullName)
-						result.Append ("return ");
-					result.Append ("base.");
-					result.Append (method.Name);
-					if (Policy.BeforeMethodCallParentheses)
-						result.Append (" ");
-					result.Append ("(");
-					for (int i = 0; i < method.Parameters.Count; i++) {
-						if (i > 0)
-							result.Append (", ");
-						
-						var p = method.Parameters[i];
-						if (p.IsOut)
-							result.Append ("out ");
-						if (p.IsRef)
-							result.Append ("ref ");
-						result.Append (p.Name);
+					if (!skipBody) {
+						if (method.ReturnType.ReflectionName != typeof(void).FullName)
+							result.Append ("return ");
+						result.Append ("base.");
+						result.Append (method.Name);
+						if (Policy.BeforeMethodCallParentheses)
+							result.Append (" ");
+						result.Append ("(");
+						for (int i = 0; i < method.Parameters.Count; i++) {
+							if (i > 0)
+								result.Append (", ");
+							
+							var p = method.Parameters [i];
+							if (p.IsOut)
+								result.Append ("out ");
+							if (p.IsRef)
+								result.Append ("ref ");
+							result.Append (p.Name);
+						}
+						result.Append (");");
+					} else {
+						result.Append ("throw new System.NotImplementedException ();");
 					}
-					result.Append (");");
 					bodyEndOffset = result.Length;
 					AppendLine (result);
 				}
 				AppendBraceEnd (result, Policy.MethodBraceStyle);
 			}
 			return new CodeGeneratorMemberResult (result.ToString (), bodyStartOffset, bodyEndOffset);
+		}
+		
+		class ThrowsExceptionVisitor : DepthFirstAstVisitor
+		{
+			public bool Throws = false;
+			
+			public override void VisitBlockStatement (BlockStatement blockStatement)
+			{
+				if (blockStatement.Statements.Count == 1 && blockStatement.Statements.First () is ThrowStatement)
+					Throws = true;
+			}
 		}
 		
 		void AppendParameterList (StringBuilder result, CodeGenerationOptions options, IList<IParameter> parameters)
@@ -728,7 +790,7 @@ namespace MonoDevelop.CSharp.Refactoring
 			
 			var policy = doc.Project != null ? doc.Project.Policies.Get <CSharpFormattingPolicy> () : null;
 			if (policy == null)
-				policy = this.Policy;
+				policy = Policy;
 			
 			var node = SearchUsingInsertionPoint (unit);
 			
@@ -749,7 +811,7 @@ namespace MonoDevelop.CSharp.Refactoring
 			int offset = 0;
 			if (node != null) {
 				var loc = InsertUsingAfter (node) ? node.EndLocation : node.StartLocation;
-				offset = doc.Editor.LocationToOffset (loc.Line, loc.Column);
+				offset = doc.Editor.LocationToOffset (loc);
 			}
 			
 			lines = policy.BlankLinesAfterUsings;
@@ -783,7 +845,7 @@ namespace MonoDevelop.CSharp.Refactoring
 			
 			var policy = doc.Project != null ? doc.Project.Policies.Get <CSharpFormattingPolicy> () : null;
 			if (policy == null)
-				policy = this.Policy;
+				policy = Policy;
 			
 			
 			var node = SearchUsingInsertionPoint (nsDecl);
@@ -811,7 +873,7 @@ namespace MonoDevelop.CSharp.Refactoring
 			} else {
 				loc = nsDecl.LBraceToken.EndLocation;
 			}
-			offset = doc.Editor.LocationToOffset (loc.Line, loc.Column);
+			offset = doc.Editor.LocationToOffset (loc);
 			
 			lines = policy.BlankLinesAfterUsings;
 			lines -= CountBlankLines (doc, doc.Editor.OffsetToLineNumber (offset) + 1);
@@ -862,7 +924,7 @@ namespace MonoDevelop.CSharp.Refactoring
 			var caretLocation = file.Caret.Location;
 			
 			int pos = file.LocationToOffset (caretLocation.Line + 1, 1);
-			StringBuilder line = new StringBuilder ();
+			var line = new StringBuilder ();
 			int lineNr = caretLocation.Line + 1, column = 1, maxColumn = 1, lastPos = pos;
 			if (true) 
 				while (lineNr == caretLocation.Line + 1) {
@@ -880,30 +942,31 @@ namespace MonoDevelop.CSharp.Refactoring
 				file.Caret.Location = caretLocation;
 				return;
 			}
-			
+			int caretLine = caretLocation.Line;
+			int caretColumn = caretLocation.Column;
 			if (trimmedline.StartsWith ("if") || 
-			    trimmedline.StartsWith ("while") ||
-			    trimmedline.StartsWith ("switch") ||
-			    trimmedline.StartsWith ("for") ||
-			    trimmedline.StartsWith ("foreach")) {
+				trimmedline.StartsWith ("while") ||
+				trimmedline.StartsWith ("switch") ||
+				trimmedline.StartsWith ("for") ||
+				trimmedline.StartsWith ("foreach")) {
 				if (!trimmedline.EndsWith (")")) {
 					file.Insert (lastPos, " () {" + file.EolMarker + indent + file.Options.IndentationString + file.EolMarker + indent + "}");
-					caretLocation.Column = maxColumn + 1;
+					caretColumn = maxColumn + 1;
 				} else {
 					file.Insert (lastPos, " {" + file.EolMarker + indent + file.Options.IndentationString + file.EolMarker + indent + "}");
-					caretLocation.Column = indent.Length + 1;
-					caretLocation.Line++;
+					caretColumn = indent.Length + 1;
+					caretLine++;
 				}
 			} else if (trimmedline.StartsWith ("do")) {
 				file.Insert (lastPos, " {" + file.EolMarker + indent + file.Options.IndentationString + file.EolMarker + indent + "} while ();");
-				caretLocation.Column = indent.Length + 1;
-				caretLocation.Line++;
+				caretColumn = indent.Length + 1;
+				caretLine++;
 			} else {
 				file.Insert (lastPos, ";" + file.EolMarker + indent);
-				caretLocation.Column = indent.Length;
-				caretLocation.Line++;
+				caretColumn = indent.Length;
+				caretLine++;
 			}
-			file.Caret.Location = caretLocation;
+			file.Caret.Location = new DocumentLocation (caretLine, caretColumn);
 		}
 		
 		

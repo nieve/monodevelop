@@ -63,7 +63,7 @@ namespace ICSharpCode.NRefactory.CSharp.Refactoring
 			yield return new CodeAction (context.TranslateString("Introduce format item"), script => {
 				var invocation = context.GetNode<InvocationExpression>();
 				if (invocation != null && invocation.Target.IsMatch(PrototypeFormatReference)) {
-					AddFormatCallToInvocation(context, pexpr, invocation);
+					AddFormatCallToInvocation(context, script, pexpr, invocation);
 					return;
 				}
 			
@@ -78,16 +78,14 @@ namespace ICSharpCode.NRefactory.CSharp.Refactoring
 
 		}
 		
-		void AddFormatCallToInvocation (RefactoringContext context, PrimitiveExpression pExpr, InvocationExpression invocation)
+		void AddFormatCallToInvocation (RefactoringContext context, Script script, PrimitiveExpression pExpr, InvocationExpression invocation)
 		{
 			var newInvocation = (InvocationExpression)invocation.Clone ();
 			
 			newInvocation.Arguments.First ().ReplaceWith (CreateFormatString (context, pExpr, newInvocation.Arguments.Count () - 1));
 			newInvocation.Arguments.Add (CreateFormatArgument (context));
 			
-			using (var script = context.StartScript ()) {
-				script.Replace (invocation, newInvocation);
-			}
+			script.Replace (invocation, newInvocation);
 		}
 		
 		static PrimitiveExpression CreateFormatArgument (RefactoringContext context)
@@ -95,12 +93,13 @@ namespace ICSharpCode.NRefactory.CSharp.Refactoring
 			return new PrimitiveExpression (context.SelectedText);
 		}
 		
-		static PrimitiveExpression CreateFormatString (RefactoringContext context, PrimitiveExpression pExpr, int argumentNumber)
+		static PrimitiveExpression CreateFormatString(RefactoringContext context, PrimitiveExpression pExpr, int argumentNumber)
 		{
-			var start = context.GetOffset (pExpr.StartLocation);
-			var end = context.GetOffset (pExpr.EndLocation);
-			
-			return new PrimitiveExpression ("", context.GetText (start, context.SelectionStart - start) + "{" + argumentNumber + "}" + context.GetText (context.SelectionEnd, end - context.SelectionEnd));
+			var start = context.GetOffset(pExpr.StartLocation);
+			var end = context.GetOffset(pExpr.EndLocation);
+			var sStart = context.GetOffset(context.SelectionStart);
+			var sEnd = context.GetOffset(context.SelectionEnd);
+			return new PrimitiveExpression("", context.GetText(start, sStart - start) + "{" + argumentNumber + "}" + context.GetText(sEnd, end - sEnd));
 		}
 	}
 }

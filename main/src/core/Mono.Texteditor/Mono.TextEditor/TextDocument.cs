@@ -39,7 +39,7 @@ namespace Mono.TextEditor
 	public class TextDocument : AbstractAnnotatable, IBuffer, ICSharpCode.NRefactory.Editor.IDocument
 	{
 		readonly IBuffer buffer;
-		internal readonly ILineSplitter splitter;
+		readonly ILineSplitter splitter;
 
 		ISyntaxMode syntaxMode = null;
 
@@ -57,7 +57,7 @@ namespace Mono.TextEditor
 			set {
 				if (mimeType != value) {
 					mimeType = value;
-					this.SyntaxMode = SyntaxModeService.GetSyntaxMode (this);
+					SyntaxMode = SyntaxModeService.GetSyntaxMode (this);
 				}
 			}
 		}
@@ -71,7 +71,13 @@ namespace Mono.TextEditor
 			get;
 			set;
 		}
-		
+
+		internal ILineSplitter Splitter {
+			get {
+				return splitter;
+			}
+		}
+
 		public ISyntaxMode SyntaxMode {
 			get {
 				return syntaxMode ?? new SyntaxMode (this);
@@ -79,12 +85,23 @@ namespace Mono.TextEditor
 			set {
 				if (syntaxMode != null)
 					syntaxMode.Document = null;
+				var old = syntaxMode;
 				syntaxMode = value;
 				if (syntaxMode != null)
 					syntaxMode.Document = this;
+				OnSyntaxModeChanged (new SyntaxModeChangeEventArgs (old, syntaxMode));
 			}
 		}
-		
+
+		protected virtual void OnSyntaxModeChanged (Mono.TextEditor.SyntaxModeChangeEventArgs e)
+		{
+			var handler = SyntaxModeChanged;
+			if (handler != null)
+				handler (this, e);
+		}
+
+		public event EventHandler<SyntaxModeChangeEventArgs> SyntaxModeChanged;
+
 		public object Tag {
 			get;
 			set;
@@ -108,12 +125,11 @@ namespace Mono.TextEditor
 		public TextDocument () : this(new GapBuffer (), new LineSplitter ())
 		{
 		}
-		
+
 		public TextDocument (string text) : this()
 		{
 			Text = text;
 		}
-
 
 		public static TextDocument CreateImmutableDocument (string text, bool suppressHighlighting = true)
 		{
@@ -123,7 +139,7 @@ namespace Mono.TextEditor
 				ReadOnly = true
 			};
 		}
-		
+
 		~TextDocument ()
 		{
 			if (foldSegmentWorker != null) {
@@ -142,9 +158,9 @@ namespace Mono.TextEditor
 	//	public event EventHandler<LineEventArgs> LineInserted;
 		
 		#region Buffer implementation
-		public int Length {
+		public int TextLength {
 			get {
-				return this.buffer.Length;
+				return buffer.TextLength;
 			}
 		}
 
@@ -152,66 +168,55 @@ namespace Mono.TextEditor
 		
 		public string Text {
 			get {
-				return this.buffer.Text;
+				return buffer.Text;
 			}
 			set {
 				if (!SuppressHighlightUpdate)
-					Mono.TextEditor.Highlighting.SyntaxModeService.WaitUpdate (this);
+					SyntaxModeService.WaitUpdate (this);
 				var args = new DocumentChangeEventArgs (0, Text, value);
-				this.OnTextReplacing (args);
-				this.buffer.Text = value;
+				OnTextReplacing (args);
+				buffer.Text = value;
 				splitter.Initalize (value);
 				ClearFoldSegments ();
-				this.OnTextReplaced (args);
-				this.OnTextSet (EventArgs.Empty);
-				this.CommitUpdateAll ();
-				this.ClearUndoBuffer ();
+				OnTextReplaced (args);
+				OnTextSet (EventArgs.Empty);
+				CommitUpdateAll ();
+				ClearUndoBuffer ();
 				versionProvider = new TextSourceVersionProvider ();
 			}
 		}
 
-		void IBuffer.Insert (int offset, string text)
+		public void Insert (int offset, string text)
 		{
-			((IBuffer)this).Replace (offset, 0, text);
+			Replace (offset, 0, text);
 		}
 		
-		void IBuffer.Remove (int offset, int count)
+		public void Remove (int offset, int count)
 		{
-			((IBuffer)this).Replace (offset, count, null);
+			Replace (offset, count, null);
 		}
 		
-		void IBuffer.Remove (TextSegment segment)
+		public void Remove (TextSegment segment)
 		{
-			((IBuffer)this).Remove (segment.Offset, segment.Length);
+			Remove (segment.Offset, segment.Length);
 		}
 
-		void IBuffer.Replace (int offset, int count, string value)
+		public void Replace (int offset, int count, string value)
 		{
 			if (offset < 0)
 				throw new ArgumentOutOfRangeException ("offset", "must be > 0, was: " + offset);
-			if (offset > Length)
+			if (offset > TextLength)
 				throw new ArgumentOutOfRangeException ("offset", "must be <= Length, was: " + offset);
 			if (count < 0)
 				throw new ArgumentOutOfRangeException ("count", "must be > 0, was: " + count);
 
-			if (atomicUndoLevel == 0) {
-				if (this.syntaxMode != null && !SuppressHighlightUpdate)
-					Mono.TextEditor.Highlighting.SyntaxModeService.WaitUpdate (this);
-			}
 			InterruptFoldWorker ();
-			//			Mono.TextEditor.Highlighting.SyntaxModeService.WaitForUpdate (true);
-			//			Debug.Assert (count >= 0);
-			//			Debug.Assert (0 <= offset && offset + count <= Length);
-			int oldLineCount = this.LineCount;
+			
+			int oldLineCount = LineCount;
 			var args = new DocumentChangeEventArgs (offset, count > 0 ? GetTextAt (offset, count) : "", value);
 			OnTextReplacing (args);
 			value = args.InsertedText;
-			/* insert/repla
-			lock (syncObject) {
-				int endOffset = offset + count;
-				foldSegments = new List<FoldSegment> (foldSegments.Where (s => (s.Offset < offset || s.Offset >= endOffset) && 
-				                                                               (s.EndOffset <= offset || s.EndOffset >= endOffset)));
-			}*/	
+
 			UndoOperation operation = null;
 			if (!isInUndo) {
 				operation = new UndoOperation (args);
@@ -236,18 +241,18 @@ namespace Mono.TextEditor
 				operation.Setup (this, args);
 			
 			if (oldLineCount != LineCount)
-				this.CommitLineToEndUpdate (this.OffsetToLocation (offset).Line);
+				CommitLineToEndUpdate (OffsetToLocation (offset).Line);
 		}
 		
 		public string GetTextBetween (int startOffset, int endOffset)
 		{
 			if (startOffset < 0)
 				throw new ArgumentException ("startOffset < 0");
-			if (startOffset > Length)
+			if (startOffset > TextLength)
 				throw new ArgumentException ("startOffset > Length");
 			if (endOffset < 0)
 				throw new ArgumentException ("startOffset < 0");
-			if (endOffset > Length)
+			if (endOffset > TextLength)
 				throw new ArgumentException ("endOffset > Length");
 			
 			return buffer.GetTextAt (startOffset, endOffset - startOffset);
@@ -267,20 +272,25 @@ namespace Mono.TextEditor
 		{
 			if (offset < 0)
 				throw new ArgumentException ("startOffset < 0");
-			if (offset > Length)
+			if (offset > TextLength)
 				throw new ArgumentException ("startOffset > Length");
 			if (count < 0)
 				throw new ArgumentException ("count < 0");
-			if (offset + count > Length)
+			if (offset + count > TextLength)
 				throw new ArgumentException ("offset + count is beyond EOF");
 			return buffer.GetTextAt (offset, count);
 		}
 		
+		public string GetTextAt (DocumentRegion region)
+		{
+			return GetTextAt (region.GetSegment (this));
+		}
+
 		public string GetTextAt (TextSegment segment)
 		{
 			return GetTextAt (segment.Offset, segment.Length);
 		}
-		
+
 		/// <summary>
 		/// Gets the line text without the delimiter.
 		/// </summary>
@@ -307,26 +317,72 @@ namespace Mono.TextEditor
 			return buffer.GetCharAt (offset);
 		}
 		
-		public IEnumerable<int> SearchForward (string pattern, int startIndex)
+		/// <summary>
+		/// Gets the index of the first occurrence of the character in the specified array.
+		/// </summary>
+		/// <param name="c">Character to search for</param>
+		/// <param name="startIndex">Start index of the area to search.</param>
+		/// <param name="count">Length of the area to search.</param>
+		/// <returns>The first index where the character was found; or -1 if no occurrence was found.</returns>
+		public int IndexOf (char c, int startIndex, int count)
 		{
-			return buffer.SearchForward (pattern, startIndex);
+			return buffer.IndexOf (c, startIndex, count);
 		}
 		
-		public IEnumerable<int> SearchForwardIgnoreCase (string pattern, int startIndex)
+		/// <summary>
+		/// Gets the index of the first occurrence of any character in the specified array.
+		/// </summary>
+		/// <param name="anyOf">Characters to search for</param>
+		/// <param name="startIndex">Start index of the area to search.</param>
+		/// <param name="count">Length of the area to search.</param>
+		/// <returns>The first index where any character was found; or -1 if no occurrence was found.</returns>
+		public int IndexOfAny (char[] anyOf, int startIndex, int count)
 		{
-			return SearchForwardIgnoreCase (pattern, startIndex);
+			return buffer.IndexOfAny (anyOf, startIndex, count);
 		}
 		
-		public IEnumerable<int> SearchBackward (string pattern, int startIndex)
+		/// <summary>
+		/// Gets the index of the first occurrence of the specified search text in this text source.
+		/// </summary>
+		/// <param name="searchText">The search text</param>
+		/// <param name="startIndex">Start index of the area to search.</param>
+		/// <param name="count">Length of the area to search.</param>
+		/// <param name="comparisonType">String comparison to use.</param>
+		/// <returns>The first index where the search term was found; or -1 if no occurrence was found.</returns>
+		public int IndexOf (string searchText, int startIndex, int count, StringComparison comparisonType)
 		{
-			return SearchBackward (pattern, startIndex);
+			return buffer.IndexOf (searchText, startIndex, count, comparisonType);
 		}
 		
-		public IEnumerable<int> SearchBackwardIgnoreCase (string pattern, int startIndex)
+		/// <summary>
+		/// Gets the index of the last occurrence of the specified character in this text source.
+		/// </summary>
+		/// <param name="c">The search character</param>
+		/// <param name="startIndex">Start index of the area to search.</param>
+		/// <param name="count">Length of the area to search.</param>
+		/// <returns>The last index where the search term was found; or -1 if no occurrence was found.</returns>
+		/// <remarks>The search proceeds backwards from (startIndex+count) to startIndex.
+		/// This is different than the meaning of the parameters on string.LastIndexOf!</remarks>
+		public int LastIndexOf (char c, int startIndex, int count)
 		{
-			return SearchBackwardIgnoreCase (pattern, startIndex);
+			return buffer.LastIndexOf (c, startIndex, count);
 		}
 		
+		/// <summary>
+		/// Gets the index of the last occurrence of the specified search text in this text source.
+		/// </summary>
+		/// <param name="searchText">The search text</param>
+		/// <param name="startIndex">Start index of the area to search.</param>
+		/// <param name="count">Length of the area to search.</param>
+		/// <param name="comparisonType">String comparison to use.</param>
+		/// <returns>The last index where the search term was found; or -1 if no occurrence was found.</returns>
+		/// <remarks>The search proceeds backwards from (startIndex+count) to startIndex.
+		/// This is different than the meaning of the parameters on string.LastIndexOf!</remarks>
+		public int LastIndexOf (string searchText, int startIndex, int count, StringComparison comparisonType)
+		{
+			return buffer.LastIndexOf (searchText, startIndex, count, comparisonType);
+		}
+
 		protected virtual void OnTextReplaced (DocumentChangeEventArgs args)
 		{
 			if (TextReplaced != null)
@@ -391,7 +447,7 @@ namespace Mono.TextEditor
 			if (location.Line > this.splitter.Count || location.Line < DocumentLocation.MinLine)
 				return -1;
 			LineSegment line = GetLine (location.Line);
-			return System.Math.Min (Length, line.Offset + System.Math.Max (0, System.Math.Min (line.EditableLength, location.Column - 1)));
+			return System.Math.Min (TextLength, line.Offset + System.Math.Max (0, System.Math.Min (line.EditableLength, location.Column - 1)));
 		}
 		
 		public DocumentLocation OffsetToLocation (int offset)
@@ -474,8 +530,8 @@ namespace Mono.TextEditor
 			internal void Setup (TextDocument doc, DocumentChangeEventArgs args)
 			{
 				if (args != null) {
-					this.startOffset = args.Offset;
-					this.length = args.InsertionLength;
+					startOffset = args.Offset;
+					length = args.InsertionLength;
 				}
 			}
 			
@@ -490,13 +546,13 @@ namespace Mono.TextEditor
 			
 			public virtual void Undo (TextDocument doc)
 			{
-				((IBuffer)doc).Replace (args.Offset, args.InsertionLength, args.RemovedText);
+				doc.Replace (args.Offset, args.InsertionLength, args.RemovedText);
 				OnUndoDone ();
 			}
 			
 			public virtual void Redo (TextDocument doc)
 			{
-				((IBuffer)doc).Replace (args.Offset, args.RemovalLength, args.InsertedText);
+				doc.Replace (args.Offset, args.RemovalLength, args.InsertedText);
 				OnRedoDone ();
 			}
 			
@@ -1056,7 +1112,7 @@ namespace Mono.TextEditor
 		
 		public IEnumerable<FoldSegment> GetFoldingsFromOffset (int offset)
 		{
-			if (offset < 0 || offset >= Length)
+			if (offset < 0 || offset >= TextLength)
 				return new FoldSegment[0];
 			return foldSegmentTree.GetSegmentsAt (offset);
 		}
@@ -1273,12 +1329,12 @@ namespace Mono.TextEditor
 		
 		public bool Contains (int offset)
 		{
-			return new TextSegment (0, Length).Contains (offset);
+			return new TextSegment (0, TextLength).Contains (offset);
 		}
 		
 		public bool Contains (TextSegment segment)
 		{
-			return new TextSegment (0, Length).Contains (segment);
+			return new TextSegment (0, TextLength).Contains (segment);
 		}
 		
 		
@@ -1379,7 +1435,7 @@ namespace Mono.TextEditor
 
 		{
 			return (offset == 0 || IsWordSeparator (GetCharAt (offset - 1))) &&
-				   (offset + length == Length || IsWordSeparator (GetCharAt (offset + length)));
+				   (offset + length == TextLength || IsWordSeparator (GetCharAt (offset + length)));
 		}
 		
 		public bool IsEmptyLine (LineSegment line)
@@ -1400,7 +1456,7 @@ namespace Mono.TextEditor
 		
 		public int GetMatchingBracketOffset (System.ComponentModel.BackgroundWorker worker, int offset)
 		{
-			if (offset < 0 || offset >= Length)
+			if (offset < 0 || offset >= TextLength)
 				return -1;
 			char ch = GetCharAt (offset);
 			int bracket = openBrackets.IndexOf (ch);
@@ -1646,22 +1702,12 @@ namespace Mono.TextEditor
 
 		void ICSharpCode.NRefactory.Editor.IDocument.Insert (int offset, string text)
 		{
-			((IBuffer)this).Insert (offset, text);
+			Insert (offset, text);
 		}
 
 		public void Insert (int offset, string text, ICSharpCode.NRefactory.Editor.AnchorMovementType defaultAnchorMovementType)
 		{
-			((IBuffer)this).Insert (offset, text);
-		}
-
-		void ICSharpCode.NRefactory.Editor.IDocument.Remove (int offset, int length)
-		{
-			((IBuffer)this).Remove (offset, length);
-		}
-
-		void ICSharpCode.NRefactory.Editor.IDocument.Replace (int offset, int length, string newText)
-		{
-			((IBuffer)this).Replace (offset, length, newText);
+			Insert (offset, text);
 		}
 
 		void ICSharpCode.NRefactory.Editor.IDocument.StartUndoableAction ()
@@ -1677,21 +1723,6 @@ namespace Mono.TextEditor
 		ICSharpCode.NRefactory.Editor.ITextAnchor ICSharpCode.NRefactory.Editor.IDocument.CreateAnchor (int offset)
 		{
 			throw new NotImplementedException ();
-		}
-
-		string ICSharpCode.NRefactory.Editor.IDocument.Text {
-			get {
-				return Text;
-			}
-			set {
-				Text = value;
-			}
-		}
-
-		int ICSharpCode.NRefactory.Editor.IDocument.LineCount {
-			get {
-				return LineCount;
-			}
 		}
 		#endregion
 
@@ -1715,7 +1746,7 @@ namespace Mono.TextEditor
 
 		public System.IO.TextReader CreateReader ()
 		{
-			return new BufferedTextReader (this.buffer);
+			return new BufferedTextReader (buffer);
 		}
 
 		public System.IO.TextReader CreateReader (int offset, int length)
@@ -1733,31 +1764,6 @@ namespace Mono.TextEditor
 			return GetTextAt (segment.Offset, segment.Length);
 		}
 
-		int ICSharpCode.NRefactory.Editor.ITextSource.IndexOfAny (char[] anyOf, int startIndex, int count)
-		{
-			throw new NotImplementedException ();
-		}
-
-		int ICSharpCode.NRefactory.Editor.ITextSource.IndexOf(char c, int startIndex, int count)
-		{
-			throw new NotImplementedException ();
-		}
-		
-		int ICSharpCode.NRefactory.Editor.ITextSource.IndexOf (string searchText, int startIndex, int count, StringComparison comparisonType)
-		{
-			throw new NotImplementedException ();
-		}
-
-		int ICSharpCode.NRefactory.Editor.ITextSource.LastIndexOf(char c, int startIndex, int count)
-		{
-			throw new NotImplementedException ();
-		}
-
-		int ICSharpCode.NRefactory.Editor.ITextSource.LastIndexOf (string searchText, int startIndex, int count, StringComparison comparisonType)
-		{
-			throw new NotImplementedException ();
-		}
-
 		public virtual ITextSourceVersion Version {
 			get {
 				return versionProvider.CurrentVersion;
@@ -1766,7 +1772,7 @@ namespace Mono.TextEditor
 
 		int ICSharpCode.NRefactory.Editor.ITextSource.TextLength {
 			get {
-				return Length;
+				return TextLength;
 			}
 		}
 

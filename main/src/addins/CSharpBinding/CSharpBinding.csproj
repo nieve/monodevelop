@@ -90,6 +90,10 @@
       <Name>ICSharpCode.NRefactory.CSharp</Name>
       <Private>False</Private>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\contrib\ICSharpCode.Decompiler\ICSharpCode.Decompiler.csproj">
+      <Project>{984CC812-9470-4A13-AFF9-CC44068D666C}</Project>
+      <Name>ICSharpCode.Decompiler</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -128,6 +132,9 @@
     </Reference>
     <Reference Include="System.Core" />
     <Reference Include="Mono.Cairo" />
+    <Reference Include="Mono.Cecil">
+      <HintPath>..\..\..\build\bin\Mono.Cecil.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="templates\ConsoleProject.xpt.xml">
@@ -196,6 +203,9 @@
     <EmbeddedResource Include="MonoDevelop.CSharp.Formatting\policies\GNUTextStylePolicy.xml">
       <LogicalName>GNUTextStylePolicy.xml</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="MonoDevelop.CSharp.Refactoring.CodeIssues\NamingInspection\MonoNameConventionPolicy.xml">
+      <LogicalName>MonoNameConventionPolicy.xml</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="gtk-gui\generated.cs" />
@@ -242,10 +252,6 @@
     <Compile Include="MonoDevelop.CSharp.Completion\ConstructorParameterDataProvider.cs" />
     <Compile Include="MonoDevelop.CSharp.Completion\MethodParameterDataProvider.cs" />
     <Compile Include="MonoDevelop.CSharp.Refactoring\CSharpCodeGenerator.cs" />
-    <Compile Include="MonoDevelop.CSharp.Refactoring\CreateMethod\CreateMethodCodeGenerator.cs" />
-    <Compile Include="MonoDevelop.CSharp.Refactoring\CreateMethod\CreateMethodHandler.cs" />
-    <Compile Include="MonoDevelop.CSharp.Refactoring\DeclareLocal\DeclareLocalCodeGenerator.cs" />
-    <Compile Include="MonoDevelop.CSharp.Refactoring\DeclareLocal\DeclareLocalHandler.cs" />
     <Compile Include="MonoDevelop.CSharp.Completion\NewOverrideCompletionData.cs" />
     <Compile Include="MonoDevelop.CSharp.Completion\EventCreationCompletionData.cs" />
     <Compile Include="MonoDevelop.CSharp.Refactoring\ExtractMethod\ExtractMethodDialog.cs" />
@@ -255,10 +261,6 @@
     <Compile Include="gtk-gui\MonoDevelop.CSharp.Refactoring.ExtractMethod.ExtractMethodDialog.cs" />
     <Compile Include="MonoDevelop.CSharp.Completion\VariableCompletionData.cs" />
     <Compile Include="MonoDevelop.CSharp.Completion\IndexerParameterDataProvider.cs" />
-    <Compile Include="MonoDevelop.CSharp.Refactoring\VisitNamespaceNodesNavigator.cs" />
-    <Compile Include="MonoDevelop.CSharp.Refactoring\RefactorImports\RemoveUnusedImportsRefactoring.cs" />
-    <Compile Include="MonoDevelop.CSharp.Refactoring\RefactorImports\RefactorImportsHandler.cs" />
-    <Compile Include="MonoDevelop.CSharp.Refactoring\RefactorImports\SortImportsRefactoring.cs" />
     <Compile Include="MonoDevelop.CSharp.Refactoring\HelperMethods.cs" />
     <Compile Include="MonoDevelop.CSharp.Parser\CSharpFoldingParser.cs" />
     <Compile Include="MonoDevelop.CSharp.Completion\TemplateParameterDataProvider.cs" />
@@ -278,29 +280,26 @@
     <Compile Include="MonoDevelop.CSharp.Formatting\OnTheFlyFormatterTextEditorExtension.cs" />
     <Compile Include="MonoDevelop.CSharp.CodeGeneration\ReadonlyPropertyGenerator.cs" />
     <Compile Include="MonoDevelop.CSharp.CodeGeneration\RaiseEventMethodGenerator.cs" />
-    <Compile Include="MonoDevelop.CSharp.Resolver\ResolveCommandHandler.cs" />
     <Compile Include="MonoDevelop.CSharp.Refactoring.CodeActions\ContextActionExtensions.cs" />
     <Compile Include="MonoDevelop.CSharp.Refactoring.CodeActions\MDRefactoringContext.cs" />
     <Compile Include="MonoDevelop.CSharp.Refactoring.CodeActions\Actions\MoveTypeToFile.cs" />
     <Compile Include="MonoDevelop.CSharp.Refactoring.CodeActions\MDRefactoringScript.cs" />
-    <Compile Include="MonoDevelop.CSharp.Refactoring.CodeActions\MDRefactoringContextActionProvider.cs" />
-    <Compile Include="MonoDevelop.CSharp.Refactoring.CodeIssues\CSharpInspector.cs" />
-    <Compile Include="MonoDevelop.CSharp.Refactoring.CodeIssues\NRefactoryIssueWrapper.cs" />
     <Compile Include="MonoDevelop.CSharp.Refactoring.CodeIssues\NRefactoryCodeIssueSource.cs" />
     <Compile Include="MonoDevelop.CSharp.Refactoring.CodeActions\NRefactoryCodeActionSource.cs" />
-    <Compile Include="MonoDevelop.CSharp.Refactoring.CodeActions\NRefactoryCodeActionWrapper.cs" />
+    <Compile Include="MonoDevelop.CSharp.Refactoring.CodeIssues\NamingInspection\NameConventionRule.cs" />
+    <Compile Include="MonoDevelop.CSharp.Refactoring.CodeIssues\NamingInspection\NameConventionEditRuleDialog.cs" />
+    <Compile Include="MonoDevelop.CSharp.Refactoring.CodeIssues\NamingInspection\NameConventionPanel.cs" />
+    <Compile Include="MonoDevelop.CSharp.Refactoring.CodeIssues\NamingInspection\NameConventionPanelWidget.cs" />
+    <Compile Include="gtk-gui\MonoDevelop.CSharp.Refactoring.CodeIssues.NameConventionEditRuleDialog.cs" />
+    <Compile Include="gtk-gui\MonoDevelop.CSharp.Refactoring.CodeIssues.NameConventionPanelWidget.cs" />
+    <Compile Include="MonoDevelop.CSharp.Refactoring.CodeIssues\NamingInspection\NameConventionPolicy.cs" />
+    <Compile Include="MonoDevelop.CSharp.Refactoring.CodeActions\NRefactoryCodeActionProvider.cs" />
+    <Compile Include="MonoDevelop.CSharp.Refactoring.CodeIssues\NRefactoryIssueProvider.cs" />
+    <Compile Include="MonoDevelop.CSharp.Refactoring.CodeActions\NRefactoryCodeAction.cs" />
+    <Compile Include="MonoDevelop.CSharp.Tooltips\LanguageItemTooltipProvider.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile.am" />
-    <None Include="MonoDevelop.CSharp.Refactoring\CSharpRefactorer.cs" />
-    <None Include="MonoDevelop.CSharp.Refactoring.CodeIssues\NamingInspection\NamingInspector.cs" />
-    <None Include="MonoDevelop.CSharp.Refactoring.CodeIssues\NamingInspection\NamingRule.cs" />
-    <None Include="MonoDevelop.CSharp.Refactoring.CodeIssues\NamingInspection\CSharpNamingPolicy.cs" />
-    <None Include="MonoDevelop.CSharp.Refactoring.CodeIssues\NamingInspection\NamingConventionPanelWidget.cs" />
-    <None Include="MonoDevelop.CSharp.Refactoring.CodeIssues\NamingInspection\NamingConventionSettingsDialog.cs" />
-    <None Include="MonoDevelop.CSharp.Refactoring.CodeIssues\NamingInspection\NamingStyle.cs" />
-    <None Include="gtk-gui\MonoDevelop.CSharp.Refactoring.CodeIssues.NamingConventionSettingsDialog.cs" />
-    <None Include="gtk-gui\MonoDevelop.CSharp.Refactoring.CodeIssues.NamingConventionPanelWidget.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
@@ -327,15 +326,13 @@
     <Folder Include="MonoDevelop.CSharp.Project\" />
     <Folder Include="MonoDevelop.CSharp\" />
     <Folder Include="MonoDevelop.CSharp.Completion\" />
-    <Folder Include="MonoDevelop.CSharp.Refactoring\CreateMethod\" />
     <Folder Include="MonoDevelop.CSharp.Refactoring\ExtractMethod\" />
-    <Folder Include="MonoDevelop.CSharp.Refactoring\DeclareLocal\" />
-    <Folder Include="MonoDevelop.CSharp.Refactoring\RefactorImports\" />
     <Folder Include="MonoDevelop.CSharp.CodeGeneration\" />
     <Folder Include="MonoDevelop.CSharp.Formatting\policies\" />
     <Folder Include="MonoDevelop.CSharp.Refactoring.CodeActions\" />
     <Folder Include="MonoDevelop.CSharp.Refactoring.CodeActions\Actions\" />
     <Folder Include="MonoDevelop.CSharp.Refactoring.CodeIssues\" />
     <Folder Include="MonoDevelop.CSharp.Refactoring.CodeIssues\NamingInspection\" />
+    <Folder Include="MonoDevelop.CSharp.Tooltips\" />
   </ItemGroup>
 </Project>

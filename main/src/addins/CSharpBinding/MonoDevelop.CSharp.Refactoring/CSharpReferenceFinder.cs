@@ -53,22 +53,31 @@ namespace MonoDevelop.CSharp.Refactoring
 		List<Tuple<FilePath, MonoDevelop.Ide.Gui.Document>> openDocuments = new List<Tuple<FilePath, MonoDevelop.Ide.Gui.Document>> ();
 		
 		string memberName;
+		string keywordName;
 		
 		public CSharpReferenceFinder ()
 		{
 			IncludeDocumentation = true;
 		}
 		
-		public void SetSearchedMembers (IEnumerable<object> searchedMembers)
+		public void SetSearchedMembers (IEnumerable<object> members)
 		{
-			this.searchedMembers = new List<object> (searchedMembers);
+			searchedMembers = new List<object> (members);
 			var firstMember = searchedMembers.FirstOrDefault ();
-			if (firstMember is INamedElement)
-				memberName = ((INamedElement)firstMember).Name;
+			if (firstMember is INamedElement) {
+				var namedElement = (INamedElement)firstMember;
+				memberName = namedElement.Name;
+
+				keywordName = CSharpAmbience.NetToCSharpTypeName (namedElement.FullName);
+				if (keywordName == namedElement.FullName)
+					keywordName = null;
+			}
 			if (firstMember is string)
 				memberName = firstMember.ToString ();
 			if (firstMember is IVariable)
 				memberName = ((IVariable)firstMember).Name;
+			if (firstMember is ITypeParameter)
+				memberName = ((ITypeParameter)firstMember).Name;
 		}
 		
 		void SetPossibleFiles (IEnumerable<FilePath> files)
@@ -101,7 +110,9 @@ namespace MonoDevelop.CSharp.Refactoring
 				var ns = ((LocalResolveResult)result).Variable;
 				valid = searchedMembers.FirstOrDefault (n => n is IVariable && ((IVariable)n).Region == ns.Region);
 			} else if (result is TypeResolveResult) {
-				valid = searchedMembers.FirstOrDefault (n => n is IType && result.Type.Equals ((IType)n));
+				valid = searchedMembers.FirstOrDefault (n => n is IType);
+			} else {
+				valid = searchedMembers.FirstOrDefault ();
 			}
 
 			if (node is ConstructorInitializer)
@@ -132,8 +143,9 @@ namespace MonoDevelop.CSharp.Refactoring
 			if (node is DestructorDeclaration)
 				node = ((DestructorDeclaration)node).NameToken;
 			var region = new DomRegion (fileName, node.StartLocation, node.EndLocation);
-			
-			return new MemberReference (valid, region, editor.LocationToOffset (region.Begin), memberName.Length);
+
+			var length = node is PrimitiveType ? keywordName.Length : memberName.Length;
+			return new MemberReference (valid, region, editor.LocationToOffset (region.Begin), length);
 		}
 
 		bool IsNodeValid (object searchedMember, AstNode node)
@@ -163,24 +175,27 @@ namespace MonoDevelop.CSharp.Refactoring
 						if (IsNodeValid (obj, astNode))
 							result.Add (GetReference (r, astNode, editor.FileName, editor));
 					}, CancellationToken.None);
+				} else if (obj is ITypeParameter) {
+					refFinder.FindTypeParameterReferences ((ITypeParameter)obj, file, unit, doc.Compilation, (astNode, r) => { 
+						if (IsNodeValid (obj, astNode))
+							result.Add (GetReference (r, astNode, editor.FileName, editor));
+					}, CancellationToken.None);
 				}
 			}
 			return result;
 		}
 		
-		public override IEnumerable<MemberReference> FindReferences (Project project, IProjectContent content, IEnumerable<FilePath> possibleFiles, IEnumerable<object> searchedMembers)
+		public override IEnumerable<MemberReference> FindReferences (Project project, IProjectContent content, IEnumerable<FilePath> possibleFiles, IEnumerable<object> members)
 		{
 			if (project == null)
-				throw new ArgumentNullException ("Project", "Project not set.");
+				throw new ArgumentNullException ("project", "Project not set.");
 			if (content == null)
 				throw new ArgumentNullException ("content", "Project content not set.");
-			
 			SetPossibleFiles (possibleFiles);
-			SetSearchedMembers (searchedMembers);
+			SetSearchedMembers (members);
 			
-			var entity = searchedMembers.First () as IEntity;
 			var scopes = searchedMembers.Select (e => refFinder.GetSearchScopes (e as IEntity));
-			var compilation = entity != null ? entity.Compilation : content.CreateCompilation ();
+			var compilation = TypeSystemService.GetCompilation (project);
 			List<MemberReference> refs = new List<MemberReference> ();
 			foreach (var opendoc in openDocuments) {
 				foreach (var newRef in FindInDocument (opendoc.Item2)) {
@@ -191,8 +206,9 @@ namespace MonoDevelop.CSharp.Refactoring
 			}
 			
 			foreach (var file in files) {
-				string text = Mono.TextEditor.Utils.TextFileReader.ReadAllText (file);
-				if (memberName != null && text.IndexOf (memberName, StringComparison.Ordinal) < 0)
+				string text = Mono.TextEditor.Utils.TextFileUtility.ReadAllText (file);
+				if (memberName != null && text.IndexOf (memberName, StringComparison.Ordinal) < 0 &&
+					(keywordName == null || text.IndexOf (keywordName, StringComparison.Ordinal) < 0))
 					continue;
 				using (var editor = TextEditorData.CreateImmutable (text)) {
 					editor.Document.FileName = file;
@@ -200,7 +216,7 @@ namespace MonoDevelop.CSharp.Refactoring
 					if (unit == null)
 						continue;
 					
-					var storedFile = content != null ? content.GetFile (file) : null;
+					var storedFile = content.GetFile (file);
 					var parsedFile = storedFile as CSharpParsedFile;
 					
 					if (parsedFile == null && storedFile is ParsedDocumentDecorator) {

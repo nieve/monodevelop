@@ -568,7 +568,7 @@ namespace MonoDevelop.GtkCore.GuiBuilder
 					bool isBlank, isBracket;
 					CheckLine (doc, line, out isBlank, out isBracket);
 					if (isBlank && previousWasBlank && line.Length > 0) {
-						((Mono.TextEditor.IBuffer)doc).Remove (line.Offset, line.Length);
+						doc.Remove (line.Offset, line.Length);
 						i--;
 					}
 					previousWasBlank = isBlank || isBracket;
@@ -576,7 +576,7 @@ namespace MonoDevelop.GtkCore.GuiBuilder
 			}
 			
 			int offset = doc.GetLine (realStartLine).Offset;
-			return doc.GetTextAt (offset, doc.Length - offset);
+			return doc.GetTextAt (offset, doc.TextLength - offset);
 		}
 
 		static void CheckLine (Mono.TextEditor.TextDocument doc, Mono.TextEditor.LineSegment line, out bool isBlank, out bool isBracket)

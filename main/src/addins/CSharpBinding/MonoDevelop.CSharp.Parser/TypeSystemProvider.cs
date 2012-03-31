@@ -285,14 +285,14 @@ namespace MonoDevelop.CSharp.Parser
 			case Tokenizer.PreprocessorDirective.Endregion:
 				if (regions.Count > 0) {
 					var start = regions.Pop ();
-					DomRegion dr = new DomRegion (start.Line, start.Col, directive.EndLine, directive.EndCol);
+					DomRegion dr = new DomRegion (start.Line, loc.Column, directive.EndLine, directive.EndCol);
 					result.Add (new FoldingRegion (start.Arg, dr, FoldType.UserRegion, true));
 				}
 				break;
 			}
 		}
 		
-		CompilerSettings GetCompilerArguments (MonoDevelop.Projects.Project project)
+		public static CompilerSettings GetCompilerArguments (MonoDevelop.Projects.Project project)
 		{
 			var compilerArguments = new CompilerSettings ();
 			if (project == null || MonoDevelop.Ide.IdeApp.Workspace == null)

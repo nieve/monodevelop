@@ -109,7 +109,7 @@ namespace Mono.TextEditor
 			get { return textEditor.Caret; }
 		}
 
-		public Mono.TextEditor.Highlighting.ColorSheme ColorStyle {
+		public Mono.TextEditor.Highlighting.ColorScheme ColorStyle {
 			get { return this.textEditor.ColorStyle; }
 		}
 
@@ -211,15 +211,14 @@ namespace Mono.TextEditor
 		{
 			if (textEditor.HighlightSearchPattern) {
 				DisposeSearchPatternWorker ();
-
 				SearchWorkerArguments args = new SearchWorkerArguments () {
-					FirstLine = this.YToLine (textEditor.VAdjustment.Value),
-					LastLine = this.YToLine (textEditor.Allocation.Height + textEditor.VAdjustment.Value),
+					FirstLine = YToLine (textEditor.VAdjustment.Value),
+					LastLine = YToLine (textEditor.Allocation.Height + textEditor.VAdjustment.Value),
 					OldRegions = selectedRegions,
-					Engine = this.textEditor.GetTextEditorData ().SearchEngine.Clone ()
+					Engine = textEditor.GetTextEditorData ().SearchEngine.Clone ()
 				};
 
-				if (string.IsNullOrEmpty (this.textEditor.SearchPattern)) {
+				if (string.IsNullOrEmpty (textEditor.SearchPattern)) {
 					if (selectedRegions.Count > 0) {
 						UpdateRegions (selectedRegions, args);
 						selectedRegions.Clear ();
@@ -239,7 +238,7 @@ namespace Mono.TextEditor
 			SearchWorkerArguments args = (SearchWorkerArguments)e.Argument;
 			System.ComponentModel.BackgroundWorker worker = (System.ComponentModel.BackgroundWorker)sender;
 			List<TextSegment> newRegions = new List<TextSegment> ();
-			int offset = 0;
+			int offset = args.Engine.SearchRequest.SearchRegion.IsInvalid ? 0 : args.Engine.SearchRequest.SearchRegion.Offset;
 			do {
 				if (worker.CancellationPending)
 					return;
@@ -352,10 +351,10 @@ namespace Mono.TextEditor
 			}
 
 			int offset = Caret.Offset - 1;
-			if (Caret.Mode != CaretMode.Insert || (offset >= 0 && offset < Document.Length && !TextDocument.IsBracket (Document.GetCharAt (offset))))
+			if (Caret.Mode != CaretMode.Insert || (offset >= 0 && offset < Document.TextLength && !TextDocument.IsBracket (Document.GetCharAt (offset))))
 				offset++;
 			offset = System.Math.Max (0, offset);
-			if (highlightBracketOffset >= 0 && (offset >= Document.Length || !TextDocument.IsBracket (Document.GetCharAt (offset)))) {
+			if (highlightBracketOffset >= 0 && (offset >= Document.TextLength || !TextDocument.IsBracket (Document.GetCharAt (offset)))) {
 				int old = highlightBracketOffset;
 				highlightBracketOffset = -1;
 				if (old >= 0)
@@ -383,7 +382,7 @@ namespace Mono.TextEditor
 			matchingBracket = Document.GetMatchingBracketOffset (worker, offset);
 			if (worker.CancellationPending)
 				return;
-			if (matchingBracket == caretOffset && offset + 1 < Document.Length)
+			if (matchingBracket == caretOffset && offset + 1 < Document.TextLength)
 				matchingBracket = Document.GetMatchingBracketOffset (worker, offset + 1);
 			if (worker.CancellationPending)
 				return;
@@ -635,7 +634,7 @@ namespace Mono.TextEditor
 		{
 			var offset = Caret.Offset;
 			char caretChar;
-			if (offset >= 0 && offset < Document.Length) {
+			if (offset >= 0 && offset < Document.TextLength) {
 				caretChar = Document.GetCharAt (offset);
 			} else {
 				if (textEditor.Options.ShowEolMarkers) {
@@ -903,7 +902,7 @@ namespace Mono.TextEditor
 		}
 
 		Dictionary<LineSegment, ChunkDescriptor> chunkDict = new Dictionary<LineSegment, ChunkDescriptor> ();
-		IEnumerable<Chunk> GetCachedChunks (ISyntaxMode mode, TextDocument doc, Mono.TextEditor.Highlighting.ColorSheme style, LineSegment line, int offset, int length)
+		IEnumerable<Chunk> GetCachedChunks (ISyntaxMode mode, TextDocument doc, Mono.TextEditor.Highlighting.ColorScheme style, LineSegment line, int offset, int length)
 		{
 			ChunkDescriptor descriptor;
 			if (chunkDict.TryGetValue (line, out descriptor)) {
@@ -1416,7 +1415,7 @@ namespace Mono.TextEditor
 			if (textEditor.HighlightSearchPattern) {
 				while (!(firstSearch = GetFirstSearchResult (o, offset + length)).IsInvalid) {
 					double x = pangoPosition;
-					HandleSelection (lineOffset, logicalRulerColumn, selectionStart, selectionEnd, firstSearch.Offset, firstSearch.EndOffset, delegate(int start, int end) {
+					HandleSelection (lineOffset, logicalRulerColumn, selectionStart, selectionEnd, System.Math.Max (lineOffset, firstSearch.Offset), System.Math.Min (lineOffset + line.EditableLength, firstSearch.EndOffset), delegate(int start, int end) {
 						uint startIndex = (uint)(start - offset);
 						uint endIndex = (uint)(end - offset);
 						if (startIndex < endIndex && endIndex <= layout.LineChars.Length) {
@@ -1431,7 +1430,7 @@ namespace Mono.TextEditor
 							x1 /= (int)Pango.Scale.PangoScale;
 							x2 /= (int)Pango.Scale.PangoScale;
 	
-							cr.Color = MainSearchResult == null || MainSearchResult.Offset != firstSearch.Offset ? ColorStyle.SearchTextBg : ColorStyle.SearchTextMainBg;
+							cr.Color = MainSearchResult.IsInvalid || MainSearchResult.Offset != firstSearch.Offset ? ColorStyle.SearchTextBg : ColorStyle.SearchTextMainBg;
 							FoldingScreenbackgroundRenderer.DrawRoundRectangle (cr, true, true, x1, y, System.Math.Min (10, width) * textEditor.Options.Zoom, x2 - x1, LineHeight);
 							cr.Fill ();
 						}
@@ -1644,11 +1643,11 @@ namespace Mono.TextEditor
 				if (isHandled)
 					return;
 				if (line != null && clickLocation.Column >= line.EditableLength + 1 && GetWidth (Document.GetTextAt (line.Segment) + "-") < args.X) {
-					clickLocation.Column = line.EditableLength + 1;
+					clickLocation = new DocumentLocation (clickLocation.Line, line.EditableLength + 1);
 					if (textEditor.GetTextEditorData ().HasIndentationTracker && textEditor.Options.IndentStyle == IndentStyle.Virtual) {
 						int indentationColumn = this.textEditor.GetTextEditorData ().GetVirtualIndentationColumn (clickLocation);
 						if (indentationColumn > clickLocation.Column)
-							clickLocation.Column = indentationColumn;
+							clickLocation = new DocumentLocation (clickLocation.Line, indentationColumn);
 					}
 				}
 
@@ -1780,7 +1779,7 @@ namespace Mono.TextEditor
 
 			StringBuilder textBuilder = new StringBuilder ();
 			int curOffset = previewSegment.Offset;
-			while (curOffset >= 0 && curOffset < previewSegment.EndOffset && curOffset < Document.Length) {
+			while (curOffset >= 0 && curOffset < previewSegment.EndOffset && curOffset < Document.TextLength) {
 				LineSegment line = Document.GetLineByOffset (curOffset);
 				string lineText = Document.GetTextAt (curOffset, line.Offset + line.EditableLength - curOffset);
 				textBuilder.Append (lineText);
@@ -1804,7 +1803,7 @@ namespace Mono.TextEditor
 				return;
 			CancelCodeSegmentTooltip ();
 			HideCodeSegmentPreviewWindow ();
-			if (segment == null || segment.Length == 0)
+			if (segment.IsInvalid || segment.Length == 0)
 				return;
 			codeSegmentTooltipTimeoutId = GLib.Timeout.Add (650, delegate {
 				previewWindow = new CodeSegmentPreviewWindow (this.textEditor, false, segment);
@@ -2097,7 +2096,7 @@ namespace Mono.TextEditor
 					continue;
 
 				if (folding.IsFolded) {
-					markerLayout.SetText (Document.GetTextAt (offset, System.Math.Max (0, System.Math.Min (foldOffset - offset, Document.Length - offset))).Replace ("\t", new string (' ', textEditor.Options.TabSize)));
+					markerLayout.SetText (Document.GetTextAt (offset, System.Math.Max (0, System.Math.Min (foldOffset - offset, Document.TextLength - offset))).Replace ("\t", new string (' ', textEditor.Options.TabSize)));
 					markerLayout.GetPixelSize (out width, out height);
 					xPos += width;
 					offset = folding.EndLine.Offset + folding.EndColumn;

@@ -38,6 +38,7 @@ using ICSharpCode.NRefactory.CSharp.Refactoring;
 using ICSharpCode.NRefactory.TypeSystem;
 using ICSharpCode.NRefactory.TypeSystem.Implementation;
 using MonoDevelop.Core.ProgressMonitoring;
+using MonoDevelop.Ide.Gui;
 
 
 namespace MonoDevelop.Refactoring.Rename
@@ -72,6 +73,13 @@ namespace MonoDevelop.Refactoring.Rename
 
 		public static void Rename (IEntity entity, string newName)
 		{
+			if (newName == null) {
+				var options = new RefactoringOptions () {
+					SelectedItem = entity
+				};
+				new RenameRefactoring ().Run (options);
+				return;
+			}
 			using (var monitor = new NullProgressMonitor ()) {
 				var col = ReferenceFinder.FindReferences (entity, monitor);
 				
@@ -90,7 +98,57 @@ namespace MonoDevelop.Refactoring.Rename
 				}
 			}
 		}
-		
+
+		public static void RenameVariable (IVariable variable, string newName)
+		{
+			using (var monitor = new NullProgressMonitor ()) {
+				var col = ReferenceFinder.FindReferences (variable, monitor);
+				
+				List<Change> result = new List<Change> ();
+				foreach (var memberRef in col) {
+					var change = new TextReplaceChange ();
+					change.FileName = memberRef.FileName;
+					change.Offset = memberRef.Offset;
+					change.RemovedChars = memberRef.Length;
+					change.InsertedText = newName;
+					change.Description = string.Format (GettextCatalog.GetString ("Replace '{0}' with '{1}'"), memberRef.GetName (), newName);
+					result.Add (change);
+				}
+				if (result.Count > 0) {
+					RefactoringService.AcceptChanges (monitor, result);
+				}
+			}
+		}
+
+		public static void RenameTypeParameter (ITypeParameter typeParameter, string newName)
+		{
+			if (newName == null) {
+				var options = new RefactoringOptions () {
+					SelectedItem = typeParameter
+				};
+				new RenameRefactoring ().Run (options);
+				return;
+			}
+
+			using (var monitor = new NullProgressMonitor ()) {
+				var col = ReferenceFinder.FindReferences (typeParameter, monitor);
+				
+				List<Change> result = new List<Change> ();
+				foreach (var memberRef in col) {
+					var change = new TextReplaceChange ();
+					change.FileName = memberRef.FileName;
+					change.Offset = memberRef.Offset;
+					change.RemovedChars = memberRef.Length;
+					change.InsertedText = newName;
+					change.Description = string.Format (GettextCatalog.GetString ("Replace '{0}' with '{1}'"), memberRef.GetName (), newName);
+					result.Add (change);
+				}
+				if (result.Count > 0) {
+					RefactoringService.AcceptChanges (monitor, result);
+				}
+			}
+		}
+
 		public override string GetMenuDescription (RefactoringOptions options)
 		{
 			return IdeApp.CommandService.GetCommandInfo (MonoDevelop.Ide.Commands.EditCommands.Rename).Text;
@@ -108,7 +166,7 @@ namespace MonoDevelop.Refactoring.Rename
 				var col = ReferenceFinder.FindReferences (options.SelectedItem);
 				if (col == null)
 					return;
-				var data = options.GetTextEditorData ();
+				var data = options.Document != null ? options.GetTextEditorData () : IdeApp.Workbench.ActiveDocument.Editor;
 				var editor = data.Parent;
 				if (editor == null) {
 					MessageService.ShowCustomDialog (new RenameItemDialog (options, this));
@@ -137,7 +195,7 @@ namespace MonoDevelop.Refactoring.Rename
 				tle.SetCaretPosition = false;
 				tle.SelectPrimaryLink = true;
 				if (tle.ShouldStartTextLinkMode) {
-					ModeHelpWindow helpWindow = new ModeHelpWindow ();
+					var helpWindow = new TableLayoutModeHelpWindow ();
 					helpWindow.TransientFor = IdeApp.Workbench.RootWindow;
 					helpWindow.TitleText = options.SelectedItem is IVariable ? GettextCatalog.GetString ("<b>Local Variable -- Renaming</b>") : GettextCatalog.GetString ("<b>Parameter -- Renaming</b>");
 					helpWindow.Items.Add (new KeyValuePair<string, string> (GettextCatalog.GetString ("<b>Key</b>"), GettextCatalog.GetString ("<b>Behavior</b>")));
@@ -176,7 +234,7 @@ namespace MonoDevelop.Refactoring.Rename
 			List<Change> result = new List<Change> ();
 			IEnumerable<MemberReference> col = null;
 			using (var monitor = new MessageDialogProgressMonitor (true, false, false, true)) {
-				col = ReferenceFinder.FindReferences (options.SelectedItem as IEntity, monitor);
+				col = ReferenceFinder.FindReferences (options.SelectedItem, monitor);
 				if (col == null)
 					return result;
 					
@@ -185,7 +243,7 @@ namespace MonoDevelop.Refactoring.Rename
 					int currentPart = 1;
 					HashSet<string> alreadyRenamed = new HashSet<string> ();
 					foreach (var part in cls.Parts) {
-						if (part.Region.FileName != options.Document.FileName && System.IO.Path.GetFileNameWithoutExtension (part.Region.FileName) != System.IO.Path.GetFileNameWithoutExtension (options.Document.FileName))
+						if (options.Document != null && part.Region.FileName != options.Document.FileName && System.IO.Path.GetFileNameWithoutExtension (part.Region.FileName) != System.IO.Path.GetFileNameWithoutExtension (options.Document.FileName))
 							continue;
 						if (alreadyRenamed.Contains (part.Region.FileName))
 							continue;

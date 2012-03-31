@@ -248,7 +248,7 @@ namespace MonoDevelop.SourceEditor
 		
 		IEnumerable<char> TextWithoutCommentsAndStrings {
 			get {
-				return from p in GetTextWithoutCommentsAndStrings (Document, 0, Document.Length) select p.Key;
+				return from p in GetTextWithoutCommentsAndStrings (Document, 0, Document.TextLength) select p.Key;
 			}
 		}
 		
@@ -268,7 +268,7 @@ namespace MonoDevelop.SourceEditor
 						if (isInBlockComment) {
 							if (pos > 0 && doc.GetCharAt (pos - 1) == '*') 
 								isInBlockComment = false;
-						} else  if (!isInString && !isInChar && pos + 1 < doc.Length) {
+						} else  if (!isInString && !isInChar && pos + 1 < doc.TextLength) {
 							char nextChar = doc.GetCharAt (pos + 1);
 							if (nextChar == '/')
 								isInLineComment = true;
@@ -345,14 +345,14 @@ namespace MonoDevelop.SourceEditor
 			// insert template when space is typed (currently disabled - it's annoying).
 			bool templateInserted = false;
 			//!inStringOrComment && (key == Gdk.Key.space) && DoInsertTemplate ();
-			bool returnBetweenBraces = key == Gdk.Key.Return && (state & (Gdk.ModifierType.ControlMask | Gdk.ModifierType.ShiftMask)) == Gdk.ModifierType.None && Caret.Offset > 0 && Caret.Offset < Document.Length && Document.GetCharAt (Caret.Offset - 1) == '{' && Document.GetCharAt (Caret.Offset) == '}' && !inStringOrComment;
+			bool returnBetweenBraces = key == Gdk.Key.Return && (state & (Gdk.ModifierType.ControlMask | Gdk.ModifierType.ShiftMask)) == Gdk.ModifierType.None && Caret.Offset > 0 && Caret.Offset < Document.TextLength && Document.GetCharAt (Caret.Offset - 1) == '{' && Document.GetCharAt (Caret.Offset) == '}' && !inStringOrComment;
 //			int initialOffset = Caret.Offset;
 			const string openBrackets = "{[('\"";
 			const string closingBrackets = "}])'\"";
 			int braceIndex = openBrackets.IndexOf ((char)ch);
 			var skipChars = GetTextEditorData ().SkipChars;
 			var skipChar = skipChars.Find (sc => sc.Char == (char)ch && sc.Offset == Caret.Offset);
-			bool startedAtomicOperation = false;
+//			bool startedAtomicOperation = false;
 
 			// special handling for escape chars inside ' and "
 			if (Caret.Offset > 0) {
@@ -377,7 +377,7 @@ namespace MonoDevelop.SourceEditor
 					}
 
 					if (count >= 0) {
-						startedAtomicOperation = true;
+//						startedAtomicOperation = true;
 						undoGroup = Document.OpenUndoGroup ();
 						GetTextEditorData ().EnsureCaretIsNotVirtual ();
 						
@@ -390,7 +390,7 @@ namespace MonoDevelop.SourceEditor
 				} else {
 					char charBefore = Document.GetCharAt (Caret.Offset - 1);
 					if (!inString && !inComment && !inChar && ch == '"' && charBefore != '\\') {
-						startedAtomicOperation = true;
+//						startedAtomicOperation = true;
 						undoGroup = Document.OpenUndoGroup ();
 						GetTextEditorData ().EnsureCaretIsNotVirtual ();
 						insertionChar = '"';
@@ -535,10 +535,10 @@ namespace MonoDevelop.SourceEditor
 			int start = offset;
 			while (start > 0 && IsIdChar (Document.GetCharAt (start)))
 				start--;
-			while (offset < Document.Length && IsIdChar (Document.GetCharAt (offset)))
+			while (offset < Document.TextLength && IsIdChar (Document.GetCharAt (offset)))
 				offset++;
 			start++;
-			if (offset - start > 0 && start < Document.Length)
+			if (offset - start > 0 && start < Document.TextLength)
 				return Document.GetTextAt (start, offset - start);
 			else
 				return string.Empty;
@@ -631,26 +631,27 @@ namespace MonoDevelop.SourceEditor
 		{
 			using (var undo = Document.OpenUndoGroup ()) {
 				var result = template.InsertTemplateContents (document);
-				var tle = new TextLinkEditMode (this, result.InsertPosition, result.TextLinks);
-				
+
+				var links = result.TextLinks;
 				if (PropertyService.Get ("OnTheFlyFormatting", true)) {
 					var prettyPrinter = CodeFormatterService.GetFormatter (Document.MimeType);
 					if (prettyPrinter != null) {
 						int endOffset = result.InsertPosition + result.Code.Length;
-						string oldText = Document.GetTextAt (result.InsertPosition, result.Code.Length);
-						var policies = document.Project != null ? document.Project.Policies : null;
+						//						string oldText = Document.GetTextAt (result.InsertPosition, result.Code.Length);
+						//						var policies = document.Project != null ? document.Project.Policies : null;
 						var oldVersion = Document.Version;
 						prettyPrinter.OnTheFlyFormat (document, result.InsertPosition, endOffset);
-
-						foreach (TextLink textLink in tle.Links) {
+						foreach (var textLink in links) {
 							for (int i = 0; i < textLink.Links.Count; i++) {
 								var segment = textLink.Links [i];
-								textLink.Links [i] = new TextSegment (oldVersion.MoveOffsetTo (Document.Version, segment.Offset, ICSharpCode.NRefactory.Editor.AnchorMovementType.Default), segment.Length);
+								var translatedOffset = oldVersion.MoveOffsetTo (Document.Version, result.InsertPosition + segment.Offset) - result.InsertPosition;
+								textLink.Links [i] = new TextSegment (translatedOffset, segment.Length);
 							}
 						}
 					}
 				}
-				
+
+				var tle = new TextLinkEditMode (this, result.InsertPosition, links);
 				if (tle.ShouldStartTextLinkMode) {
 					tle.OldMode = CurrentMode;
 					tle.StartMode ();

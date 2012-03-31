@@ -139,6 +139,7 @@ FILES =  \
 	Formatter/AstFormattingVisitor.cs \
 	Formatter/CSharpFormattingOptions.cs \
 	Formatter/Indent.cs \
+	Formatter/TextEditorOptions.cs \
 	OutputVisitor/CodeDomConvertVisitor.cs \
 	OutputVisitor/CSharpAmbience.cs \
 	OutputVisitor/CSharpOutputVisitor.cs \
@@ -213,14 +214,21 @@ FILES =  \
 	Refactoring/CodeActions/ConvertForeachToForAction.cs \
 	Refactoring/CodeActions/ConvertHexToDecAction.cs \
 	Refactoring/CodeActions/CreateBackingStoreAction.cs \
+	Refactoring/CodeActions/CreateClassDeclarationAction.cs \
+	Refactoring/CodeActions/CreateConstructorDeclarationAction.cs \
+	Refactoring/CodeActions/CreateDelegateAction.cs \
 	Refactoring/CodeActions/CreateEventInvocatorAction.cs \
 	Refactoring/CodeActions/CreateFieldAction.cs \
+	Refactoring/CodeActions/CreateIndexerAction.cs \
 	Refactoring/CodeActions/CreateLocalVariableAction.cs \
+	Refactoring/CodeActions/CreateMethodDeclarationAction.cs \
 	Refactoring/CodeActions/CreatePropertyAction.cs \
+	Refactoring/CodeActions/DeclareLocalVariableAction.cs \
 	Refactoring/CodeActions/FlipOperatorArgumentsAction.cs \
 	Refactoring/CodeActions/GenerateGetterAction.cs \
 	Refactoring/CodeActions/GeneratePropertyAction.cs \
 	Refactoring/CodeActions/GenerateSwitchLabelsAction.cs \
+	Refactoring/CodeActions/InlineLocalVariableAction.cs \
 	Refactoring/CodeActions/InsertAnonymousMethodSignatureAction.cs \
 	Refactoring/CodeActions/IntroduceFormatItemAction.cs \
 	Refactoring/CodeActions/InvertIfAction.cs \
@@ -235,6 +243,13 @@ FILES =  \
 	Refactoring/CodeIssue.cs \
 	Refactoring/CodeIssues/ConditionalToNullCoalescingIssue.cs \
 	Refactoring/CodeIssues/GatherVisitorBase.cs \
+	Refactoring/CodeIssues/InconsistentNamingIssue/AffectedEntity.cs \
+	Refactoring/CodeIssues/InconsistentNamingIssue/DefaultRules.cs \
+	Refactoring/CodeIssues/InconsistentNamingIssue/InconsistentNamingIssue.cs \
+	Refactoring/CodeIssues/InconsistentNamingIssue/NamingConventionService.cs \
+	Refactoring/CodeIssues/InconsistentNamingIssue/NamingRule.cs \
+	Refactoring/CodeIssues/InconsistentNamingIssue/NamingStyle.cs \
+	Refactoring/CodeIssues/InconsistentNamingIssue/WordParser.cs \
 	Refactoring/CodeIssues/IssueCategories.cs \
 	Refactoring/CodeIssues/NotImplementedExceptionIssue.cs \
 	Refactoring/CodeIssues/RedundantInternalIssue.cs \

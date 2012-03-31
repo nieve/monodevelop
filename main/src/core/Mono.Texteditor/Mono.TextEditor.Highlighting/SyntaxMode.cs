@@ -70,7 +70,7 @@ namespace Mono.TextEditor.Highlighting
 		{
 			if (doc == null || doc.SuppressHighlightUpdate)
 				return;
-			Mono.TextEditor.Highlighting.SyntaxModeService.StartUpdate (doc, this, 0, doc.Length);
+			Mono.TextEditor.Highlighting.SyntaxModeService.StartUpdate (doc, this, 0, doc.TextLength);
 		}
 		
 		public event EventHandler DocumentSet;
@@ -108,7 +108,7 @@ namespace Mono.TextEditor.Highlighting
 			this.doc = doc;
 		}
 
-		public bool Validate (ColorSheme style)
+		public bool Validate (ColorScheme style)
 		{
 			if (!GetIsValid (style)) {
 				return false;
@@ -121,7 +121,7 @@ namespace Mono.TextEditor.Highlighting
 			return true;
 		}
 
-		public virtual IEnumerable<Chunk> GetChunks (ColorSheme style, LineSegment line, int offset, int length)
+		public virtual IEnumerable<Chunk> GetChunks (ColorScheme style, LineSegment line, int offset, int length)
 		{
 			SpanParser spanParser = CreateSpanParser (line, null);
 			ChunkParser chunkParser = CreateChunkParser (spanParser, style, line);
@@ -161,7 +161,7 @@ namespace Mono.TextEditor.Highlighting
 			}
 		}
 
-		public virtual string GetTextWithoutMarkup (ColorSheme style, int offset, int length)
+		public virtual string GetTextWithoutMarkup (ColorScheme style, int offset, int length)
 		{
 			return doc.GetTextAt (offset, length);
 		}
@@ -193,7 +193,7 @@ namespace Mono.TextEditor.Highlighting
 			return new SpanParser (this, spanStack ?? line.StartSpan.Clone ());
 		}
 
-		public virtual ChunkParser CreateChunkParser (SpanParser spanParser, ColorSheme style, LineSegment line)
+		public virtual ChunkParser CreateChunkParser (SpanParser spanParser, ColorScheme style, LineSegment line)
 		{
 			return new ChunkParser (this, spanParser, style, line);
 		}
@@ -403,7 +403,7 @@ namespace Mono.TextEditor.Highlighting
 
 			public void ParseSpans (int offset, int length)
 			{
-				if (offset < 0 || offset + length > doc.Length || length <= 0)
+				if (offset < 0 || offset + length > doc.TextLength || length <= 0)
 					return;
 				StartOffset = offset;
 				CurText = doc.GetTextAt (offset, length);
@@ -431,7 +431,7 @@ namespace Mono.TextEditor.Highlighting
 							continue;
 					}
 					ScanSpan (ref i);
-					if (i < doc.Length)
+					if (i < doc.TextLength)
 						ParseChar (ref i, CurText[textIndex]);
 				}
 			}
@@ -446,7 +446,7 @@ namespace Mono.TextEditor.Highlighting
 			internal int lineOffset;
 			protected SyntaxMode mode;
 
-			public ChunkParser (SyntaxMode mode, SpanParser spanParser, ColorSheme style, LineSegment line)
+			public ChunkParser (SyntaxMode mode, SpanParser spanParser, ColorScheme style, LineSegment line)
 			{
 				this.mode = mode;
 				this.doc = mode.Document;
@@ -632,7 +632,7 @@ namespace Mono.TextEditor.Highlighting
 			{
 				if (lineOffset < offset)
 					SyntaxModeService.ScanSpans (doc, mode, spanParser.CurRule, spanParser.SpanStack, lineOffset, offset);
-				length = System.Math.Min (doc.Length - offset, length);
+				length = System.Math.Min (doc.TextLength - offset, length);
 				curChunk = new Chunk (offset, 0, GetSpanStyle ());
 				spanParser.ParseSpans (offset, length);
 				curChunk.Length = offset + length - curChunk.Offset;

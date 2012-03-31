@@ -71,10 +71,18 @@ namespace MonoDevelop.CodeActions
 		public void CreateWidget (IEnumerable<CodeAction> fixes, TextLocation loc)
 		{
 			Fixes = fixes;
-			if (!fixes.Any ())
-				return;
 			if (!QuickTaskStrip.EnableFancyFeatures)
 				return;
+			if (!fixes.Any ()) {
+				ICSharpCode.NRefactory.TypeSystem.DomRegion region;
+				var resolveResult = document.GetLanguageItem (document.Editor.Caret.Offset, out region);
+				if (resolveResult != null) {
+					var possibleNamespaces = ResolveCommandHandler.GetPossibleNamespaces (document, resolveResult);
+					if (!possibleNamespaces.Any ())
+						return;
+				} else
+					return;
+			}
 			var editor = Document.Editor.Parent;
 			if (!editor.IsRealized)
 				return;
@@ -103,7 +111,7 @@ namespace MonoDevelop.CodeActions
 			
 			if (Document.ParsedDocument != null) {
 				quickFixTimeout = GLib.Timeout.Add (100, delegate {
-					TextLocation loc = new TextLocation (Document.Editor.Caret.Line, Document.Editor.Caret.Column);
+					var loc = Document.Editor.Caret.Location;
 					RefactoringService.QueueQuickFixAnalysis (Document, loc, delegate(List<CodeAction> fixes) {
 						Application.Invoke (delegate {
 							RemoveWidget ();
