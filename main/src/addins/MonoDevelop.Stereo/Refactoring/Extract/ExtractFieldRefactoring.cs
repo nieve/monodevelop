@@ -84,7 +84,7 @@ namespace MonoDevelop.Stereo.Refactoring.Extract
 						break;
 					}
 				}
-				ModeHelpWindow helpWindow = new ModeHelpWindow ();
+				ModeHelpWindow helpWindow = new InsertionCursorLayoutModeHelpWindow ();
 				helpWindow.TransientFor = IdeApp.Workbench.RootWindow;
 				helpWindow.TitleText = "<b>Extract Field -- Targeting</b>";
 				helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Key</b>", "<b>Behavior</b>"));
