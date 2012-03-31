@@ -5,17 +5,10 @@ using Mono.TextEditor;
 
 namespace MonoDevelop.Stereo
 {
-	public class NonConcreteTypeContext : INonConcreteTypeContext
-	{
-		IDocumentContext docContext;
-		public NonConcreteTypeContext (IDocumentContext docContext)
-		{
-			this.docContext = docContext;
-		}
-		public NonConcreteTypeContext () : this(new DocumentContext()) {}
+	public class NonConcreteTypeContext : DocumentContext, INonConcreteTypeContext {
 		public bool IsCurrentLocationNonConcreteType ()
 		{
-			var result = docContext.GetResolvedResult();
+			var result = GetResolvedResult();
 			if (result != null) {
 				var type = result.Type;
 				if (type != null) return (type is ITypeDefinition && (type as ITypeDefinition).IsAbstract) || type.Kind == TypeKind.Interface;
@@ -25,13 +18,8 @@ namespace MonoDevelop.Stereo
 
 		public IType GetNonConcreteType ()
 		{
-			var result = docContext.GetResolvedResult();
+			var result = GetResolvedResult();
 			return result.Type;
-		}
-		
-		public int GetOffset (DocumentLocation location)
-		{
-			return docContext.GetOffset(location);
 		}
 	}
 	

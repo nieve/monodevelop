@@ -10,18 +10,12 @@ namespace MonoDevelop.Stereo
 		void AppendDuplicatedText(DuplicateText text);
 	}
 	
-	public class TextDuplicationContext : ITextDuplicationContext {
-		IDocumentContext docContext;
-		public TextDuplicationContext (IDocumentContext docContext)
-		{
-			this.docContext = docContext;
-		}
-		public TextDuplicationContext () : this(new DocumentContext()) {}
+	public class TextDuplicationContext : DocumentContext, ITextDuplicationContext {
 		public DuplicateText GetTextToDuplicate ()
 		{
-			MonoDevelop.Ide.Gui.Document doc = docContext.GetActiveDocument();
+			MonoDevelop.Ide.Gui.Document doc = GetActiveDocument();
 			if (doc == null) new EmptyDuplicateText();
-			var data = docContext.GetData();
+			var data = GetData();
 			var editor = doc.Editor;
 			if (editor.IsSomethingSelected) {				
 				return new SelectedDuplicateText(editor.SelectedText, editor.SelectionRange.EndOffset);
@@ -34,11 +28,11 @@ namespace MonoDevelop.Stereo
 		}
 		public bool ActiveDocumentAndEditorExist ()
 		{
-			MonoDevelop.Ide.Gui.Document activeDocument = docContext.GetActiveDocument();
+			MonoDevelop.Ide.Gui.Document activeDocument = GetActiveDocument();
 			return (activeDocument != null || activeDocument.Editor != null);
 		}
 		public void AppendDuplicatedText(DuplicateText text){
-			var doc = docContext.GetActiveDocument();
+			var doc = GetActiveDocument();
 			doc.Editor.Insert(text.Offset, text);
 		}
 	}

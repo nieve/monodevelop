@@ -38,37 +38,26 @@ namespace MonoDevelop.Stereo
 		string GetEol ();
 	}
 	
-	public class VariableContext : IVariableContext
-	{
-		IDocumentContext docContext;
-		public VariableContext (IDocumentContext docContext)
-		{
-			this.docContext = docContext;
-		}
-		public VariableContext () : this(new DocumentContext()) {}
+	public class VariableContext : DocumentContext, IVariableContext {
 		public bool IsCurrentLocationVariable ()
 		{
-			var resolved = docContext.GetResolvedResult();
+			var resolved = GetResolvedResult();
 			return resolved is LocalResolveResult;
 		}
 		public string GetIndentation (InsertionPoint insertionPoint)
 		{
 			bool isAfterMethod = insertionPoint.LineBefore == NewLineInsertion.Eol;
-			var data = docContext.GetActiveDocument().Editor;
+			var data = GetActiveDocument().Editor;
 			return isAfterMethod ? data.GetLineIndent(insertionPoint.Location.Line - 1) : data.GetLineIndent(insertionPoint.Location.Line);
 		}
 		public string GetIndentation (int line)
 		{
-			var data = docContext.GetActiveDocument().Editor;
+			var data = GetActiveDocument().Editor;
 			return data.GetLineIndent(line);
-		}
-		public int GetOffset (Mono.TextEditor.DocumentLocation location)
-		{
-			return docContext.GetOffset (location);
 		}
 		public string GetEol ()
 		{
-			var editor = docContext.GetActiveDocument().Editor;
+			var editor = GetActiveDocument().Editor;
 			return editor.EolMarker;
 		}
 	}

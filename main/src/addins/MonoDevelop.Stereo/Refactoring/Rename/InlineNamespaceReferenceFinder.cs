@@ -62,13 +62,13 @@ namespace MonoDevelop.Stereo.Refactoring.Rename
 				lineOffset = editor.Text.IndexOf (line, lastFoundIndex);
 				lastFoundIndex = lineOffset + line.Length;
 				var offset = editor.LocationToOffset (lineIndex, column + 1);
-				return new NamespaceReferenceExtraction(lastFoundIndex, new MemberReference(null, region, offset, nspace.Length));
+				return new NamespaceReferenceExtraction(lastFoundIndex, new MemberReference(0, region, offset, nspace.Length));
 			}
 			if (nsLine.ContainsNamespaceDeclaration ()) {
 				lineOffset = editor.Text.IndexOf (line, lastFoundIndex);
 				lastFoundIndex = lineOffset + line.Length;
 				var offset = editor.LocationToOffset (lineIndex, column + 1);
-				return new NamespaceReferenceExtraction(lastFoundIndex, new MemberReference(null, region, offset, nspace.Length));
+				return new NamespaceReferenceExtraction(lastFoundIndex, new MemberReference(0, region, offset, nspace.Length));
 			} else if (nsLine.ContainsNamespaceRef()) {
 				column = line.IndexOf(nspace + ".", column);
 				MemberReference memRef = TryFindTypePrefixNamespaceRef (nspace, filePath, lineIndex, column, editor);
@@ -85,7 +85,7 @@ namespace MonoDevelop.Stereo.Refactoring.Rename
 			ResolveResult typeResult = resolver.GetLanguageItem(document, position + 1, out region);
 			region = new DomRegion(filePath,region.Begin,region.End);
 			if (typeResult is NamespaceResolveResult) {
-				return new MemberReference(null, region, position, nspace.Length);
+				return new MemberReference(0, region, position, nspace.Length);
 			}
 			
 			return null;
