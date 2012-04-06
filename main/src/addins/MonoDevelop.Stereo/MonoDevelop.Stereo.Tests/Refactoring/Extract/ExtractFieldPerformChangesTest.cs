@@ -23,15 +23,14 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
-using NUnit.Framework;
-using MonoDevelop.Stereo.Refactoring.Extract;
-using Mono.TextEditor;
-using Rhino.Mocks;
-using MonoDevelop.Refactoring;
-using MonoDevelop.Ide.Gui;
 using ICSharpCode.NRefactory.Semantics;
 using ICSharpCode.NRefactory.TypeSystem;
+using Mono.TextEditor;
+using MonoDevelop.Ide.Gui;
+using MonoDevelop.Refactoring;
+using MonoDevelop.Stereo.Refactoring.Extract;
+using NUnit.Framework;
+using Rhino.Mocks;
 
 namespace MonoDevelop.Stereo.Tests.ExtractFieldRefactoringTest
 {

@@ -54,7 +54,8 @@
     <Compile Include="Refactoring\QuickFixes\QuickFixesHandlerTest.cs" />
     <Compile Include="Refactoring\NewTypeContentBuilders\TypeContentResolverTest.cs" />
     <Compile Include="Refactoring\NewTypeContentBuilders\DerivedTypeContentBuilderTest.cs" />
-    <Compile Include="Refactoring\Extract\ExtractFieldRefactoringTest.cs" />
+    <Compile Include="Refactoring\Extract\ExtractFieldPerformChangesTest.cs" />
+    <Compile Include="Refactoring\Extract\ExtractFieldIsValidTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

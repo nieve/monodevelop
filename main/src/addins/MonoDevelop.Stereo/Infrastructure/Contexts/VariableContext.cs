@@ -24,8 +24,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using ICSharpCode.NRefactory.Semantics;
 using Mono.TextEditor;
+using Mono.TextEditor.PopupWindow;
+using MonoDevelop.Ide;
+using MonoDevelop.Refactoring;
+using MonoDevelop.TypeSystem;
 
 namespace MonoDevelop.Stereo
 {
@@ -36,6 +42,7 @@ namespace MonoDevelop.Stereo
 		bool IsCurrentLocationVariable();
 		int GetOffset (DocumentLocation location);
 		string GetEol ();
+		void EnterInsertionCursorEditMode(RefactoringOptions options, EventHandler<InsertionCursorEventArgs> onExit);
 	}
 	
 	public class VariableContext : DocumentContext, IVariableContext {
@@ -59,6 +66,41 @@ namespace MonoDevelop.Stereo
 		{
 			var editor = GetActiveDocument().Editor;
 			return editor.EolMarker;
+		}
+		public void EnterInsertionCursorEditMode (RefactoringOptions options, EventHandler<InsertionCursorEventArgs> onExit)
+		{
+			var data = options.GetTextEditorData();
+			ParsedDocument doc = options.Document.ParsedDocument;
+			Mono.TextEditor.TextEditor editor = data.Parent;
+			var member = doc.GetMember (data.Caret.Location);
+			if (editor == null) return;			
+			if (member == null) return;
+			
+			MonoDevelop.Ide.Gui.Document document = options.Document;
+			var declaringMember = member.CreateResolved (doc.GetTypeResolveContext (document.Compilation, data.Caret.Location));
+			var type = declaringMember.DeclaringTypeDefinition.Parts.First ();
+			
+			List<InsertionPoint> list = CodeGenerationService.GetInsertionPoints (document, type);
+			var mode = new InsertionCursorEditMode (editor, list);
+			for (int i = 0; i < mode.InsertionPoints.Count; i++) {
+				var point = mode.InsertionPoints[i];
+				if (point.Location < editor.Caret.Location) {
+					mode.CurIndex = i;
+				} else {
+					break;
+				}
+			}
+			ModeHelpWindow helpWindow = new InsertionCursorLayoutModeHelpWindow ();
+			helpWindow.TransientFor = IdeApp.Workbench.RootWindow;
+			helpWindow.TitleText = "<b>Extract Field -- Targeting</b>";
+			helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Key</b>", "<b>Behavior</b>"));
+			helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Up</b>", "Move to <b>previous</b> target point."));
+			helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Down</b>", "Move to <b>next</b> target point."));
+			helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Enter</b>", "<b>Declare new method</b> at target point."));
+			helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Esc</b>", "<b>Cancel</b> this refactoring."));
+			mode.HelpWindow = helpWindow;
+			mode.StartMode ();
+			if (onExit != null) mode.Exited += onExit;
 		}
 	}
 }
