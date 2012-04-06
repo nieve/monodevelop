@@ -27,7 +27,7 @@ namespace MonoDevelop.Stereo.GenerateNewTypeRefactoringTest {
 		public void SetUp(){
 			generateClassRefactoring = new GenerateNewTypeRefactoring(ctx, resolver);
 			IWorkbenchWindow window = MockRepository.GenerateStub<IWorkbenchWindow>();
-			generateClassRefactoring.Data = new Mono.TextEditor.TextEditorData{Document = new TextDocument()};
+			generateClassRefactoring.Data = new Mono.TextEditor.TextEditorData(new TextDocument());
 			generateClassRefactoring.InsertionPoint = new InsertionPoint(new DocumentLocation(0,0),NewLineInsertion.None,NewLineInsertion.None);
 			generateClassRefactoring.InsertionPoint.LineBefore = NewLineInsertion.Eol;
 			generateClassRefactoring.InsertionPoint.LineAfter = NewLineInsertion.None;
