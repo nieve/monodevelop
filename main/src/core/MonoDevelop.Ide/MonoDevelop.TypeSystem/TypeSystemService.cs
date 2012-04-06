@@ -400,6 +400,8 @@ namespace MonoDevelop.TypeSystem
 		
 		static void SerializeObject (string path, object obj)
 		{
+			if (obj == null)
+				throw new ArgumentNullException ("obj");
 			try {
 				using (var fs = new FileStream (path, FileMode.Create, FileAccess.Write)) {
 					using (var writer = new BinaryWriterWith7BitEncodedInts (fs)) {
@@ -408,7 +410,9 @@ namespace MonoDevelop.TypeSystem
 					}
 				}
 			} catch (Exception e) {
-				LoggingService.LogError ("Error while writing type system cache.", e);
+				Console.WriteLine ("-----------------Serialize stack trace:");
+				Console.WriteLine (Environment.StackTrace);
+				LoggingService.LogError ("Error while writing type system cache. (object:" + obj.GetType () + ")", e);
 			}
 		}
 		
@@ -517,7 +521,11 @@ namespace MonoDevelop.TypeSystem
 				ws.ItemRemoved += OnWorkspaceItemRemoved;
 			} else if (item is Solution) {
 				var solution = (Solution)item;
-				Parallel.ForEach (solution.GetAllProjects (), project => Load (project));
+				Parallel.ForEach (solution.GetAllProjects (), project => LoadProject (project));
+				Task.Factory.StartNew (delegate {
+					ReloadAllReferences ();
+				});
+
 				solution.SolutionItemAdded += OnSolutionItemAdded;
 				solution.SolutionItemRemoved += OnSolutionItemRemoved;
 			}
@@ -593,6 +601,11 @@ namespace MonoDevelop.TypeSystem
 		[Serializable]
 		public class ProjectContentWrapper
 		{
+			public bool IsDirty {
+				get;
+				set;
+			}
+
 			IProjectContent content;
 
 			public IProjectContent Content {
@@ -636,6 +649,7 @@ namespace MonoDevelop.TypeSystem
 					throw new ArgumentNullException ("content");
 				this.Project = project;
 				this.content = content.SetAssemblyName (project.Name);
+				this.IsDirty = true;
 			}
 			
 			public IEnumerable<Project> ReferencedProjects {
@@ -704,7 +718,7 @@ namespace MonoDevelop.TypeSystem
 		static Dictionary<Project, ProjectContentWrapper> projectContents = new Dictionary<Project, ProjectContentWrapper> ();
 		static Dictionary<Project, int> referenceCounter = new Dictionary<Project, int> ();
 		
-		public static void Load (Project project)
+		public static void LoadProject (Project project)
 		{
 			if (IncLoadCount (project) != 1)
 				return;
@@ -733,7 +747,6 @@ namespace MonoDevelop.TypeSystem
 					project.FileRemovedFromProject += OnFileRemoved;
 					project.FileRenamedInProject += OnFileRenamed;
 					project.Modified += OnProjectModified;
-					wrapper.ReloadAssemblyReferences (project);
 				} catch (Exception ex) {
 					LoggingService.LogError ("Parser database for project '" + project.Name + " could not be loaded", ex);
 				}
@@ -823,13 +836,13 @@ namespace MonoDevelop.TypeSystem
 				ws.ItemRemoved -= OnWorkspaceItemRemoved;
 			} else if (item is Solution) {
 				Solution solution = (Solution)item;
-				Parallel.ForEach (solution.GetAllProjects (), project => Unload (project));
+				Parallel.ForEach (solution.GetAllProjects (), project => UnloadProject (project));
 				solution.SolutionItemAdded -= OnSolutionItemAdded;
 				solution.SolutionItemRemoved -= OnSolutionItemRemoved;
 			}
 		}
 		
-		public static void Unload (Project project)
+		public static void UnloadProject (Project project)
 		{
 			if (DecLoadCount (project) != 0)
 				return;
@@ -872,13 +885,13 @@ namespace MonoDevelop.TypeSystem
 		static void OnSolutionItemAdded (object sender, SolutionItemChangeEventArgs args)
 		{
 			if (args.SolutionItem is Project)
-				Load ((Project)args.SolutionItem);
+				LoadProject ((Project)args.SolutionItem);
 		}
 		
 		static void OnSolutionItemRemoved (object sender, SolutionItemChangeEventArgs args)
 		{
 			if (args.SolutionItem is Project)
-				Unload ((Project)args.SolutionItem);
+				UnloadProject ((Project)args.SolutionItem);
 		}
 		
 		#endregion
@@ -1541,12 +1554,15 @@ namespace MonoDevelop.TypeSystem
 					modifiedFiles = new List<ProjectFile> ();
 				modifiedFiles.Add (file);
 			}
-			
-			// check if file needs to be removed from project content 
-			foreach (var file in content.Content.Files) {
-				if (project.GetProjectFile (file.FileName) == null)
-					content.UpdateContent (c => c.UpdateProjectContent (file, null));
+			if (content.IsDirty) {
+				// check if file needs to be removed from project content 
+				foreach (var file in content.Content.Files) {
+					if (project.GetProjectFile (file.FileName) == null)
+						content.UpdateContent (c => c.UpdateProjectContent (file, null));
+				}
+				content.IsDirty = false;
 			}
+			
 			
 			if (modifiedFiles == null)
 				return;

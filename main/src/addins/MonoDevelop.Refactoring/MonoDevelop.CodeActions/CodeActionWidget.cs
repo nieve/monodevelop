@@ -41,7 +41,7 @@ using MonoDevelop.CodeActions;
 
 namespace MonoDevelop.CodeActions
 {
-	public class CodeActionWidget : Gtk.EventBox
+	class CodeActionWidget : Gtk.EventBox
 	{
 //		CodeActionEditorExtension ext;
 		MonoDevelop.Ide.Gui.Document document;
@@ -49,17 +49,20 @@ namespace MonoDevelop.CodeActions
 		TextLocation loc;
 		Gdk.Pixbuf icon;
 		
-		public CodeActionWidget (CodeActionEditorExtension ext, MonoDevelop.Ide.Gui.Document document, TextLocation loc, IEnumerable<CodeAction> fixes)
+		public CodeActionWidget (CodeActionEditorExtension ext, MonoDevelop.Ide.Gui.Document document)
 		{
 //			this.ext = ext;
 			this.document = document;
-			this.loc = loc;
-			this.fixes = fixes;
 			Events = Gdk.EventMask.AllEventsMask;
 			icon = ImageService.GetPixbuf ("md-text-quickfix", Gtk.IconSize.Menu);
 			SetSizeRequest (Math.Max ((int)document.Editor.LineHeight , icon.Width) + 4, (int)document.Editor.LineHeight + 4);
-			ShowAll ();
 			document.Editor.Parent.EditorOptionsChanged += HandleDocumentEditorParentEditorOptionsChanged;
+		}
+
+		public void SetFixes (IEnumerable<CodeAction> fixes, TextLocation loc)
+		{
+			this.loc = loc;
+			this.fixes = fixes;
 		}
 
 		void HandleDocumentEditorParentEditorOptionsChanged (object sender, EventArgs e)
@@ -201,7 +204,6 @@ namespace MonoDevelop.CodeActions
 			menuPushed = true;
 			menu.Destroyed += delegate {
 				menuPushed = false;
-				QueueDraw ();
 			};
 			var container = (TextEditorContainer)document.Editor.Parent.Parent;
 			var child = (TextEditorContainer.EditorContainerChild)container [this];
@@ -223,14 +225,10 @@ namespace MonoDevelop.CodeActions
 			
 			public void Run (object sender, EventArgs e)
 			{
-				// ensure that the Ast is recent.
-				document.UpdateParseDocument ();
 				act.Run (document, loc);
-
-				document.Editor.Document.CommitUpdateAll ();
 			}
 		}
-//		
+		
 		protected override bool OnButtonPressEvent (Gdk.EventButton evnt)
 		{
 			if (!evnt.TriggersContextMenu () && evnt.Button == 1)

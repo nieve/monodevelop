@@ -119,8 +119,6 @@
   <ItemGroup>
     <Folder Include="MonoDevelop.Refactoring\" />
     <Folder Include="MonoDevelop.Refactoring.Rename\" />
-    <Folder Include="MonoDevelop.Refactoring.IntroduceConstant\" />
-    <Folder Include="MonoDevelop.Refactoring.CreateClass\" />
     <Folder Include="MonoDevelop.Refactoring.ImplementInterface\" />
     <Folder Include="MonoDevelop.AnalysisCore\" />
     <Folder Include="MonoDevelop.CodeIssues\" />
@@ -190,15 +188,9 @@
   <ItemGroup>
     <None Include="MonoDevelop.AnalysisCore\README.txt" />
     <None Include="MonoDevelop.AnalysisCore\TODO.txt" />
-    <None Include="MonoDevelop.Refactoring.IntroduceConstant\IntroduceConstantRefactoring.cs" />
-    <None Include="MonoDevelop.Refactoring.IntroduceConstant\IntroduceConstantDialog.cs" />
-    <None Include="MonoDevelop.Refactoring.CreateClass\CreateClassCodeGenerator.cs" />
-    <None Include="MonoDevelop.Refactoring.CreateClass\CreateStructCodeGenerator.cs" />
-    <None Include="MonoDevelop.Refactoring.IntroduceConstant\IntroduceConstantHandler.cs" />
     <None Include="MonoDevelop.Refactoring\QuickFixHandler.cs" />
     <None Include="MonoDevelop.Refactoring\EncapsulateFieldDialog.cs" />
     <None Include="MonoDevelop.Refactoring\OverridesImplementsDialog.cs" />
-    <None Include="gtk-gui\MonoDevelop.Refactoring.IntroduceConstant.IntroduceConstantDialog.cs" />
     <None Include="gtk-gui\MonoDevelop.Refactoring.OverridesImplementsDialog.cs" />
     <None Include="gtk-gui\MonoDevelop.Refactoring.EncapsulateFieldDialog.cs" />
   </ItemGroup>

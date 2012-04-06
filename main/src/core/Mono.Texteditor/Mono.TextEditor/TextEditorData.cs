@@ -30,6 +30,7 @@ using Gtk;
 using System.IO;
 using System.Diagnostics;
 using Mono.TextEditor.Highlighting;
+using ICSharpCode.NRefactory.Editor;
 
 namespace Mono.TextEditor
 {
@@ -41,7 +42,7 @@ namespace Mono.TextEditor
 	public class TextEditorData : IDisposable
 	{
 		ITextEditorOptions options;
-		TextDocument document; 
+		readonly TextDocument document; 
 		Caret      caret;
 		
 		static Adjustment emptyAdjustment = new Adjustment (0, 0, 0, 0, 0, 0);
@@ -69,12 +70,12 @@ namespace Mono.TextEditor
 		EditMode currentMode = null;
 		public EditMode CurrentMode {
 			get {
-				return this.currentMode;
+				return currentMode;
 			}
 			set {
-				EditMode oldMode = this.currentMode;
-				this.currentMode = value;
-				this.currentMode.AddedToEditor (this);
+				var oldMode = currentMode;
+				currentMode = value;
+				currentMode.AddedToEditor (this);
 				if (oldMode != null)
 					oldMode.RemovedFromEditor (this);
 			}
@@ -97,6 +98,12 @@ namespace Mono.TextEditor
 			}
 		}
 
+		public bool IsDisposed {
+			get;
+			protected set;
+		}
+
+		
 		public TextEditorData () : this (new TextDocument ())
 		{
 		}
@@ -109,16 +116,33 @@ namespace Mono.TextEditor
 			caret.PositionChanged += CaretPositionChanged;
 
 			options = TextEditorOptions.DefaultOptions;
-			Document = doc;
-			this.SearchEngine = new BasicSearchEngine ();
+			
+			document = doc;
+			document.BeginUndo += OnBeginUndo;
+			document.EndUndo += OnEndUndo;
 
-			this.heightTree = new HeightTree (this);
-			this.heightTree.Rebuild ();
+			document.Undone += DocumentHandleUndone;
+			document.Redone += DocumentHandleRedone;
+			document.LineChanged += HandleDocLineChanged;
+			document.TextReplaced += HandleTextReplaced;
+
+			document.TextSet += HandleDocTextSet;
+			document.Folded += HandleTextEditorDataDocumentFolded;
+			document.FoldTreeUpdated += HandleTextEditorDataDocumentFoldTreeUpdated;
+
+			document.Splitter.LineInserted += HandleDocumentsplitterhandleLineInserted;
+			document.Splitter.LineRemoved += HandleDocumentsplitterhandleLineRemoved;
+
+			SearchEngine = new BasicSearchEngine ();
+
+			HeightTree = new HeightTree (this);
+			HeightTree.Rebuild ();
 		}
 
 		void HandleDocTextSet (object sender, EventArgs e)
 		{
-			this.heightTree.Rebuild ();
+			caret.SetDocument (document);
+			HeightTree.Rebuild ();
 			ClearSelection ();
 		}
 
@@ -146,34 +170,22 @@ namespace Mono.TextEditor
 			get {
 				return document;
 			}
-			set {
-				DetachDocument ();
-				this.document = value;
-				this.document.BeginUndo += OnBeginUndo;
-				this.document.EndUndo += OnEndUndo;
+		}
 
-				this.document.Undone += DocumentHandleUndone;
-				this.document.Redone += DocumentHandleRedone;
-				this.document.LineChanged += HandleDocLineChanged;
-
-				this.document.TextSet += HandleDocTextSet;
-				this.document.Folded += HandleTextEditorDataDocumentFolded;
-				this.document.FoldTreeUpdated += HandleTextEditorDataDocumentFoldTreeUpdated;
-
-				this.document.Splitter.LineInserted += HandleDocumentsplitterhandleLineInserted;
-				this.document.Splitter.LineRemoved += HandleDocumentsplitterhandleLineRemoved;
-			}
+		void HandleTextReplaced (object sender, DocumentChangeEventArgs e)
+		{
+			caret.UpdateCaretPosition ();
 		}
 
 
 		void HandleDocumentsplitterhandleLineRemoved (object sender, LineEventArgs e)
 		{
-			heightTree.RemoveLine (OffsetToLineNumber (e.Line.Offset));
+			HeightTree.RemoveLine (OffsetToLineNumber (e.Line.Offset));
 		}
 
 		void HandleDocumentsplitterhandleLineInserted (object sender, LineEventArgs e)
 		{
-			heightTree.InsertLine (OffsetToLineNumber (e.Line.Offset));
+			HeightTree.InsertLine (OffsetToLineNumber (e.Line.Offset));
 		}
 
 		/// <value>
@@ -415,9 +427,6 @@ namespace Mono.TextEditor
 
 		void DetachDocument ()
 		{
-			if (document == null) 
-				return;
-			
 			document.BeginUndo -= OnBeginUndo;
 			document.EndUndo -= OnEndUndo;
 
@@ -431,12 +440,13 @@ namespace Mono.TextEditor
 			
 			document.Splitter.LineInserted -= HandleDocumentsplitterhandleLineInserted;
 			document.Splitter.LineRemoved -= HandleDocumentsplitterhandleLineRemoved;
-			
-			document = null;
 		}
 
 		public void Dispose ()
 		{
+			if (IsDisposed)
+				return;
+			IsDisposed = true;
 			options = options.Kill ();
 
 			DetachDocument ();
@@ -458,12 +468,7 @@ namespace Mono.TextEditor
 		void CaretPositionChanged (object sender, DocumentLocationEventArgs args)
 		{
 			if (!caret.PreserveSelection)
-				this.ClearSelection ();
-			if (Options.RemoveTrailingWhitespaces && args.Location.Line != Caret.Line) {
-				LineSegment line = Document.GetLine (args.Location.Line);
-				if (line != null && line.WasChanged)
-					TextDocument.RemoveTrailingWhitespaces (this, line);
-			}
+				ClearSelection ();
 		}
 		
 		public bool CanEdit (int line)
@@ -475,32 +480,32 @@ namespace Mono.TextEditor
 
 		public int FindNextWordOffset (int offset)
 		{
-			return this.options.WordFindStrategy.FindNextWordOffset (this.Document, offset);
+			return options.WordFindStrategy.FindNextWordOffset (Document, offset);
 		}
 		
 		public int FindPrevWordOffset (int offset)
 		{
-			return this.options.WordFindStrategy.FindPrevWordOffset (this.Document, offset);
+			return options.WordFindStrategy.FindPrevWordOffset (Document, offset);
 		}
 		
 		public int FindNextSubwordOffset (int offset)
 		{
-			return this.options.WordFindStrategy.FindNextSubwordOffset (this.Document, offset);
+			return options.WordFindStrategy.FindNextSubwordOffset (Document, offset);
 		}
 
 		public int FindPrevSubwordOffset (int offset)
 		{
-			return this.options.WordFindStrategy.FindPrevSubwordOffset (this.Document, offset);
+			return options.WordFindStrategy.FindPrevSubwordOffset (Document, offset);
 		}
 		
 		public int FindCurrentWordEnd (int offset)
 		{
-			return this.Options.WordFindStrategy.FindCurrentWordEnd (this.Document, offset);
+			return Options.WordFindStrategy.FindCurrentWordEnd (Document, offset);
 		}
 		
 		public int FindCurrentWordStart (int offset)
 		{
-			return this.Options.WordFindStrategy.FindCurrentWordStart (this.Document, offset);
+			return Options.WordFindStrategy.FindCurrentWordStart (Document, offset);
 		}
 		
 		public delegate void PasteCallback (int insertionOffset, string text, int insertedChars);
@@ -514,13 +519,13 @@ namespace Mono.TextEditor
 		}
 		
 		#region undo/redo handling
-		int       savedCaretPos;
+		DocumentLocation savedCaretPos;
 		Selection savedSelection;
 		//List<TextEditorDataState> states = new List<TextEditorDataState> ();
 
 		void OnBeginUndo (object sender, EventArgs args)
 		{
-			savedCaretPos  = Caret.Offset;
+			savedCaretPos  = Caret.Location;
 			savedSelection = Selection.Clone (MainSelection);
 		}
 
@@ -533,48 +538,48 @@ namespace Mono.TextEditor
 
 		void DocumentHandleUndone (object sender, TextDocument.UndoOperationEventArgs e)
 		{
-			TextEditorDataState state = e.Operation.Tag as TextEditorDataState;
+			var state = e.Operation.Tag as TextEditorDataState;
 			if (state != null)
 				state.UndoState ();
 		}
 
 		void DocumentHandleRedone (object sender, TextDocument.UndoOperationEventArgs e)
 		{
-			TextEditorDataState state = e.Operation.Tag as TextEditorDataState;
+			var state = e.Operation.Tag as TextEditorDataState;
 			if (state != null)
 				state.RedoState ();
 		}
 
 		class TextEditorDataState
 		{
-			int      undoCaretPos;
+			DocumentLocation undoCaretPos;
 			Selection undoSelection;
 
-			int      redoCaretPos;
+			DocumentLocation redoCaretPos;
 			Selection redoSelection;
 			
 			TextEditorData editor;
 			
-			public TextEditorDataState (TextEditorData editor, int caretPos, Selection selection)
+			public TextEditorDataState (TextEditorData editor, DocumentLocation caretPos, Selection selection)
 			{
 				this.editor        = editor;
-				this.undoCaretPos  = caretPos;
-				this.undoSelection = selection;
+				undoCaretPos  = caretPos;
+				undoSelection = selection;
 				
-				this.redoCaretPos  = editor.Caret.Offset;
-				this.redoSelection = Mono.TextEditor.Selection.Clone (editor.MainSelection);
+				redoCaretPos  = editor.Caret.Location;
+				redoSelection = Mono.TextEditor.Selection.Clone (editor.MainSelection);
 			}
 			
 			public void UndoState ()
 			{
-				editor.Caret.Offset   = this.undoCaretPos;
-				editor.MainSelection = this.undoSelection;
+				editor.Caret.Location = undoCaretPos;
+				editor.MainSelection = undoSelection;
 			}
 			
 			public void RedoState ()
 			{
-				editor.Caret.Offset   = this.redoCaretPos;
-				editor.MainSelection = this.redoSelection;
+				editor.Caret.Location = redoCaretPos;
+				editor.MainSelection = redoSelection;
 			}
 		}
 		#endregion
@@ -618,7 +623,7 @@ namespace Mono.TextEditor
 		
 		protected virtual void OnSelectionChanging (EventArgs e)
 		{
-			EventHandler handler = this.SelectionChanging;
+			var handler = SelectionChanging;
 			if (handler != null)
 				handler (this, e);
 		}
@@ -697,7 +702,7 @@ namespace Mono.TextEditor
 				return MainSelection != null ? MainSelection.GetSelectionRange (this) : new TextSegment (Caret.Offset, 0);
 			}
 			set {
-				if (this.SelectionRange != value) {
+				if (SelectionRange != value) {
 					OnSelectionChanging (EventArgs.Empty);
 					if (value.IsEmpty) {
 						MainSelection = null;
@@ -726,16 +731,16 @@ namespace Mono.TextEditor
 			get {
 				if (!IsSomethingSelected)
 					return null;
-				return this.Document.GetTextAt (this.SelectionRange);
+				return Document.GetTextAt (SelectionRange);
 			}
 			set {
 				if (!IsSomethingSelected)
 					return;
-				var selection = this.SelectionRange;
+				var selection = SelectionRange;
 				Replace (selection.Offset, selection.Length, value);
-				if (this.Caret.Offset > selection.Offset)
-					this.Caret.Offset = selection.Offset + value.Length;
-				this.SelectionRange = new TextSegment (selection.Offset, value.Length);
+				if (Caret.Offset > selection.Offset)
+					Caret.Offset = selection.Offset + value.Length;
+				SelectionRange = new TextSegment (selection.Offset, value.Length);
 			}
 		}
 		
@@ -757,7 +762,7 @@ namespace Mono.TextEditor
 		
 		public void ClearSelection ()
 		{
-			if (!this.IsSomethingSelected)
+			if (!IsSomethingSelected)
 				return;
 			MainSelection = null;
 			OnSelectionChanged (EventArgs.Empty);
@@ -772,8 +777,8 @@ namespace Mono.TextEditor
 		
 		public void SetSelection (int anchorOffset, int leadOffset)
 		{
-			DocumentLocation anchor = document.OffsetToLocation (anchorOffset);
-			DocumentLocation lead = document.OffsetToLocation (leadOffset);
+			var anchor = document.OffsetToLocation (anchorOffset);
+			var lead = document.OffsetToLocation (leadOffset);
 			MainSelection = new Selection (anchor, lead);
 		}
 
@@ -974,7 +979,7 @@ namespace Mono.TextEditor
 		public bool SearchReplace (string withPattern, bool setSelection)
 		{
 			bool result = false;
-			if (this.IsSomethingSelected) {
+			if (IsSomethingSelected) {
 				var selection = MainSelection.GetSelectionRange (this);
 				SearchResult match = searchEngine.GetMatchAt (selection.Offset, selection.Length);
 				if (match != null) {
@@ -1076,12 +1081,14 @@ namespace Mono.TextEditor
 				} else {
 					virtualSpace = new string (' ', Caret.Column - 1 - line.EditableLength);
 				}
+				var oldPreserve = Caret.PreserveSelection;
+				Caret.PreserveSelection = true;
 				Insert (Caret.Offset, virtualSpace);
-
+				Caret.PreserveSelection = oldPreserve;
+			
 				// No need to reposition the caret, because it's already at the correct position
 				// The only difference is that the position is not virtual anymore.
 				return virtualSpace.Length;
-
 			}
 			return 0;
 		}
@@ -1089,7 +1096,7 @@ namespace Mono.TextEditor
 		
 		public Stream OpenStream ()
 		{
-			return new MemoryStream (System.Text.Encoding.UTF8.GetBytes (Document.Text), false);
+			return new MemoryStream (Encoding.UTF8.GetBytes (Document.Text), false);
 		}
 		
 		public void RaiseUpdateAdjustmentsRequested ()
@@ -1099,7 +1106,7 @@ namespace Mono.TextEditor
 		
 		protected virtual void OnUpdateAdjustmentsRequested (EventArgs e)
 		{
-			EventHandler handler = this.UpdateAdjustmentsRequested;
+			var handler = UpdateAdjustmentsRequested;
 			if (handler != null)
 				handler (this, e);
 		}
@@ -1108,7 +1115,7 @@ namespace Mono.TextEditor
 
 		public void RequestRecenter ()
 		{
-			EventHandler handler = RecenterEditor;
+			var handler = RecenterEditor;
 			if (handler != null)
 				handler (this, EventArgs.Empty);
 		}
@@ -1127,6 +1134,12 @@ namespace Mono.TextEditor
 			}
 			set {
 				document.Text = value;
+			}
+		}
+
+		public ITextSourceVersion Version {
+			get {
+				return document.Version;
 			}
 		}
 
@@ -1317,23 +1330,23 @@ namespace Mono.TextEditor
 		
 		public int VisibleLineCount {
 			get {
-				return heightTree.VisibleLineCount;
+				return HeightTree.VisibleLineCount;
 			}
 		}	
 		
 		
 		public double TotalHeight {
 			get {
-				return heightTree.TotalHeight;
+				return HeightTree.TotalHeight;
 			}
 		}
 		
-		internal HeightTree heightTree;
+		internal HeightTree HeightTree;
 		
 		public DocumentLocation LogicalToVisualLocation (DocumentLocation location)
 		{
 			int line = LogicalToVisualLine (location.Line);
-			LineSegment lineSegment = this.GetLine (location.Line);
+			var lineSegment = GetLine (location.Line);
 			int column = lineSegment != null ? lineSegment.GetVisualColumn (this, location.Column) : location.Column;
 			return new DocumentLocation (line, column);
 		}
@@ -1345,17 +1358,17 @@ namespace Mono.TextEditor
 
 		public int LogicalToVisualLine (int logicalLine)
 		{
-			return heightTree.LogicalToVisualLine (logicalLine);
+			return HeightTree.LogicalToVisualLine (logicalLine);
 		}
 
 		public int VisualToLogicalLine (int visualLineNumber)
 		{
-			return heightTree.VisualToLogicalLine (visualLineNumber);
+			return HeightTree.VisualToLogicalLine (visualLineNumber);
 		}
 		
 		void HandleTextEditorDataDocumentFoldTreeUpdated (object sender, EventArgs e)
 		{
-			heightTree.Rebuild ();
+			HeightTree.Rebuild ();
 		}
 
 		void HandleTextEditorDataDocumentFolded (object sender, FoldSegmentEventArgs e)
@@ -1365,10 +1378,10 @@ namespace Mono.TextEditor
 			
 			if (e.FoldSegment.IsFolded) {
 				if (e.FoldSegment.Marker != null)
-					heightTree.Unfold (e.FoldSegment.Marker, start, end - start);
-				e.FoldSegment.Marker = heightTree.Fold (start, end - start);
+					HeightTree.Unfold (e.FoldSegment.Marker, start, end - start);
+				e.FoldSegment.Marker = HeightTree.Fold (start, end - start);
 			} else {
-				heightTree.Unfold (e.FoldSegment.Marker, start, end - start);
+				HeightTree.Unfold (e.FoldSegment.Marker, start, end - start);
 				e.FoldSegment.Marker = null;
 			}
 		}

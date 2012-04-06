@@ -57,7 +57,10 @@ namespace MonoDevelop.Ide.CodeCompletion
 		Widget footer;
 		VBox vbox;
 		
-		protected CompletionTextEditorExtension Ext { get; set; }
+		public CompletionTextEditorExtension Extension {
+			get;
+			set;
+		}		
 		
 		public List<int> FilteredItems {
 			get {
@@ -115,11 +118,15 @@ namespace MonoDevelop.Ide.CodeCompletion
 			}
 		}
 
-		protected void Reset (bool clearWord)
+		/// <summary>
+		/// This method is used to set the completion window to it's inital state.
+		/// This is required for re-using the window object.
+		/// </summary>
+		protected virtual void ResetState ()
 		{
-			list.Reset ();
-			if (DataProvider != null)
-				ResetSizes ();
+			HideWhenWordDeleted = false;
+			endOffset = -1;
+			list.ResetState ();
 		}
 		
 		protected int curXPos, curYPos;
@@ -202,6 +209,7 @@ namespace MonoDevelop.Ide.CodeCompletion
 				list.CloseOnSquareBrackets = value;
 			}
 		}
+		
 		protected int StartOffset {
 			get;
 			set;
@@ -228,12 +236,7 @@ namespace MonoDevelop.Ide.CodeCompletion
 
 		public bool IsUniqueMatch {
 			get {
-/*				int pos = list.Selection + 1;
-				if (DataProvider.ItemCount > pos && 
-					DataProvider.GetText (pos).ToLower ().StartsWith (CurrentPartialWord.ToLower ()) || 
-					!(DataProvider.GetText (list.Selection).ToLower ().StartsWith (CurrentPartialWord.ToLower ())))
-					return false;
-				*/
+				list.FilterWords ();
 				return list.filteredItems.Count == 1;
 			}
 		}

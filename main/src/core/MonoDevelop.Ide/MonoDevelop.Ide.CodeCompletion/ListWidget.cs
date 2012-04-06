@@ -118,19 +118,14 @@ namespace MonoDevelop.Ide.CodeCompletion
 			layout.FontDescription = des;
 		}
 		
-		public void Reset ()
+		public void ResetState ()
 		{
-			if (win.DataProvider == null) {
-				selection = -1;
-				return;
-			}
-			selection = win.DataProvider.ItemCount == 0 ? -1 : 0;
+			categories.Clear ();
+			filteredItems.Clear ();
+			oldCompletionString = completionString = null;
+			selection = 0;
 			page = 0;
 			AutoSelect = false;
-			CalcVisibleRows ();
-			
-			if (SelectionChanged != null)
-				SelectionChanged (this, EventArgs.Empty);
 		}
 		
 		public int SelectionIndex {

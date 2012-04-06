@@ -522,11 +522,6 @@ namespace MonoDevelop.SourceEditor
 			if (this.isDisposed || document == null || this.view == null)
 				return;
 			
-			if (MonoDevelop.Core.PropertyService.Get ("EnableSemanticHighlighting", true) && TextEditor != null) {
-				var margin = TextEditor.TextViewMargin;
-				if (margin != null)
-					Gtk.Application.Invoke (delegate { margin.PurgeLayoutCache (); });
-			}
 			SetParsedDocument (document, parsedDocument != null);
 		}
 		
@@ -1041,15 +1036,10 @@ namespace MonoDevelop.SourceEditor
 			if (curLine != null && curLine.Markers.Any (m => m is MonoDevelop.SourceEditor.MessageBubbleTextMarker)) {
 				marker = (MonoDevelop.SourceEditor.MessageBubbleTextMarker)curLine.Markers.First (m => m is MonoDevelop.SourceEditor.MessageBubbleTextMarker);
 //				marker.CollapseExtendedErrors = false;
-				if (oldExpandedMarker == null)
-					Document.CommitLineToEndUpdate (Document.OffsetToLineNumber (curLine.Offset));
 			}
 			
 			if (oldExpandedMarker != null && oldExpandedMarker != marker) {
 //				oldExpandedMarker.CollapseExtendedErrors = true;
-				int markerOffset = marker != null && marker.LineSegment != null ? marker.LineSegment.Offset : Int32.MaxValue;
-				int oldMarkerOffset = oldExpandedMarker.LineSegment != null ? oldExpandedMarker.LineSegment.Offset : Int32.MaxValue;
-				Document.CommitLineToEndUpdate (Document.OffsetToLineNumber (Math.Min (markerOffset, oldMarkerOffset)));
 			}
 			oldExpandedMarker = marker;
 		}

@@ -44,6 +44,19 @@ namespace MonoDevelop.Ide.CodeCompletion
 		public static bool IsWindowVisible {
 			get { return methods.Count > 0; }
 		}
+
+		static ParameterInformationWindowManager ()
+		{
+			IdeApp.Workbench.RootWindow.Destroyed += (sender, e) => DestroyWindow ();
+		}
+
+		static void DestroyWindow ()
+		{
+			if (window != null) {
+				window.Destroy ();
+				window = null;
+			}
+		}
 		
 		// Called when a key is pressed in the editor.
 		// Returns false if the key press has to continue normal processing.
@@ -185,89 +198,89 @@ namespace MonoDevelop.Ide.CodeCompletion
 		public static bool wasAbove = false;
 		static bool wasVisi;
 		static int lastW = -1, lastH = -1;
-		
-		internal static void UpdateWindow (CompletionTextEditorExtension ext, ICompletionWidget widget)
+
+		internal static void UpdateWindow (CompletionTextEditorExtension textEditorExtension, ICompletionWidget completionWidget)
 		{
 			// Updates the parameter information window from the information
 			// of the current method overload
-			if (window == null && methods.Count > 0) {
-				window = new ParameterInformationWindow (ext, widget);
-				window.SizeAllocated += delegate(object o, SizeAllocatedArgs args) {
-
-					if (args.Allocation.Width == lastW && args.Allocation.Height == lastH && wasVisi == CompletionWindowManager.IsVisible)
-						return;
-					lastW = args.Allocation.Width;
-					lastH = args.Allocation.Height;
-					wasVisi = CompletionWindowManager.IsVisible;
-					
-					var ctx = widget.CurrentCodeCompletionContext;
-					MethodData md = methods [methods.Count - 1];
-					int cparam = ext != null ? ext.GetCurrentParameterIndex (md.MethodProvider.StartOffset) : 0;
-					Gdk.Rectangle geometry = DesktopService.GetUsableMonitorGeometry (window.Screen, window.Screen.GetMonitorAtPoint (X, Y));
-					window.ShowParameterInfo (md.MethodProvider, md.CurrentOverload, cparam - 1, geometry.Width);
-					X = md.CompletionContext.TriggerXCoord;
-					if (CompletionWindowManager.IsVisible) {
-						// place above
-						Y = ctx.TriggerYCoord - ctx.TriggerTextHeight - args.Allocation.Height - 10;
-					} else {
-						// place below
-						Y = ctx.TriggerYCoord;
-					}
-
-					if (X + args.Allocation.Width > geometry.Right)
-						X = geometry.Right - args.Allocation.Width;
-			
-					if (Y < geometry.Top)
-						Y = ctx.TriggerYCoord;
-			
-					if (wasAbove || Y + args.Allocation.Height > geometry.Bottom) {
-						Y = Y - ctx.TriggerTextHeight - args.Allocation.Height - 4;
-						wasAbove = true;
-					}
-					
-					if (CompletionWindowManager.IsVisible) {
-						Rectangle completionWindow = new Rectangle (CompletionWindowManager.X, CompletionWindowManager.Y,
-				                                            CompletionWindowManager.Wnd.Allocation.Width, CompletionWindowManager.Wnd.Allocation.Height);
-						if (completionWindow.IntersectsWith (new Rectangle (X, Y, args.Allocation.Width, args.Allocation.Height))) {
-							X = completionWindow.X;
-							Y = completionWindow.Y - args.Allocation.Height - 6;
-							if (Y < 0)
-								Y = completionWindow.Bottom + 6;
-						}
-					}
-					window.Move (X, Y);
-				};
-				window.Destroyed += delegate {
-					lastW = -1;
-					lastH = -1;
-				};
-				window.QueueResize ();
-				window.Show ();
+			if (methods.Count > 0) {
+				if (window == null) {
+					window = new ParameterInformationWindow ();
+					window.Ext = textEditorExtension;
+					window.Widget = completionWidget;
+					window.SizeAllocated += delegate(object o, SizeAllocatedArgs args) {
+						if (args.Allocation.Width == lastW && args.Allocation.Height == lastH && wasVisi == CompletionWindowManager.IsVisible)
+							return;
+						PositionParamaterInfoWindow (args.Allocation);
+					};
+					window.Hidden += delegate {
+						lastW = -1;
+						lastH = -1;
+					};
+				} else {
+					window.Ext = textEditorExtension;
+					window.Widget = completionWidget;
+				}
 				wasAbove = false;
+				var lastMethod = methods [methods.Count - 1];
+				int curParam = window.Ext != null ? window.Ext.GetCurrentParameterIndex (lastMethod.MethodProvider.StartOffset) : 0;
+				var geometry2 = DesktopService.GetUsableMonitorGeometry (window.Screen, window.Screen.GetMonitorAtPoint (X, Y));
+				window.ShowParameterInfo (lastMethod.MethodProvider, lastMethod.CurrentOverload, curParam - 1, geometry2.Width);
+				PositionParamaterInfoWindow (window.Allocation);
+				window.ShowAll ();
 			}
 			
 			if (methods.Count == 0) {
 				if (window != null) {
-					window.Destroy ();
-					window = null;
+					window.Hide ();
 					wasAbove = false;
+					wasVisi = false;
+					lastW = -1;
+					lastH = -1;
 				}
 				return;
 			}
-					
-			if (window != null) {
-				var ctx = widget.CurrentCodeCompletionContext;
-				MethodData md = methods [methods.Count - 1];
-				int cparam = ext != null ? ext.GetCurrentParameterIndex (md.MethodProvider.StartOffset) : 0;
-				Gdk.Rectangle geometry = DesktopService.GetUsableMonitorGeometry (window.Screen, window.Screen.GetMonitorAtPoint (X, Y));
-				window.ShowParameterInfo (md.MethodProvider, md.CurrentOverload, cparam - 1, geometry.Width);
-				window.QueueResize ();
-			}
-			
-			
 		}
-	}
 	
+		static void PositionParamaterInfoWindow (Rectangle allocation)
+		{
+			lastW = allocation.Width;
+			lastH = allocation.Height;
+			wasVisi = CompletionWindowManager.IsVisible;
+			var ctx = window.Widget.CurrentCodeCompletionContext;
+			var md = methods [methods.Count - 1];
+			int cparam = window.Ext != null ? window.Ext.GetCurrentParameterIndex (md.MethodProvider.StartOffset) : 0;
+			var geometry = DesktopService.GetUsableMonitorGeometry (window.Screen, window.Screen.GetMonitorAtPoint (X, Y));
+			window.ShowParameterInfo (md.MethodProvider, md.CurrentOverload, cparam - 1, geometry.Width);
+			X = md.CompletionContext.TriggerXCoord;
+			if (CompletionWindowManager.IsVisible) {
+				// place above
+				Y = ctx.TriggerYCoord - ctx.TriggerTextHeight - allocation.Height - 10;
+			} else {
+				// place below
+				Y = ctx.TriggerYCoord;
+			}
+			if (X + allocation.Width > geometry.Right)
+				X = geometry.Right - allocation.Width;
+			if (Y < geometry.Top)
+				Y = ctx.TriggerYCoord;
+			if (wasAbove || Y + allocation.Height > geometry.Bottom) {
+				Y = Y - ctx.TriggerTextHeight - allocation.Height - 4;
+				wasAbove = true;
+			}
+			if (CompletionWindowManager.IsVisible) {
+				var completionWindow = new Rectangle (CompletionWindowManager.X, CompletionWindowManager.Y, CompletionWindowManager.Wnd.Allocation.Width, CompletionWindowManager.Wnd.Allocation.Height);
+				if (completionWindow.IntersectsWith (new Rectangle (X, Y, allocation.Width, allocation.Height))) {
+					X = completionWindow.X;
+					Y = completionWindow.Y - allocation.Height - 6;
+					if (Y < 0)
+						Y = completionWindow.Bottom + 6;
+				}
+			}
+			window.Move (X, Y);
+		}		
+	}
+		
 	class MethodData
 	{
 		public IParameterDataProvider MethodProvider;

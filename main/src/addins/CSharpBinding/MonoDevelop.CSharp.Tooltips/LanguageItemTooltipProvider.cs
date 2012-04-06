@@ -80,14 +80,15 @@ namespace MonoDevelop.SourceEditor
 			var file = doc.ParsedDocument.ParsedFile as CSharpParsedFile;
 			if (file == null)
 				return null;
-
-	
+			
 			ResolveResult result;
 			AstNode node;
-			CSharpAstResolver resolver;
-			var loc = editor.Caret.Location;
-			if (!doc.TryResolveAt (loc, out result, out node, out resolver))
+			var loc = editor.OffsetToLocation (offset);
+			if (!doc.TryResolveAt (loc, out result, out node))
 				return null;
+			var resolver = new CSharpAstResolver (doc.Compilation, unit, file);
+			resolver.ApplyNavigator (new NodeListResolveVisitorNavigator (node), CancellationToken.None);
+
 			int startOffset = offset;
 			int endOffset = offset;
 			return new TooltipItem (new ToolTipData (unit, result, node, resolver), startOffset, endOffset - startOffset);

@@ -60,10 +60,10 @@ namespace Mono.TextEditor.Utils
 			
 			// Encoding verifiers
 			var verifierList = new List<Verifier> () {
-				new UnicodeVerifier (),
-				new BigEndianUnicodeVerifier (),
 				new Utf8Verifier (),
 				new CodePage1252Verifier (),
+				new UnicodeVerifier (),
+				new BigEndianUnicodeVerifier (),
 				new CodePage858Verifier ()
 			};
 
@@ -311,8 +311,14 @@ namespace Mono.TextEditor.Utils
 						}
 						bPtr++;
 					}
-				finishVerify:
+					finishVerify:
 					if (verifiersRunning > 0) {
+//						Console.WriteLine ("valid encodings:");
+//						for (int i = 0; i < verifiers.Length; i++) {
+//							if (verifiers [i].IsEncodingValid (states [i]))
+//								Console.WriteLine (verifiers [i].Encoding.EncodingName);
+//						}
+//						Console.WriteLine ("---------------");
 						for (int i = 0; i < verifiers.Length; i++) {
 							if (verifiers [i].IsEncodingValid (states [i]))
 								return verifiers [i].Encoding;
@@ -388,6 +394,7 @@ namespace Mono.TextEditor.Utils
 					table [i] = new byte[(int)byte.MaxValue + 1];
 
 				// UTF8-1      = %x00-7F
+				// Take out the 0 case, that indicates a UTF16/32 file.
 				for (int i = 0x00; i <= 0x7F; i++) {
 					table [UTF1] [i] = UTF1;
 				}
@@ -589,7 +596,7 @@ namespace Mono.TextEditor.Utils
 				for (int i = 1; i < LAST; i++)
 					table [i] = new byte[(int)byte.MaxValue + 1];
 
-				for (int i = 0x20; i <= 0xFF; i++) {
+				for (int i = 0x00; i <= 0xFF; i++) {
 					table [Valid] [i] = Valid;
 				}
 				table [Valid] [0x81] = Error;
