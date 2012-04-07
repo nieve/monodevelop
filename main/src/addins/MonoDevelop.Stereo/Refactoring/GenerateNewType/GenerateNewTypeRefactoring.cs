@@ -69,11 +69,7 @@ namespace MonoDevelop.Stereo.Refactoring.GenerateNewType
 		
 		public override void Run (RefactoringOptions options)
 		{
-			MonoDevelop.Ide.Gui.Document doc = options.Document;
-			var parsedDocument = doc.ParsedDocument;
-			var comp = doc.Compilation;
-			var type = parsedDocument.GetTypeResolveContext(comp, options.Location).CurrentTypeDefinition;
-			insertionPoint = GetInsertionPoint(doc, type);
+			insertionPoint = GetInsertionPoint(options);
 			base.Run(options);
 		}
 				

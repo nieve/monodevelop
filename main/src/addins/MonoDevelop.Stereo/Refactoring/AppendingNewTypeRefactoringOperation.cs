@@ -10,6 +10,15 @@ namespace MonoDevelop.Stereo.Refactoring.GenerateNewType
 		protected TextEditorData data = null;
 		protected string indent = "";
 		
+		protected InsertionPoint GetInsertionPoint (RefactoringOptions options){
+			var document = options.Document;
+			var parsedDocument = document.ParsedDocument;
+			var typeResolveContext = parsedDocument.GetTypeResolveContext (document.Compilation, options.Location);
+			var type = typeResolveContext.CurrentTypeDefinition;
+			
+			return GetInsertionPoint(document, type);
+		}
+		
 		protected InsertionPoint GetInsertionPoint (MonoDevelop.Ide.Gui.Document document, IType type)
 		{
 			data = document.Editor;

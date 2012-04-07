@@ -22,8 +22,7 @@ namespace MonoDevelop.Stereo.Refactoring.CreateDerivedType
 		InsertionPoint insertionPoint = null;
 		IBuildDerivedTypeContent builder;
 		INameValidator validator;
-		string fileName;
-		public IType Type {get;set;}
+		public IType Type {private get;set;}
 		public TextEditorData Data {set{data=value;}}
 		public InsertionPoint InsertionPoint {set{insertionPoint=value;}}
 		
@@ -43,10 +42,7 @@ namespace MonoDevelop.Stereo.Refactoring.CreateDerivedType
 		public override void Run (RefactoringOptions options)
 		{
 			Type = context.GetNonConcreteType();
-			fileName = options.Document.FileName;
-			MonoDevelop.Ide.Gui.Document openDocument = IdeApp.Workbench.OpenDocument(fileName, (OpenDocumentOptions) 39);
-			if (openDocument == null) MessageService.ShowError(string.Format("Can't open file {0}.", fileName));
-			else insertionPoint = GetInsertionPoint(openDocument, Type);
+			insertionPoint = GetInsertionPoint(options.Document, Type);
 			MessageService.ShowCustomDialog((Dialog) new RefactoringNamingDialog(options, this, validator));
 		}
 		
@@ -57,7 +53,7 @@ namespace MonoDevelop.Stereo.Refactoring.CreateDerivedType
 			var methods = GetMethodsToImplement(Type);
 			List<Change> changes = new List<Change>();
 			var textReplaceChange = new TextReplaceChange();
-			textReplaceChange.FileName = fileName;
+			textReplaceChange.FileName = options.Document.FileName;
 			textReplaceChange.RemovedChars = 0;			
 			textReplaceChange.Offset = context.GetOffset(insertionPoint.Location);
 			

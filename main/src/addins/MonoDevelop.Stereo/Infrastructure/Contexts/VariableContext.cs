@@ -67,29 +67,26 @@ namespace MonoDevelop.Stereo
 			var editor = GetActiveDocument().Editor;
 			return editor.EolMarker;
 		}
+		
+		//TODO: Breaking SRP? Should it move to a new class?
 		public void EnterInsertionCursorEditMode (RefactoringOptions options, EventHandler<InsertionCursorEventArgs> onExit)
 		{
 			var data = options.GetTextEditorData();
 			ParsedDocument doc = options.Document.ParsedDocument;
+			DocumentLocation currentLocation = data.Caret.Location;
 			Mono.TextEditor.TextEditor editor = data.Parent;
-			var member = doc.GetMember (data.Caret.Location);
+			var member = doc.GetMember (currentLocation);
 			if (editor == null) return;			
 			if (member == null) return;
 			
 			MonoDevelop.Ide.Gui.Document document = options.Document;
-			var declaringMember = member.CreateResolved (doc.GetTypeResolveContext (document.Compilation, data.Caret.Location));
+			var declaringMember = member.CreateResolved (doc.GetTypeResolveContext (document.Compilation, currentLocation));
 			var type = declaringMember.DeclaringTypeDefinition.Parts.First ();
 			
 			List<InsertionPoint> list = CodeGenerationService.GetInsertionPoints (document, type);
 			var mode = new InsertionCursorEditMode (editor, list);
-			for (int i = 0; i < mode.InsertionPoints.Count; i++) {
-				var point = mode.InsertionPoints[i];
-				if (point.Location < editor.Caret.Location) {
-					mode.CurIndex = i;
-				} else {
-					break;
-				}
-			}
+			mode.CurIndex = mode.InsertionPoints.FindLastIndex(p=>p.Location < currentLocation);
+			
 			ModeHelpWindow helpWindow = new InsertionCursorLayoutModeHelpWindow ();
 			helpWindow.TransientFor = IdeApp.Workbench.RootWindow;
 			helpWindow.TitleText = "<b>Extract Field -- Targeting</b>";
@@ -98,6 +95,7 @@ namespace MonoDevelop.Stereo
 			helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Down</b>", "Move to <b>next</b> target point."));
 			helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Enter</b>", "<b>Declare new method</b> at target point."));
 			helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Esc</b>", "<b>Cancel</b> this refactoring."));
+			
 			mode.HelpWindow = helpWindow;
 			mode.StartMode ();
 			if (onExit != null) mode.Exited += onExit;
