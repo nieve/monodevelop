@@ -29,40 +29,32 @@ using ICSharpCode.NRefactory.Semantics;
 using Mono.TextEditor;
 using MonoDevelop.Refactoring;
 
-namespace MonoDevelop.Stereo.Refactoring.Extract
-{
-	public class ExtractFieldRefactoring : RefactoringOperation
+namespace MonoDevelop.Stereo.Refactoring.Extract {
+	public class ExtractParameterRefactoring : RefactoringOperation
 	{
 		IVariableContext context;
-		IEnterInsertionCursorEditModeCommand enterInsertionCursorEditMode;
 		public InsertionPoint InsertionPoint{private get; set;}
-		public ExtractFieldRefactoring () : this(new VariableContext(), new EnterInsertionCursorEditModeCommand()) {}
-		public ExtractFieldRefactoring (IVariableContext context, IEnterInsertionCursorEditModeCommand enterInsertionCursorEditMode)
+		public ExtractParameterRefactoring () : this(new VariableContext()) {}
+		public ExtractParameterRefactoring (IVariableContext context)
 		{
-			this.Name = "Extract Field";
+			this.Name = "Extract Parameter";
 			this.context = context;
-			this.enterInsertionCursorEditMode = enterInsertionCursorEditMode;
 		}
 		public override string AccelKey {
 			get {
-				return string.IsNullOrWhiteSpace(base.AccelKey) ? "Ctrl+R|Ctrl+F" : base.AccelKey;
+				return string.IsNullOrWhiteSpace(base.AccelKey) ? "Ctrl+R|Ctrl+P" : base.AccelKey;
 			}
 		}		
 		public override string GetMenuDescription(RefactoringOptions options)
 	    {
-	    	return "Extract _Field";
+	    	return "Extract _parameter";
 	    }		
 		public string OperationTitle  {
-			get{return "Extract Field";}
+			get{return "Extract Parameter";}
 		}
-		public override void Run (RefactoringOptions options) {
-			EventHandler<InsertionCursorEventArgs> onExit = delegate(object s, InsertionCursorEventArgs args) {
-				if (args.Success) {
-					InsertionPoint = args.InsertionPoint;
-					BaseRun (options);
-				}
-			};
-			enterInsertionCursorEditMode.Execute(options, onExit);
+		public override void Run (RefactoringOptions options)
+		{
+			//TODO: GetInsertionPoint @ method declaration. 
 		}
 		private void BaseRun(RefactoringOptions options){base.Run (options);}
 		public override List<Change> PerformChanges (RefactoringOptions options, object prop){
@@ -70,11 +62,10 @@ namespace MonoDevelop.Stereo.Refactoring.Extract
 			TextReplaceChange change = new TextReplaceChange();
 			var fileName = options.Document.FileName;
 			change.FileName = fileName;
-			var indentation = context.GetIndentation(InsertionPoint);
-			string text = indentation + variable.Type.Name + " " + variable.Name + ";";
-			change.InsertedText = text + context.GetEol();
+			string text = variable.Type.Name + " " + variable.Name;
+			change.InsertedText = ", " + text;//TODO: know when to prepend with comma.
 			change.MoveCaretToReplace = false;
-			change.Offset = context.GetOffset(InsertionPoint.Location);
+			change.Offset = context.GetOffset(InsertionPoint.Location);//TODO: Need to set insertion point @ method declaration; see Run.
 			change.RemovedChars = 0;
 			
 			TextReplaceChange removeChange = new TextReplaceChange();
@@ -89,5 +80,5 @@ namespace MonoDevelop.Stereo.Refactoring.Extract
 		public override bool IsValid (RefactoringOptions options){
 			return options.ResolveResult is LocalResolveResult;
 		}
-	}
+	}
 }

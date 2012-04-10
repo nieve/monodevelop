@@ -1,5 +1,5 @@
 // 
-// ExtractFieldHandler.cs
+// ExtractParameterIsValidTest.cs
 //  
 // Author:
 //       Nieve <>
@@ -23,28 +23,40 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
+using ICSharpCode.NRefactory.Semantics;
+using ICSharpCode.NRefactory.TypeSystem;
 using MonoDevelop.Refactoring;
-
-namespace MonoDevelop.Stereo.Refactoring.Extract
-{
-	public class ExtractFieldHandler : AbstractRefactoringCommandHandler
+using MonoDevelop.Stereo.Refactoring.Extract;
+using NUnit.Framework;
+using Rhino.Mocks;
+namespace MonoDevelop.Stereo.Tests.ExtractParameterRefactoringTest {
+	[TestFixture]
+	public class IsValid
 	{
-		IVariableContext context;
-		ExtractFieldRefactoring refactoring = new ExtractFieldRefactoring();
-		public ExtractFieldHandler () : this(new VariableContext()) {}
-		public ExtractFieldHandler (IVariableContext context)
+		ExtractParameterRefactoring subject = new ExtractParameterRefactoring();
+		
+		[Test]
+		public void Returns_true_when_resolve_result_is_local_variable ()
 		{
-			this.context = context;
+			IType type = MockRepository.GenerateMock<IType> ();
+			type.Expect(t=>t.Kind).Return (TypeKind.Anonymous);
+			IVariable variable = MockRepository.GenerateMock<IVariable> ();
+			variable.Expect(v=>v.Type).Return(type);
+			var options = new RefactoringOptions(){ResolveResult = new LocalResolveResult(variable)};
+			
+			var isValid = subject.IsValid(options);
+			
+			Assert.IsTrue(isValid);
 		}
-		protected override void Run (RefactoringOptions options)
+		
+		[Test]
+		public void Returns_false_when_resolve_result_isnt_local_variable ()
 		{
-			refactoring.Run(options);
+			var options = new RefactoringOptions(){ResolveResult = new ErrorResolveResult(MockRepository.GenerateStub<IType>())};
+			
+			var isValid = subject.IsValid(options);
+			
+			Assert.IsFalse(isValid);
 		}
-		protected override void Update (MonoDevelop.Components.Commands.CommandInfo info)
-		{
-			info.Enabled = context.IsCurrentLocationVariable ();
-		}
-	}
+	}
 }
-

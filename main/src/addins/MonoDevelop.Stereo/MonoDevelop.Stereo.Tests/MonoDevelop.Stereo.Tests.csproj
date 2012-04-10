@@ -56,6 +56,8 @@
     <Compile Include="Refactoring\NewTypeContentBuilders\DerivedTypeContentBuilderTest.cs" />
     <Compile Include="Refactoring\Extract\ExtractFieldPerformChangesTest.cs" />
     <Compile Include="Refactoring\Extract\ExtractFieldIsValidTest.cs" />
+    <Compile Include="Refactoring\Extract\ExtractParameterIsValidTest.cs" />
+    <Compile Include="Refactoring\Extract\ExtractParameterPerformChangesTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

@@ -26,14 +26,13 @@
 using System;
 using MonoDevelop.Refactoring;
 
-namespace MonoDevelop.Stereo.Refactoring.Extract
-{
-	public class ExtractFieldHandler : AbstractRefactoringCommandHandler
+namespace MonoDevelop.Stereo.Refactoring.Extract {
+	public class ExtractParameterHandler : AbstractRefactoringCommandHandler
 	{
 		IVariableContext context;
-		ExtractFieldRefactoring refactoring = new ExtractFieldRefactoring();
-		public ExtractFieldHandler () : this(new VariableContext()) {}
-		public ExtractFieldHandler (IVariableContext context)
+		ExtractParameterRefactoring refactoring = new ExtractParameterRefactoring();
+		public ExtractParameterHandler () : this(new VariableContext()) {}
+		public ExtractParameterHandler (IVariableContext context)
 		{
 			this.context = context;
 		}
@@ -45,6 +44,5 @@ namespace MonoDevelop.Stereo.Refactoring.Extract
 		{
 			info.Enabled = context.IsCurrentLocationVariable ();
 		}
-	}
+	}
 }
-

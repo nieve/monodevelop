@@ -51,9 +51,20 @@
 	
 	<Extension path = "/MonoDevelop/Ide/Commands/Refactoring">
 		<Command id = "MonoDevelop.Refactoring.RefactoryCommands.ExtractField"
-				defaultHandler = "MonoDevelop.Stereo.Refactoring.ExtractFieldHandler"
+				defaultHandler = "MonoDevelop.Stereo.Refactoring.Extract.ExtractFieldHandler"
 				shortcut="Ctrl+R|Ctrl+F"
 				_label = "Extract _field"/>
+	</Extension>
+	
+	<Extension path = "/MonoDevelop/Refactoring/Refactorings">
+		<Class id="ExtractParameter" class = "MonoDevelop.Stereo.Refactoring.Extract.ExtractParameterRefactoring" />
+	</Extension>
+	
+	<Extension path = "/MonoDevelop/Ide/Commands/Refactoring">
+		<Command id = "MonoDevelop.Refactoring.RefactoryCommands.ExtractParameter"
+				defaultHandler = "MonoDevelop.Stereo.Refactoring.Extract.ExtractParameterHandler"
+				shortcut="Ctrl+R|Ctrl+P"
+				_label = "Extract _parameter"/>
 	</Extension>
 
 </Addin>

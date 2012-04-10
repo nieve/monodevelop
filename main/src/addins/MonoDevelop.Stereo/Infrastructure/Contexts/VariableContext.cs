@@ -23,15 +23,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using ICSharpCode.NRefactory.Semantics;
 using Mono.TextEditor;
-using Mono.TextEditor.PopupWindow;
-using MonoDevelop.Ide;
-using MonoDevelop.Refactoring;
-using MonoDevelop.TypeSystem;
 
 namespace MonoDevelop.Stereo
 {
@@ -42,7 +35,6 @@ namespace MonoDevelop.Stereo
 		bool IsCurrentLocationVariable();
 		int GetOffset (DocumentLocation location);
 		string GetEol ();
-		void EnterInsertionCursorEditMode(RefactoringOptions options, EventHandler<InsertionCursorEventArgs> onExit);
 	}
 	
 	public class VariableContext : DocumentContext, IVariableContext {
@@ -67,39 +59,6 @@ namespace MonoDevelop.Stereo
 			var editor = GetActiveDocument().Editor;
 			return editor.EolMarker;
 		}
-		
-		//TODO: Breaking SRP? Should it move to a new class?
-		public void EnterInsertionCursorEditMode (RefactoringOptions options, EventHandler<InsertionCursorEventArgs> onExit)
-		{
-			var data = options.GetTextEditorData();
-			ParsedDocument doc = options.Document.ParsedDocument;
-			DocumentLocation currentLocation = data.Caret.Location;
-			Mono.TextEditor.TextEditor editor = data.Parent;
-			var member = doc.GetMember (currentLocation);
-			if (editor == null) return;			
-			if (member == null) return;
-			
-			MonoDevelop.Ide.Gui.Document document = options.Document;
-			var declaringMember = member.CreateResolved (doc.GetTypeResolveContext (document.Compilation, currentLocation));
-			var type = declaringMember.DeclaringTypeDefinition.Parts.First ();
-			
-			List<InsertionPoint> list = CodeGenerationService.GetInsertionPoints (document, type);
-			var mode = new InsertionCursorEditMode (editor, list);
-			mode.CurIndex = mode.InsertionPoints.FindLastIndex(p=>p.Location < currentLocation);
-			
-			ModeHelpWindow helpWindow = new InsertionCursorLayoutModeHelpWindow ();
-			helpWindow.TransientFor = IdeApp.Workbench.RootWindow;
-			helpWindow.TitleText = "<b>Extract Field -- Targeting</b>";
-			helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Key</b>", "<b>Behavior</b>"));
-			helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Up</b>", "Move to <b>previous</b> target point."));
-			helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Down</b>", "Move to <b>next</b> target point."));
-			helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Enter</b>", "<b>Declare new method</b> at target point."));
-			helpWindow.Items.Add (new KeyValuePair<string, string> ("<b>Esc</b>", "<b>Cancel</b> this refactoring."));
-			
-			mode.HelpWindow = helpWindow;
-			mode.StartMode ();
-			if (onExit != null) mode.Exited += onExit;
-		}
-	}
+	}
 }
 

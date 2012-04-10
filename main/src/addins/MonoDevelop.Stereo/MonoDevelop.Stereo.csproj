@@ -85,6 +85,9 @@
     <Compile Include="Infrastructure\Contexts\VariableContext.cs" />
     <Compile Include="Refactoring\Extract\ExtractFieldRefactoring.cs" />
     <Compile Include="Refactoring\ProgressMonitorFactory.cs" />
+    <Compile Include="Refactoring\Extract\ExtractParameterHandler.cs" />
+    <Compile Include="Refactoring\Extract\ExtractParameterRefactoring.cs" />
+    <Compile Include="Refactoring\Extract\EnterInsertionCursorEditModeCommand.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

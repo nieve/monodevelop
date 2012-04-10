@@ -1,5 +1,5 @@
 // 
-// ExtractFieldRefactoringTest.cs
+// ExtractParameterPerformChangesTest.cs
 //  
 // Author:
 //       Nieve <>
@@ -32,7 +32,7 @@ using MonoDevelop.Stereo.Refactoring.Extract;
 using NUnit.Framework;
 using Rhino.Mocks;
 
-namespace MonoDevelop.Stereo.Tests.ExtractFieldRefactoringTest
+namespace MonoDevelop.Stereo.Tests.ExtractParameterRefactoringTest
 {
 	[TestFixture]
 	public class PerformChanges
@@ -40,18 +40,17 @@ namespace MonoDevelop.Stereo.Tests.ExtractFieldRefactoringTest
 		IVariableContext context = MockRepository.GenerateStub<IVariableContext>();
 		static DocumentLocation location = new DocumentLocation(1,1);
 		InsertionPoint point = new InsertionPoint(location,NewLineInsertion.BlankLine,NewLineInsertion.BlankLine);
-		ExtractFieldRefactoring subject;
+		ExtractParameterRefactoring subject;
 		IViewContent viewContent = MockRepository.GenerateMock<IViewContent>();
 		IWorkbenchWindow window = MockRepository.GenerateMock<IWorkbenchWindow>();
 		IVariable variable = MockRepository.GenerateMock<IVariable>();
 		IType type = MockRepository.GenerateMock<IType>();
-		IEnterInsertionCursorEditModeCommand enterInsertionCursorEditModeCommand = MockRepository.GenerateStub<IEnterInsertionCursorEditModeCommand>();
 		RefactoringOptions options;
 		
 		[TestFixtureSetUp]
 		public void SetUp ()
 		{
-			subject = new ExtractFieldRefactoring(context, enterInsertionCursorEditModeCommand);
+			subject = new ExtractParameterRefactoring(context);
 			type.Expect (t=>t.Name).Return("WhiteVanMan");
 			variable.Expect (v=>v.Type).Return (type);
 			variable.Expect (v=>v.Name).Return ("ollie");
@@ -59,9 +58,7 @@ namespace MonoDevelop.Stereo.Tests.ExtractFieldRefactoringTest
 			viewContent.Expect(vc=>vc.IsFile).Return(false);
 			window.Expect(w=>w.ViewContent).Return (viewContent);
 			
-			context.Stub (c=>c.GetIndentation(point)).Return("<indent>");
 			context.Stub (c=>c.GetIndentation(5)).Return("<indentation>");
-			context.Stub (c=>c.GetEol()).Return("<eol>");
 			context.Stub (c=>c.GetOffset(location)).Return(42);
 			
 			var doc = new Document (window);
@@ -80,12 +77,12 @@ namespace MonoDevelop.Stereo.Tests.ExtractFieldRefactoringTest
 			Assert.IsInstanceOfType (typeof(TextReplaceChange),changes[1]);
 		}
 		[Test]
-		public void Returns_a_change_with_field_declaration ()
+		public void Returns_a_change_with_parameter_declaration ()
 		{
 			var changes = subject.PerformChanges(options, null);
 			
 			var change = (TextReplaceChange)changes[0];
-			Assert.AreEqual("<indent>WhiteVanMan ollie;<eol>",change.InsertedText);
+			Assert.AreEqual(", WhiteVanMan ollie",change.InsertedText);
 		}
 		[Test]
 		public void Returns_a_change_with_variable_declaration_removed ()
@@ -99,3 +96,4 @@ namespace MonoDevelop.Stereo.Tests.ExtractFieldRefactoringTest
 		}
 	}
 }
+
