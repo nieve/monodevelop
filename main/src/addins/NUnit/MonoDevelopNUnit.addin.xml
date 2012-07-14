@@ -19,6 +19,7 @@
 	<Dependencies>
 		<Addin id="Core" version="3.1.0"/>
 		<Addin id="Ide" version="3.1.0"/>
+		<Addin id="SourceEditor2" version="3.1.0"/>
 	</Dependencies>
 	
 	<!-- Extension Points -->
@@ -208,6 +209,26 @@
 	
 	<Extension path = "/MonoDevelop/ProjectModel/SerializableClasses">
 		<DataType class = "MonoDevelop.NUnit.NUnitAssemblyGroupProject" />
+	</Extension>
+	
+	<Extension path = "/MonoDevelop/Ide/Commands">
+		<Category _name = "Test Driven" id = "TestDriven">
+			<Command id = "MonoDevelop.TestDriven.Commands.ContextSensitive"
+						_label = "Run _contextual test"
+						_description="Runs context sensitive test/s."
+						defaultHandler = "MonoDevelop.TestDriven.RunContextualTestHandler"
+						shortcut="Control+R|Control+C"/>
+		</Category>
+	</Extension>
+	
+	<Extension path = "/MonoDevelop/Ide/MainMenu/Run">
+			<CommandItem id = "MonoDevelop.TestDriven.Commands.ContextSensitive" />
+	</Extension>
+	
+	<Extension path="/MonoDevelop/SourceEditor2/ContextMenu/Editor">
+		<Condition id="FileType" fileExtensions=".cs">
+			<CommandItem id = "MonoDevelop.TestDriven.Commands.ContextSensitive" />
+		</Condition>
 	</Extension>
 
 </Addin>
