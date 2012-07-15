@@ -221,10 +221,6 @@
 		</Category>
 	</Extension>
 	
-	<Extension path = "/MonoDevelop/Ide/MainMenu/Run">
-			<CommandItem id = "MonoDevelop.TestDriven.Commands.ContextSensitive" />
-	</Extension>
-	
 	<Extension path="/MonoDevelop/SourceEditor2/ContextMenu/Editor">
 		<Condition id="FileType" fileExtensions=".cs">
 			<CommandItem id = "MonoDevelop.TestDriven.Commands.ContextSensitive" />

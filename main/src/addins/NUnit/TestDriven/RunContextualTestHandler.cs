@@ -28,6 +28,8 @@ using MonoDevelop.Components.Commands;
 using MonoDevelop.Ide;
 using MonoDevelop.NUnit.External;
 using MonoDevelop.NUnit;
+using MonoDevelop.CSharp.Refactoring.CodeActions;
+using ICSharpCode.NRefactory.CSharp;
 
 namespace MonoDevelop.TestDriven
 {
@@ -40,7 +42,22 @@ namespace MonoDevelop.TestDriven
 	{
 		protected override void Update (CommandInfo info)
 		{
-			info.Enabled = true;
+			info.Enabled = InsideTestFixture();
+		}
+
+		bool InsideTestFixture ()
+		{
+			var context = new MDRefactoringContext (IdeApp.Workbench.ActiveDocument, IdeApp.Workbench.ActiveDocument.Editor.Caret.Location);
+			var result = context.GetNode<TypeDeclaration> ();
+			if (result == null)
+			    //|| result.Parent is TypeDeclaration)
+				return false;
+			var parent = result.Parent;
+
+			foreach (var m in result.Members){
+				Console.WriteLine (m);
+			}
+			return true;
 		}
 
 		NunitTestInfo GetTestInfo (string path)
