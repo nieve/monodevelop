@@ -2,9 +2,11 @@
 // RunContextualTestHandler.cs
 //
 // Author:
-//       nieve <>
+//       Nieve <nievegoor@gmail.com>
+//       Andres G. Aragoneses <knocte@gmail.com>
 //
-// Copyright (c) 2012 nieve
+// Copyright (c) 2012 Nieve
+// Copyright (c) 2012 Andres G. Aragoneses
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +25,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using MonoDevelop.Components.Commands;
 using MonoDevelop.Ide;
@@ -30,6 +33,9 @@ using MonoDevelop.NUnit.External;
 using MonoDevelop.NUnit;
 using MonoDevelop.CSharp.Refactoring.CodeActions;
 using ICSharpCode.NRefactory.CSharp;
+using NUnit.Framework;
+using ICSharpCode.NRefactory.CSharp.TypeSystem;
+using MonoDevelop.Ide.Gui.Content;
 
 namespace MonoDevelop.TestDriven
 {
@@ -42,22 +48,30 @@ namespace MonoDevelop.TestDriven
 	{
 		protected override void Update (CommandInfo info)
 		{
-			info.Enabled = InsideTestFixture();
+			info.Visible = InsideTestFixture();
 		}
 
 		bool InsideTestFixture ()
 		{
-			var context = new MDRefactoringContext (IdeApp.Workbench.ActiveDocument, IdeApp.Workbench.ActiveDocument.Editor.Caret.Location);
+			var location = IdeApp.Workbench.ActiveDocument.Editor.Caret.Location;
+			var activeDocument = IdeApp.Workbench.ActiveDocument;
+			var context = new MDRefactoringContext (activeDocument, location);
 			var result = context.GetNode<TypeDeclaration> ();
 			if (result == null)
-			    //|| result.Parent is TypeDeclaration)
 				return false;
-			var parent = result.Parent;
 
-			foreach (var m in result.Members){
-				Console.WriteLine (m);
+			var provider = activeDocument.GetContent<ITextEditorMemberPositionProvider>();
+			var currentType = provider.GetTypeAt(activeDocument.Editor.LocationToOffset (location));
+			var csAssem = activeDocument.Compilation.MainAssembly as CSharpAssembly;
+			var parsedFile = context.Document.ParsedDocument.ParsedFile as CSharpParsedFile;
+			var resolveContext = new CSharpTypeResolveContext(csAssem, parsedFile.RootUsingScope.Resolve(context.Compilation));
+
+			foreach (CSharpAttribute attr in currentType.Attributes) {
+				var attrType = attr.AttributeType.Resolve(resolveContext);
+				return attrType.FullName == typeof(TestFixtureAttribute).FullName;
 			}
-			return true;
+
+			return false;
 		}
 
 		NunitTestInfo GetTestInfo (string path)

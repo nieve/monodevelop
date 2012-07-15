@@ -214,8 +214,8 @@
 	<Extension path = "/MonoDevelop/Ide/Commands">
 		<Category _name = "Test Driven" id = "TestDriven">
 			<Command id = "MonoDevelop.TestDriven.Commands.ContextSensitive"
-						_label = "Run _contextual test"
-						_description="Runs context sensitive test/s."
+						_label = "Run test(s)"
+						_description="Runs current test or test fixture."
 						defaultHandler = "MonoDevelop.TestDriven.RunContextualTestHandler"
 						shortcut="Control+R|Control+C"/>
 		</Category>
