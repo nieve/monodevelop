@@ -1,4 +1,4 @@
-﻿// 
+// 
 // CSharpCompletionEngine.cs
 //  
 // Author:
@@ -314,7 +314,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 				return null;
 			case '>':
 				if (!IsInsideDocComment()) {
-					if (offset > 2 && document.GetCharAt (offset - 2) == '-' && !IsInsideCommentStringOrDirective()) {
+					if (offset > 2 && document.GetCharAt(offset - 2) == '-' && !IsInsideCommentStringOrDirective()) {
 						return HandleMemberReferenceCompletion(GetExpressionBeforeCursor());
 					}
 					return null;
@@ -543,7 +543,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 						var wrapper = new CompletionDataWrapper(this);
 						if (currentType != null) {
 							//							bool includeProtected = DomType.IncludeProtected (dom, typeFromDatabase, resolver.CallingType);
-							foreach (var method in currentType.Methods) {
+							foreach (var method in ctx.CurrentTypeDefinition.Methods) {
 								if (MatchDelegate(delegateType, method) /*&& method.IsAccessibleFrom (dom, resolver.CallingType, resolver.CallingMember, includeProtected) &&*/) {
 									wrapper.AddMember(method);
 									//									data.SetText (data.CompletionText + ";");
@@ -767,7 +767,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 							}
 						}
 						idx++;
-						foreach (var list in mgr.GetExtensionMethods ()) {
+						foreach (var list in mgr.GetEligibleExtensionMethods (true)) {
 							foreach (var method in list) {
 								if (idx < method.Parameters.Count && method.Parameters [idx].Type.Kind == TypeKind.Delegate) {
 									AutoSelect = false;
@@ -886,7 +886,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 					if (n.Parent is ICSharpCode.NRefactory.CSharp.Attribute) {
 						nodes.Add(n.Parent);
 					}
-					var astResolver = CompletionContextProvider.GetResolver (csResolver, identifierStart.Unit);
+					var astResolver = CompletionContextProvider.GetResolver(csResolver, identifierStart.Unit);
 					astResolver.ApplyNavigator(new NodeListResolveVisitorNavigator(nodes));
 					try {
 						csResolver = astResolver.GetResolverStateBefore(n);
@@ -1201,15 +1201,15 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 				}
 			}
 			
-			if (currentMember is IUnresolvedParameterizedMember && !(node is AstType)) {
-				var param = (IParameterizedMember)currentMember.CreateResolved(ctx);
+			if (state.CurrentMember is IParameterizedMember && !(node is AstType)) {
+				var param = (IParameterizedMember)state.CurrentMember;
 				foreach (var p in param.Parameters) {
 					wrapper.AddVariable(p);
 				}
 			}
 			
-			if (currentMember is IUnresolvedMethod) {
-				var method = (IUnresolvedMethod)currentMember;
+			if (state.CurrentMember is IMethod) {
+				var method = (IMethod)state.CurrentMember;
 				foreach (var p in method.TypeParameters) {
 					wrapper.AddTypeParameter(p);
 				}
@@ -1281,7 +1281,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 				var root = node;
 				while (root.Parent != null)
 					root = root.Parent;
-				var astResolver = CompletionContextProvider.GetResolver (state, root);
+				var astResolver = CompletionContextProvider.GetResolver(state, root);
 				foreach (var type in CreateFieldAction.GetValidTypes(astResolver, (Expression)node)) {
 					if (type.Kind == TypeKind.Enum) {
 						AddEnumMembers(wrapper, type, state);
@@ -1319,7 +1319,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 		{
 			var lookup = new MemberLookup(ctx.CurrentTypeDefinition, Compilation.MainAssembly);
 			if (currentType != null) {
-				for (var ct = currentType; ct != null; ct = ct.DeclaringTypeDefinition) {
+				for (var ct = ctx.CurrentTypeDefinition; ct != null; ct = ct.DeclaringTypeDefinition) {
 					foreach (var nestedType in ct.NestedTypes) {
 						string name = nestedType.Name;
 						if (IsAttributeContext(node) && name.EndsWith("Attribute") && name.Length > "Attribute".Length) {
@@ -1331,7 +1331,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 							continue;
 						}
 						
-						var type = typePred(nestedType.Resolve(ctx));
+						var type = typePred(nestedType);
 						if (type != null) {
 							var a2 = wrapper.AddType(type, name);
 							if (a2 != null && callback != null) {
@@ -1374,8 +1374,10 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 						}
 					}
 				}
-				foreach (var p in currentType.TypeParameters) {
-					wrapper.AddTypeParameter(p);
+				if (ctx.CurrentTypeDefinition != null) {
+					foreach (var p in ctx.CurrentTypeDefinition.TypeParameters) {
+						wrapper.AddTypeParameter(p);
+					}
 				}
 			}
 			var scope = ctx.CurrentUsingScope;
@@ -1912,7 +1914,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 				return;
 			}
 			foreach (var m in curType.GetMembers ().Reverse ()) {
-				if (m.IsSynthetic || curType.Kind != TypeKind.Interface && !m.IsOverridable) {
+				if (curType.Kind != TypeKind.Interface && !m.IsOverridable) {
 					continue;
 				}
 				// filter out the "Finalize" methods, because finalizers should be done with destructors.
@@ -1983,7 +1985,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 			return result;
 		}
 		
-		bool MatchDelegate(IType delegateType, IUnresolvedMethod method)
+		bool MatchDelegate(IType delegateType, IMethod method)
 		{
 			var delegateMethod = delegateType.GetDelegateInvokeMethod();
 			if (delegateMethod == null || delegateMethod.Parameters.Count != method.Parameters.Count) {
@@ -1991,7 +1993,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 			}
 			
 			for (int i = 0; i < delegateMethod.Parameters.Count; i++) {
-				if (!delegateMethod.Parameters [i].Type.Equals(method.Parameters [i].Type.Resolve(ctx))) {
+				if (!delegateMethod.Parameters [i].Type.Equals(method.Parameters [i].Type)) {
 					return false;
 				}
 			}
@@ -2016,17 +2018,21 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 			}
 			var sb = new StringBuilder("(");
 			var sbWithoutTypes = new StringBuilder("(");
+			var state = GetState();
+			var builder = new TypeSystemAstBuilder(state);
+			
 			for (int k = 0; k < delegateMethod.Parameters.Count; k++) {
 				if (k > 0) {
 					sb.Append(", ");
 					sbWithoutTypes.Append(", ");
 				}
-				var parameterType = delegateMethod.Parameters [k].Type;
-				sb.Append(GetShortType(parameterType, GetState()));
-				sb.Append(" ");
-				sb.Append(delegateMethod.Parameters [k].Name);
+				var convertedParameter = builder.ConvertParameter (delegateMethod.Parameters [k]);
+				if (convertedParameter.ParameterModifier == ParameterModifier.Params)
+					convertedParameter.ParameterModifier = ParameterModifier.None;
+				sb.Append(convertedParameter.GetText (FormattingPolicy));
 				sbWithoutTypes.Append(delegateMethod.Parameters [k].Name);
 			}
+			
 			sb.Append(")");
 			sbWithoutTypes.Append(")");
 			completionList.AddCustom(
@@ -2034,7 +2040,16 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 				"Creates anonymous delegate.",
 				"delegate" + sb + " {" + EolMarker + thisLineIndent + IndentString + "|" + delegateEndString
 				);
-			if (!completionList.Result.Any(data => data.DisplayText == sbWithoutTypes.ToString())) {
+			
+			if (!completionList.Result.Any(data => data.DisplayText == sb.ToString())) {
+				completionList.AddCustom(
+					sb.ToString(),
+					"Creates typed lambda expression.",
+					sb + " => |" + (addSemicolon ? ";" : "")
+					);
+			}
+			
+			if (!delegateMethod.Parameters.Any (p => p.IsOut || p.IsRef) && !completionList.Result.Any(data => data.DisplayText == sbWithoutTypes.ToString())) {
 				completionList.AddCustom(
 					sbWithoutTypes.ToString(),
 					"Creates lambda expression.",
@@ -2270,7 +2285,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 				return;
 			}
 			string typeString = GetShortType(resolvedType, state);
-			completionList.AddEnumMembers (resolvedType, state, typeString);
+			completionList.AddEnumMembers(resolvedType, state, typeString);
 			DefaultCompletionString = typeString;
 		}
 		
@@ -2323,11 +2338,6 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 						continue;
 					result.AddMember(field);
 				}
-				foreach (var m in type.GetMethods ()) {
-					if (m.IsStatic && m.IsPublic) {
-						result.AddMember(m);
-					}
-				}
 				return result.Result;
 			}
 			
@@ -2350,11 +2360,6 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 						if (trr.Type.Kind == TypeKind.Enum) {
 							foreach (var field in trr.Type.GetFields ()) {
 								result.AddMember(field);
-							}
-							foreach (var m in trr.Type.GetMethods ()) {
-								if (m.Name == "TryParse" && m.IsStatic) {
-									result.AddMember(m);
-								}
 							}
 							return result.Result;
 						}
@@ -2446,6 +2451,8 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 			
 			if (resolveResult is TypeResolveResult || includeStaticMembers) {
 				foreach (var nested in type.GetNestedTypes ()) {
+					if (!lookup.IsAccessible(nested.GetDefinition(), isProtectedAllowed))
+						continue;
 					IType addType = typePred != null ? typePred(nested) : nested;
 					if (addType != null)
 						result.AddType(addType, addType.Name);
@@ -2876,13 +2883,13 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 		}
 		);
 		
-		string GetLastClosingXmlCommentTag ()
+		string GetLastClosingXmlCommentTag()
 		{
 			var line = document.GetLineByNumber(location.Line);
 			
 		restart:
 				string lineText = document.GetText(line);
-			if (!lineText.Trim ().StartsWith ("///"))
+			if (!lineText.Trim().StartsWith("///"))
 				return null;
 			int startIndex = Math.Min(location.Column - 1, lineText.Length - 1) - 1;
 			while (startIndex > 0 && lineText [startIndex] != '<') {
@@ -2916,7 +2923,7 @@ namespace ICSharpCode.NRefactory.CSharp.Completion
 		
 		IEnumerable<ICompletionData> GetXmlDocumentationCompletionData()
 		{
-			var closingTag = GetLastClosingXmlCommentTag ();
+			var closingTag = GetLastClosingXmlCommentTag();
 			if (closingTag != null) {
 				yield return factory.CreateLiteralCompletionData(
 					"/" + closingTag + ">"

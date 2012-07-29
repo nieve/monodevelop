@@ -145,7 +145,7 @@ namespace MonoDevelop.Ide.TypeSystem
 	
 	public static class TypeSystemService
 	{
-		const string CurrentVersion = "1.0";
+		const string CurrentVersion = "1.0.1";
 		static List<TypeSystemParserNode> parsers;
 		public static readonly HashSet<string> FilesSkippedInParseThread = new HashSet<string> ();
 		static IEnumerable<TypeSystemParserNode> Parsers {
@@ -646,9 +646,6 @@ namespace MonoDevelop.Ide.TypeSystem
 				get {
 					return assembly.Location;
 				}
-				set {
-					assembly.Location = value;
-				}
 			}
 
 			public IEnumerable<IUnresolvedAttribute> AssemblyAttributes {
@@ -855,7 +852,7 @@ namespace MonoDevelop.Ide.TypeSystem
 						}
 
 						context = new CSharpProjectContent ();
-						context.Location = wrapper.Project.FileName;
+						context = context.SetLocation (this.wrapper.Project.FileName);
 						context = context.SetAssemblyName (this.wrapper.Project.Name);
 						QueueParseJob (this.wrapper);
 						return context;
@@ -897,9 +894,6 @@ namespace MonoDevelop.Ide.TypeSystem
 					get {
 						return Content.Location;
 					}
-					set {
-						Content.Location = value;
-					}
 				}
 
 				IEnumerable<IUnresolvedAttribute> IUnresolvedAssembly.AssemblyAttributes {
@@ -940,6 +934,11 @@ namespace MonoDevelop.Ide.TypeSystem
 				IProjectContent IProjectContent.SetAssemblyName (string newAssemblyName)
 				{
 					return Content.SetAssemblyName (newAssemblyName);
+				}
+
+				IProjectContent IProjectContent.SetLocation (string newLocation)
+				{
+					return Content.SetLocation (newLocation);
 				}
 
 				IProjectContent IProjectContent.AddAssemblyReferences (IEnumerable<IAssemblyReference> references)
@@ -1190,18 +1189,20 @@ namespace MonoDevelop.Ide.TypeSystem
 		{
 			if (DecLoadCount (project) != 0)
 				return;
-			if (referenceCounter.ContainsKey (project) && --referenceCounter [project] <= 0) {
-				project.FileAddedToProject -= OnFileAdded;
-				project.FileRemovedFromProject -= OnFileRemoved;
-				project.FileRenamedInProject -= OnFileRenamed;
-				project.Modified -= OnProjectModified;
-				
-				var wrapper = projectContents [project];
-				projectContents.Remove (project);
-				referenceCounter.Remove (project);
-				StoreProjectCache (project, wrapper);
-				
-				OnProjectUnloaded (new ProjectUnloadEventArgs (project, wrapper));
+			lock (projectWrapperUpdateLock) {
+				if (referenceCounter.ContainsKey (project) && --referenceCounter [project] <= 0) {
+					project.FileAddedToProject -= OnFileAdded;
+					project.FileRemovedFromProject -= OnFileRemoved;
+					project.FileRenamedInProject -= OnFileRenamed;
+					project.Modified -= OnProjectModified;
+					
+					var wrapper = projectContents [project];
+					projectContents.Remove (project);
+					referenceCounter.Remove (project);
+
+					StoreProjectCache (project, wrapper);
+					OnProjectUnloaded (new ProjectUnloadEventArgs (project, wrapper));
+				}
 			}
 		}
 		
@@ -1464,9 +1465,6 @@ namespace MonoDevelop.Ide.TypeSystem
 				get {
 					return Ctx.Location;
 				}
-				set {
-					Ctx.Location = value;
-				}
 			}
 
 			IEnumerable<IUnresolvedAttribute> IUnresolvedAssembly.AssemblyAttributes {
@@ -1534,9 +1532,9 @@ namespace MonoDevelop.Ide.TypeSystem
 					if (File.Exists (assemblyPath)) {
 						var deserializedAssembly = DeserializeObject <IUnresolvedAssembly> (assemblyPath);
 						if (deserializedAssembly != null) {
-							var provider = deserializedAssembly as IDocumentationProviderContainer;
+						/*	var provider = deserializedAssembly as IDocumentationProviderContainer;
 							if (provider != null)
-								provider.DocumentationProvider = new CombinedDocumentationProvider (fileName);
+								provider.DocumentationProvider = new CombinedDocumentationProvider (fileName);*/
 							return deserializedAssembly;
 						}
 					}
@@ -1552,7 +1550,6 @@ namespace MonoDevelop.Ide.TypeSystem
 					loader.IncludeInternalMembers = true;
 					loader.DocumentationProvider = new CombinedDocumentationProvider (fileName);
 					assembly = loader.LoadAssembly (asm);
-					assembly.Location = fileName;
 				} catch (Exception e) {
 					LoggingService.LogError ("Can't convert assembly: " + fileName, e);
 					return null;
@@ -1676,8 +1673,6 @@ namespace MonoDevelop.Ide.TypeSystem
 				throw new ArgumentNullException ("project");
 			ProjectContentWrapper content;
 			if (projectContents.TryGetValue (project, out content)) {
-				if (content.Content != null)
-					content.Content.Location = project.FileName;
 				return content;
 			}
 			return new ProjectContentWrapper (project);

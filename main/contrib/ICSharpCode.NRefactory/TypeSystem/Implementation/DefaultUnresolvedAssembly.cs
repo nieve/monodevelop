@@ -69,10 +69,16 @@ namespace ICSharpCode.NRefactory.TypeSystem.Implementation
 				assemblyName = value;
 			}
 		}
-		
+
+		string location;
 		public string Location {
-			get;
-			set;
+			get {
+				return location;
+			}
+			set {
+				FreezableHelper.ThrowIfFrozen(this);
+				location = value;
+			}
 		}
 
 		public IList<IUnresolvedAttribute> AssemblyAttributes {
@@ -370,6 +376,10 @@ namespace ICSharpCode.NRefactory.TypeSystem.Implementation
 				
 				INamespace INamespace.ParentNamespace {
 					get { return parentNamespace; }
+				}
+				
+				IEnumerable<IAssembly> INamespace.ContributingAssemblies {
+					get { return new [] { assembly }; }
 				}
 				
 				IEnumerable<INamespace> INamespace.ChildNamespaces {
