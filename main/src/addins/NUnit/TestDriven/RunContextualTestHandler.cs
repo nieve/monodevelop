@@ -123,7 +123,7 @@ namespace MonoDevelop.TestDriven
 		{
 			if (test == null)
 				return null;
-			if (test.FullName.EndsWith(fullName))
+			if (test.TestId == fullName)
 				return test;
 			
 			UnitTestGroup group = test as UnitTestGroup;
