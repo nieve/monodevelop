@@ -36,6 +36,10 @@ using ICSharpCode.NRefactory.CSharp;
 using NUnit.Framework;
 using ICSharpCode.NRefactory.CSharp.TypeSystem;
 using MonoDevelop.Ide.Gui.Content;
+using NUnit.Core;
+using ICSharpCode.NRefactory.TypeSystem;
+using MonoDevelop.Ide.Gui;
+using Mono.TextEditor;
 
 namespace MonoDevelop.TestDriven
 {
@@ -48,23 +52,18 @@ namespace MonoDevelop.TestDriven
 	{
 		protected override void Update (CommandInfo info)
 		{
-			info.Visible = InsideTestFixture();
+			info.Visible = IsInsideTestFixture();
 		}
 
-		bool InsideTestFixture ()
+		bool IsInsideTestFixture ()
 		{
-			var location = IdeApp.Workbench.ActiveDocument.Editor.Caret.Location;
-			var activeDocument = IdeApp.Workbench.ActiveDocument;
-			var context = new MDRefactoringContext (activeDocument, location);
-			var result = context.GetNode<TypeDeclaration> ();
+			MDRefactoringContext context;
+			var result = GetTypeDeclarationContext (out context);
 			if (result == null)
 				return false;
 
-			var provider = activeDocument.GetContent<ITextEditorMemberPositionProvider>();
-			var currentType = provider.GetTypeAt(activeDocument.Editor.LocationToOffset (location));
-			var csAssem = activeDocument.Compilation.MainAssembly as CSharpAssembly;
-			var parsedFile = context.Document.ParsedDocument.ParsedFile as CSharpParsedFile;
-			var resolveContext = new CSharpTypeResolveContext(csAssem, parsedFile.RootUsingScope.Resolve(context.Compilation));
+			CSharpTypeResolveContext resolveContext;
+			var currentType = GetCurrentTypeContext (context, out resolveContext);
 
 			foreach (CSharpAttribute attr in currentType.Attributes) {
 				var attrType = attr.AttributeType.Resolve(resolveContext);
@@ -74,27 +73,74 @@ namespace MonoDevelop.TestDriven
 			return false;
 		}
 
-		NunitTestInfo GetTestInfo (string path)
+		static TypeDeclaration GetTypeDeclarationContext (out MDRefactoringContext context)
 		{
-			NunitTestInfo info = new NunitTestInfo();
-			info.FixtureTypeName = "MainTest";
-			info.FixtureTypeNamespace = "Test";
-			info.Name = "SuccessTest";
-			info.PathName = path;
-			info.TestId = "Test.MainTest.SuccessTest";
-			info.Tests = new NunitTestInfo[0];
-			return info;
+			var location = IdeApp.Workbench.ActiveDocument.Editor.Caret.Location;
+			var activeDocument = IdeApp.Workbench.ActiveDocument;
+			context = new MDRefactoringContext (activeDocument, location);
+			return context.GetNode<TypeDeclaration> ();
+		}
+
+		static IUnresolvedTypeDefinition GetCurrentTypeContext (MDRefactoringContext context, out CSharpTypeResolveContext resolveContext)
+		{
+			var activeDocument = IdeApp.Workbench.ActiveDocument;
+			var offset = IdeApp.Workbench.ActiveDocument.Editor.Caret.Offset;
+			var provider = GetProvider ();
+			var currentType = provider.GetTypeAt (offset);
+			var csAssem = activeDocument.Compilation.MainAssembly as CSharpAssembly;
+			var parsedFile = context.Document.ParsedDocument.ParsedFile as CSharpParsedFile;
+			resolveContext = new CSharpTypeResolveContext (csAssem, parsedFile.RootUsingScope.Resolve (context.Compilation));
+
+			return currentType;
 		}
 		
+		static ITextEditorMemberPositionProvider GetProvider ()
+		{
+			var activeDocument = IdeApp.Workbench.ActiveDocument;
+			return activeDocument.GetContent<ITextEditorMemberPositionProvider> ();
+		}
+
+		static string GetContextualFullName(){
+			var provider = GetProvider ();
+			var offset = IdeApp.Workbench.ActiveDocument.Editor.Caret.Offset;
+			var member = provider.GetMemberAt (offset);
+			if (member != null) return member.FullName;
+			return provider.GetTypeAt (offset).FullName;
+		}
+
+		UnitTest SearchTest ()
+		{
+			string fullName = GetContextualFullName();
+			foreach (UnitTest t in NUnitService.Instance.RootTests) {
+				UnitTest r = SearchTest (t, fullName);
+				if (r != null)
+					return r;
+			}
+			return null;
+		}
+		
+		UnitTest SearchTest (UnitTest test, string fullName)
+		{
+			if (test == null)
+				return null;
+			if (test.FullName.EndsWith(fullName))
+				return test;
+			
+			UnitTestGroup group = test as UnitTestGroup;
+			if (group != null)  {
+				foreach (UnitTest t in group.Tests) {
+					UnitTest result = SearchTest (t, fullName);
+					if (result != null)
+						return result;
+				}
+			}
+			return null;
+		}
+
 		protected override void Run ()
 		{
-			var path = IdeApp.Workbench.ActiveDocument.FileName;
-			var assembly = "/home/nieve/Code/Misc/Test/Test/bin/Debug/"+IdeApp.Workbench.ActiveDocument.ProjectContent.AssemblyName+".exe";
-			NunitTestInfo testInfo = GetTestInfo(path);
-			var root = new TestAssembly(assembly);
-			var test = new NUnitTestCase(root,testInfo,testInfo.PathName);
+			var test = SearchTest();
 			NUnitService.Instance.RunTest (test, null);
-			Console.WriteLine("running inside the RunCurrentTestHandler.");
 		}
 	}
 }
