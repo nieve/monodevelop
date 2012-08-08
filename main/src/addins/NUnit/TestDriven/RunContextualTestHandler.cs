@@ -45,7 +45,8 @@ namespace MonoDevelop.TestDriven
 {
 	public enum Commands
 	{
-		ContextSensitive
+		ContextSensitive,
+		RunFileTests
 	}
 
 	public class RunContextualTestHandler : CommandHandler
@@ -141,6 +142,20 @@ namespace MonoDevelop.TestDriven
 		{
 			var test = SearchTest();
 			NUnitService.Instance.RunTest (test, null);
+		}
+	}
+
+	public class RunProjectItemTestHandler : CommandHandler
+	{
+		protected override void Update (CommandInfo info)
+		{
+			info.Visible = true;// IsInsideTestFixture();
+		}
+
+		protected override void Run ()
+		{
+//			var test = SearchTest();
+//			NUnitService.Instance.RunTest (test, null);
 		}
 	}
 }

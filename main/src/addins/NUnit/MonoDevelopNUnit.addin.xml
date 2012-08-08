@@ -226,5 +226,21 @@
 			<CommandItem id = "MonoDevelop.TestDriven.Commands.ContextSensitive" />
 		</Condition>
 	</Extension>
+	
+	<Extension path = "/MonoDevelop/Ide/Commands">
+		<Category _name = "Test Driven" id = "TestDriven">
+			<Command id = "MonoDevelop.TestDriven.Commands.RunFileTests"
+						_label = "Run test(s)"
+						_description="Runs the test(s) inside the selected file."
+						defaultHandler = "MonoDevelop.TestDriven.RunProjectItemTestHandler"
+						shortcut="Control+R|Control+C"/>
+		</Category>
+	</Extension>
+	
+	<Extension path = "/MonoDevelop/Ide/ContextMenu/ProjectPad">
+		<Condition id="ItemType" value="Project|ProjectFolder|SolutionFolder|Solution|WorkspaceItem|SystemFile">
+			<CommandItem id = "MonoDevelop.TestDriven.Commands.RunFileTests" />
+		</Condition>
+	</Extension>
 
 </Addin>
